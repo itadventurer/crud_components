@@ -1,0 +1,11 @@
+<%# Locals: field, query, form_id, compact, autosubmit, param_name, css %>
+<% choices = [
+     [t('crud_components.filter.any', default: '–'), ''],
+     [t('crud_components.filter.yes', default: 'Yes'), 'true'],
+     [t('crud_components.filter.no', default: 'No'), 'false']
+   ] %>
+<%= select_tag param_name,
+               options_for_select(choices, query.value(field.name.to_s)),
+               class: compact ? css.select_input_sm : css.select_input, form: form_id, id: nil,
+               data: (autosubmit ? { action: 'change->crud-filter#submit' } : {}),
+               aria: { label: field.human_name } %>

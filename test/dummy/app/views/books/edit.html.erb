@@ -1,0 +1,4 @@
+<h1>Edit: <%= crud_label(@book) %></h1>
+<p class="text-muted">Form views are a later version — this page exists so the
+derived <code>:edit</code> action has a real route<%= @publisher ? ' (you reached it via the nested publisher route)' : '' %>.</p>
+<%= crud_record @book, fieldset: :compact %>

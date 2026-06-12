@@ -1,0 +1,11 @@
+<%# Locals: field, query, form_id, compact, autosubmit, param_name, css %>
+<div class="<%= css.input_group %>">
+  <%= tag.input type: 'date', name: "#{param_name}_geq",
+                value: query.value("#{field.name}_geq"),
+                class: compact ? css.input_sm : css.input, form: form_id,
+                aria: { label: "#{field.human_name} ≥" } %>
+  <%= tag.input type: 'date', name: "#{param_name}_leq",
+                value: query.value("#{field.name}_leq"),
+                class: compact ? css.input_sm : css.input, form: form_id,
+                aria: { label: "#{field.human_name} ≤" } %>
+</div>

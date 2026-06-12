@@ -1,0 +1,9 @@
+<h1><%= crud_label(@book) %></h1>
+<div class="card mb-4"><div class="card-body">
+  <%= crud_record @book %>
+</div></div>
+
+<h2 class="h4">Reviews <span class="text-muted">(static embedded collection — <code>query: false</code>)</span></h2>
+<div class="card"><div class="card-body">
+  <%= crud_collection @book.reviews, query: false %>
+</div></div>

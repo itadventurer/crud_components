@@ -16,8 +16,9 @@ module CrudComponents
       badge_muted: 'badge text-bg-light',
       input: 'form-control',
       input_sm: 'form-control form-control-sm',
-      select: 'form-select',
-      select_sm: 'form-select form-select-sm',
+      # named *_input to avoid OrderedOptions#select (Hash#select) collisions
+      select_input: 'form-select',
+      select_input_sm: 'form-select form-select-sm',
       form_label: 'form-label',
       filter_grid: 'row row-cols-1 g-2',
       input_group: 'input-group flex-nowrap',

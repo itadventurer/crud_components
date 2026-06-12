@@ -1,0 +1,89 @@
+<%# The default collection layout. Receives one local: `collection`
+    (CrudComponents::Presenters::Collection). %>
+<% css = collection.css %>
+<div class="crud-collection" data-controller="crud-filter">
+  <% if collection.filterable? %>
+    <%# The inline filter row lives inside <thead>; a form cannot wrap table
+        cells, so the inputs bind to this external form via the HTML `form`
+        attribute. Plain GET — works without JavaScript. %>
+    <form method="get" action="<%= request.path %>" id="<%= collection.filter_form_id %>"
+          data-turbo-action="advance" data-crud-filter-target="form"
+          data-action="submit->crud-filter#clean">
+      <% collection.preserved_params.each do |name, value| %>
+        <%= hidden_field_tag name, value, id: nil %>
+      <% end %>
+    </form>
+  <% end %>
+
+  <% if collection.collection_actions&.any? %>
+    <div class="d-flex justify-content-end mb-2">
+      <%= render 'crud_components/actions', actions: collection.collection_actions %>
+    </div>
+  <% end %>
+
+  <div class="table-responsive">
+    <table class="<%= css.table %>">
+      <thead class="<%= css.thead %>">
+        <tr>
+          <% collection.fields.each do |field| %>
+            <th scope="col">
+              <% if collection.sortable_field?(field) %>
+                <%= link_to collection.sort_url(field), class: css.sort_link, data: { turbo_action: 'advance' } do %>
+                  <%= field.human_name %><%= collection.sort_indicator(field) %>
+                <% end %>
+              <% else %>
+                <%= field.human_name %>
+              <% end %>
+            </th>
+          <% end %>
+          <% if collection.actions_column? %><th scope="col"></th><% end %>
+        </tr>
+        <% if collection.filterable? %>
+          <tr class="<%= css.filter_row %>">
+            <% collection.fields.each do |field| %>
+              <td>
+                <% if collection.filterable_field?(field) %>
+                  <%= collection.render_filter_control(field, collection.query,
+                                                       form_id: collection.filter_form_id,
+                                                       compact: true, autosubmit: true) %>
+                <% end %>
+              </td>
+            <% end %>
+            <% if collection.actions_column? %>
+              <td class="<%= css.actions_cell %>">
+                <button type="submit" form="<%= collection.filter_form_id %>" class="<%= css.button %>">
+                  <%= t('crud_components.filter.submit', default: 'Filter') %>
+                </button>
+              </td>
+            <% end %>
+          </tr>
+        <% end %>
+      </thead>
+      <tbody>
+        <% collection.records.each do |record| %>
+          <tr id="<%= dom_id(record) %>">
+            <% collection.fields.each do |field| %>
+              <td><%= collection.cell(field, record) %></td>
+            <% end %>
+            <% if collection.actions_column? %>
+              <td class="<%= css.actions_cell %>">
+                <% if collection.custom_actions_partial %>
+                  <%= render collection.custom_actions_partial, record: record %>
+                <% else %>
+                  <%= render 'crud_components/actions', actions: collection.row_actions(record) %>
+                <% end %>
+              </td>
+            <% end %>
+          </tr>
+        <% end %>
+        <% if collection.records.empty? %>
+          <tr>
+            <td colspan="<%= collection.columns_count %>" class="<%= css.muted %>">
+              <%= t('crud_components.empty', default: 'No records') %>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+</div>

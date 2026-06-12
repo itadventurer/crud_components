@@ -1,0 +1,15 @@
+<%# One record as a definition list. Local: `record_presenter`. %>
+<% css = record_presenter.css %>
+<div class="crud-record">
+  <% if record_presenter.actions&.any? %>
+    <div class="mb-3">
+      <%= render 'crud_components/actions', actions: record_presenter.actions %>
+    </div>
+  <% end %>
+  <dl class="<%= css.dl %>">
+    <% record_presenter.fields.each do |field| %>
+      <dt class="<%= css.dt %>"><%= field.human_name %></dt>
+      <dd class="<%= css.dd %>"><%= record_presenter.value_html(field) %></dd>
+    <% end %>
+  </dl>
+</div>

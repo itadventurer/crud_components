@@ -1,0 +1,10 @@
+<%# Locals: value, record, field, surface — pretty-printed; highlighted via
+    rouge when the host app has it %>
+<%- if value.nil? -%>
+  <span class="<%= CrudComponents.config.css.muted %>">—</span>
+<%- else -%>
+  <% pretty = value.is_a?(String) ? value : JSON.pretty_generate(value) %>
+  <% pretty = truncate(pretty, length: 120) if surface == :collection %>
+  <% highlighted = CrudComponents::Markup.highlight_json(pretty) %>
+  <pre class="crud-json mb-0"><code><%= highlighted ? raw(highlighted) : pretty %></code></pre>
+<%- end -%>

@@ -1,0 +1,8 @@
+<h1>Reviews</h1>
+<p class="text-muted">The rating column uses a custom renderer — a single partial in
+this app at <code>app/views/crud_components/fields/_stars.html.erb</code> plus
+<code>attribute :rating, as: :stars</code>. Searching delegates through
+<code>:book</code> into Book's <code>search_in</code> (try a publisher name).</p>
+<div class="card"><div class="card-body">
+  <%= crud_collection Review %>
+</div></div>

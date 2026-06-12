@@ -1,0 +1,13 @@
+<%# Locals: value (the associated record or nil), record, field, surface —
+    nil-safe link via the target's label %>
+<%- if value.nil? -%>
+  <span class="<%= CrudComponents.config.css.muted %>">—</span>
+<%- else -%>
+  <% path = crud_record_path(value, owner: record) %>
+  <% label = crud_label(value) %>
+  <%- if path -%>
+    <%= link_to label, path, data: { turbo_action: 'advance' } %>
+  <%- else -%>
+    <%= label %>
+  <%- end -%>
+<%- end -%>

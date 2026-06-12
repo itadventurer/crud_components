@@ -1,0 +1,9 @@
+<%# Locals: value, record, field, surface %>
+<% css = CrudComponents.config.css %>
+<%- if value.nil? -%>
+  <span class="<%= css.muted %>">—</span>
+<%- elsif value -%>
+  <span class="<%= css.boolean_true %>">✓</span>
+<%- else -%>
+  <span class="<%= css.boolean_false %>">✗</span>
+<%- end -%>

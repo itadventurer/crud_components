@@ -1,0 +1,8 @@
+<%# Locals: value, record, field, surface — options: unit:, digits: %>
+<%- if value.nil? -%>
+  <span class="<%= CrudComponents.config.css.muted %>">—</span>
+<%- else -%>
+  <% options = field.renderer_options %>
+  <% formatted = options[:digits] ? number_with_precision(value, precision: options[:digits], delimiter: ',') : number_with_delimiter(value) %>
+  <%= formatted %><%= " #{options[:unit]}" if options[:unit] %>
+<%- end -%>

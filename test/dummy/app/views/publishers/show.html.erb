@@ -1,0 +1,12 @@
+<h1><%= crud_label(@publisher) %></h1>
+<div class="card mb-4"><div class="card-body">
+  <%= crud_record @publisher %>
+</div></div>
+
+<div class="d-flex justify-content-between align-items-center">
+  <h2 class="h4">Books <span class="text-muted">(association collection → nested edit routes)</span></h2>
+  <%= link_to 'Filterable list', publisher_books_path(@publisher), class: 'btn btn-sm btn-outline-secondary' %>
+</div>
+<div class="card"><div class="card-body">
+  <%= crud_collection @publisher.books, fieldset: :compact, query: false %>
+</div></div>

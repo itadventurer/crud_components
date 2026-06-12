@@ -1,0 +1,17 @@
+<%# Locals: value (a collection), record, field, surface —
+    truncated list of links: "a, b +3 more" %>
+<% items = value.to_a %>
+<%- if items.empty? -%>
+  <span class="<%= CrudComponents.config.css.muted %>">—</span>
+<%- else -%>
+  <% shown = surface == :collection ? items.first(3) : items %>
+  <%= safe_join(shown.map { |item|
+        path = crud_record_path(item, owner: record)
+        path ? link_to(crud_label(item), path, data: { turbo_action: 'advance' }) : crud_label(item).to_s
+      }, ', ') %>
+  <%- if items.size > shown.size -%>
+    <span class="<%= CrudComponents.config.css.muted %>">
+      <%= t('crud_components.more', count: items.size - shown.size, default: '+%{count} more') %>
+    </span>
+  <%- end -%>
+<%- end -%>

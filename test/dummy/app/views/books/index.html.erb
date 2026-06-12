@@ -1,0 +1,24 @@
+<% fieldset = params[:view] == 'catalog' ? :catalog : :index %>
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h1><%= @publisher ? "Books by #{@publisher.name}" : 'Books' %></h1>
+  <div class="btn-group">
+    <%= link_to 'Curated', url_for(view: nil),
+                class: "btn btn-sm #{fieldset == :index ? 'btn-secondary' : 'btn-outline-secondary'}" %>
+    <%= link_to 'Catalog (all columns)', url_for(view: 'catalog'),
+                class: "btn btn-sm #{fieldset == :catalog ? 'btn-secondary' : 'btn-outline-secondary'}" %>
+  </div>
+</div>
+
+<div class="row">
+  <div class="col-xl-9">
+    <div class="card"><div class="card-body">
+      <%= crud_collection (@publisher ? @publisher.books : Book), fieldset: fieldset %>
+    </div></div>
+  </div>
+  <div class="col-xl-3">
+    <div class="card"><div class="card-body">
+      <h5 class="card-title">Filter</h5>
+      <%= crud_filter Book, fieldset: fieldset %>
+    </div></div>
+  </div>
+</div>

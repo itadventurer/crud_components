@@ -1,0 +1,18 @@
+<h1>Dashboard</h1>
+<p class="text-muted">Two auto collections on one page, isolated via
+<code>param_prefix:</code> — filtering or sorting one leaves the other alone.</p>
+
+<div class="row">
+  <div class="col-lg-6">
+    <h2 class="h4">Books</h2>
+    <div class="card"><div class="card-body">
+      <%= crud_collection Book, fieldset: :compact, param_prefix: :books %>
+    </div></div>
+  </div>
+  <div class="col-lg-6">
+    <h2 class="h4">Reviews</h2>
+    <div class="card"><div class="card-body">
+      <%= crud_collection Review, param_prefix: :reviews %>
+    </div></div>
+  </div>
+</div>

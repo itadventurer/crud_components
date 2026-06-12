@@ -1,0 +1,8 @@
+<%# Locals: value, record, field, surface %>
+<%- if value.nil? || value == '' -%>
+  <span class="<%= CrudComponents.config.css.muted %>">—</span>
+<%- elsif surface == :collection -%>
+  <%= truncate(value.to_s, length: 120) %>
+<%- else -%>
+  <%= value %>
+<%- end -%>

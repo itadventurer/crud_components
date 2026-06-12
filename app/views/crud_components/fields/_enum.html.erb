@@ -1,0 +1,8 @@
+<%# Locals: value, record, field, surface %>
+<%- if value.nil? -%>
+  <span class="<%= CrudComponents.config.css.muted %>">—</span>
+<%- else -%>
+  <span class="<%= CrudComponents.config.css.badge %>">
+    <%= field.respond_to?(:human_value) ? field.human_value(value) : value %>
+  </span>
+<%- end -%>

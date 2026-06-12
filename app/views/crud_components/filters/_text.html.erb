@@ -1,0 +1,5 @@
+<%# Locals: field, query, form_id, compact, autosubmit, param_name, css %>
+<%= tag.input type: 'search', name: param_name, value: query.value(field.name.to_s),
+              class: compact ? css.input_sm : css.input, form: form_id,
+              placeholder: (field.human_name if compact),
+              aria: { label: field.human_name } %>

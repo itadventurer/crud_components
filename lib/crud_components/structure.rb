@@ -159,13 +159,17 @@ module CrudComponents
                                                      "available: #{actions.keys.map(&:inspect).join(', ')}")
     end
 
+    # A fieldset's actions: list is authoritative per kind: listing only row
+    # actions curates the row buttons without losing the derived :new button
+    # (and vice versa). An empty list hides everything.
     def fieldset_actions(fieldset, on:)
-      list = if fieldset.action_names
-               fieldset.action_names.map { |name| action(name) }
-             else
-               actions.values
-             end
-      list.select { |a| on == :collection ? a.collection? : a.row? }
+      of_kind = ->(a) { on == :collection ? a.collection? : a.row? }
+      names = fieldset.action_names
+      return actions.values.select(&of_kind) if names.nil?
+      return [] if names.empty?
+
+      listed = names.map { |name| action(name) }.select(&of_kind)
+      listed.any? ? listed : actions.values.select(&of_kind)
     end
 
     # ── validation (DefinitionError with a way out, at first build) ──────────
