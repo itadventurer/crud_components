@@ -1,0 +1,262 @@
+module CrudComponents
+  # The resolved, validated description of how a model appears in the UI.
+  # Built lazily per model class and memoized; works for models without any
+  # declaration (rule zero: everything is derived from what Rails knows).
+  class Structure
+    RENDERER_GEMS = {
+      markdown: %w[commonmarker redcarpet kramdown],
+      asciidoc: %w[asciidoctor]
+    }.freeze
+
+    class << self
+      def for(model)
+        unless model.respond_to?(:columns_hash)
+          raise ArgumentError, "#{model.inspect} is not an ActiveRecord model class"
+        end
+
+        cached = model.instance_variable_get(:@_crud_structure) if model.instance_variable_defined?(:@_crud_structure)
+        return cached if cached
+
+        structure = new(model, find_builder(model))
+        model.instance_variable_set(:@_crud_structure, structure)
+        structure
+      end
+
+      private
+
+      # Class-level ivars are not inherited; walk up for STI subclasses.
+      def find_builder(model)
+        klass = model
+        while klass.respond_to?(:instance_variable_defined?)
+          if klass.instance_variable_defined?(:@_crud_structure_block)
+            block = klass.instance_variable_get(:@_crud_structure_block)
+            return Builder.new(model, &block) if block
+          end
+          klass = klass.superclass
+          break if klass.nil? || klass == ActiveRecord::Base
+        end
+        nil
+      end
+    end
+
+    attr_reader :model, :identify_by
+
+    def initialize(model, builder = nil)
+      @model = model
+      @declarations = builder&.declarations || {}
+      @label_decl = builder&.label_decl
+      @identify_by = builder&.identify_by_decl || :id
+      @search_decl = builder&.search_decl
+      @declared_actions = builder&.actions || {}
+      @declared_fieldsets = builder&.fieldsets || {}
+      @fields = {}
+      validate!
+    end
+
+    # ── fields ───────────────────────────────────────────────────────────────
+    def field(name)
+      @fields[name.to_sym] ||= resolve_field(name.to_sym)
+    end
+
+    # The :all set: every column (foreign keys swapped for their belongs_to)
+    # plus declared computed fields, in declaration order.
+    def default_field_names
+      @default_field_names ||= column_field_names + (@declarations.keys - column_field_names)
+    end
+
+    # ── fieldsets ────────────────────────────────────────────────────────────
+    # :default always exists; :index and :show fall back to :default when not
+    # declared; any other name must be declared (typo protection).
+    def fieldset(name = :default)
+      name = (name || :default).to_sym
+      return @declared_fieldsets[name] if @declared_fieldsets.key?(name)
+      return default_fieldset if %i[default index show].include?(name)
+
+      known = (@declared_fieldsets.keys + [:default]).uniq
+      raise UnknownFieldsetError, "#{model} has no fieldset :#{name} — " \
+                                  "available: #{known.map(&:inspect).join(', ')}"
+    end
+
+    def default_fieldset
+      @default_fieldset ||= Fieldset.new(:default, :all)
+    end
+
+    def fieldset_fields(fieldset)
+      names = fieldset.all_fields? ? default_field_names : fieldset.field_names
+      names.map { |name| field(name) }
+    end
+
+    def fieldset_filter_fields(fieldset)
+      (fieldset_fields(fieldset) + fieldset.filter_names.map { |name| field(name) })
+        .uniq.select(&:filterable?)
+    end
+
+    def fieldset_sortable_fields(fieldset)
+      fieldset_fields(fieldset).select(&:sortable?)
+    end
+
+    # ── identity ─────────────────────────────────────────────────────────────
+    def label_source
+      return @label_decl if @label_decl
+
+      @label_source ||= %i[name title].find { |attr| model.columns_hash.key?(attr.to_s) } ||
+                        model.columns.find { |col| col.type == :string }&.name&.to_sym
+    end
+
+    def label_for(record, context = nil)
+      case (source = label_source)
+      when Proc then context ? context.instance_exec(record, &source) : source.call(record)
+      when Symbol then record.public_send(source)
+      else "#{model.model_name.human} ##{record.id}"
+      end
+    end
+
+    # The field whose cell carries the record link (nil for block labels).
+    def label_field_name
+      label_source.is_a?(Symbol) ? label_source : nil
+    end
+
+    # ── search ───────────────────────────────────────────────────────────────
+    # nil when search_in is a custom block (delegation is then impossible).
+    def search_in_spec
+      return nil if @search_decl.is_a?(Proc)
+
+      @search_in_spec ||= (@search_decl.presence || default_search_spec)
+    end
+
+    def default_search_spec
+      model.columns.select { |col| %i[string text].include?(col.type) }
+           .map { |col| col.name.to_sym }
+    end
+
+    def searchable?
+      @search_decl.is_a?(Proc) || search_in_spec.any?
+    end
+
+    def apply_search(scope, query_string)
+      if @search_decl.is_a?(Proc)
+        @search_decl.call(scope.extending(WhereLike), query_string)
+      elsif search_in_spec.any?
+        LikeSpec.apply(scope, search_in_spec, query_string)
+      else
+        scope
+      end
+    end
+
+    # ── actions ──────────────────────────────────────────────────────────────
+    def actions
+      @actions ||= begin
+        derived = %i[new show edit destroy].to_h { |name| [name, Action.new(name, derived: true)] }
+        merged = derived.merge(@declared_actions)
+        custom = @declared_actions.keys - derived.keys
+        order = [:new, :show, :edit, *custom, :destroy]
+        order.to_h { |name| [name, merged.fetch(name)] }
+      end
+    end
+
+    def action(name)
+      actions[name.to_sym] || raise(DefinitionError, "#{model} has no action :#{name} — " \
+                                                     "available: #{actions.keys.map(&:inspect).join(', ')}")
+    end
+
+    def fieldset_actions(fieldset, on:)
+      list = if fieldset.action_names
+               fieldset.action_names.map { |name| action(name) }
+             else
+               actions.values
+             end
+      list.select { |a| on == :collection ? a.collection? : a.row? }
+    end
+
+    # ── validation (DefinitionError with a way out, at first build) ──────────
+    private
+
+    def validate!
+      @declarations.each_key { |name| field(name) }
+      validate_renderer_gems!
+      validate_fieldsets!
+    end
+
+    def validate_renderer_gems!
+      @declarations.each do |name, decl|
+        gems = RENDERER_GEMS[decl[:options][:as]]
+        next unless gems
+        next if gems.any? { |gem_name| try_require(gem_name) }
+
+        raise DefinitionError, "#{model}.#{name}: as: :#{decl[:options][:as]} needs one of these gems " \
+                               "in your bundle: #{gems.join(', ')}"
+      end
+    end
+
+    def try_require(gem_name)
+      require gem_name
+      true
+    rescue LoadError
+      false
+    end
+
+    def validate_fieldsets!
+      @declared_fieldsets.each_value do |fs|
+        fs.field_names.each { |name| field(name) } unless fs.all_fields?
+        fs.filter_names.each do |name|
+          next if field(name).filterable?
+
+          raise DefinitionError, "#{model}: fieldset :#{fs.name} lists :#{name} under filters:, " \
+                                 'but that field is not filterable — give it a filter facet first'
+        end
+        fs.action_names&.each { |name| action(name) }
+      end
+    end
+
+    def resolve_field(name)
+      decl = @declarations[name] || {}
+      field_class_for(name, decl[:facets] || {})
+        .new(name, model, decl[:options] || {}, decl[:facets] || {})
+    end
+
+    def field_class_for(name, facets)
+      if model.defined_enums.key?(name.to_s)
+        Fields::EnumField
+      elsif (reflection = model.reflect_on_association(name))
+        reflection.collection? ? Fields::HasManyField : Fields::BelongsToField
+      elsif model.respond_to?(:reflect_on_attachment) && model.reflect_on_attachment(name)
+        Fields::AttachmentField
+      elsif (column = model.columns_hash[name.to_s])
+        column_field_class(column)
+      elsif facets[:render] || model.method_defined?(name)
+        Fields::ComputedField
+      else
+        raise DefinitionError, "#{model} has no column, enum, association or public method '#{name}'. " \
+                               "Computed fields need a render facet: attribute(:#{name}) { |record| ... }"
+      end
+    end
+
+    def column_field_class(column)
+      case column.type
+      when :text then Fields::TextField
+      when :integer, :float, :decimal then Fields::NumericField
+      when :date, :datetime, :timestamp, :timestamptz then Fields::DateField
+      when :boolean then Fields::BooleanField
+      when :json, :jsonb then Fields::JsonField
+      else Fields::StringField
+      end
+    end
+
+    def column_field_names
+      @column_field_names ||= begin
+        by_foreign_key = {}
+        polymorphic_type_columns = []
+        model.reflect_on_all_associations(:belongs_to).each do |ref|
+          by_foreign_key[ref.foreign_key.to_s] = ref.name
+          polymorphic_type_columns << ref.foreign_type.to_s if ref.polymorphic?
+        end
+
+        model.columns.filter_map do |col|
+          next nil if polymorphic_type_columns.include?(col.name)
+
+          by_foreign_key[col.name] || col.name.to_sym
+        end.uniq
+      end
+    end
+  end
+end
