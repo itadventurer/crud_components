@@ -1,0 +1,12 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "playground",
+      "runtimeExecutable": "bash",
+      "runtimeArgs": ["-lc", "cd test/dummy && bin/rails server -p 3777"],
+      "port": 3777,
+      "autoPort": false
+    }
+  ]
+}

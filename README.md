@@ -674,7 +674,13 @@ component and integration tests.
 ```sh
 bundle install
 bundle exec rake test
-ruby script/demo.rb     # bookstore walkthrough
+
+# the live playground (test/dummy doubles as a seeded demo app)
+cd test/dummy
+bin/rails db:schema:load db:seed
+bin/rails server                  # → http://localhost:3000
+
+ruby script/demo.rb               # query-side walkthrough in the terminal
 ```
 
 Tests mirror the design: one file per field flavor, `dsl_validation_test.rb` for every
