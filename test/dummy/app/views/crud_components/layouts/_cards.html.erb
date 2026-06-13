@@ -12,26 +12,9 @@
 <% title_field = body_fields.first %>
 <% detail_fields = body_fields.drop(1) %>
 <div class="crud-collection">
-  <% if collection.searchable? || collection.collection_actions&.any? %>
-    <div class="d-flex justify-content-between align-items-center mb-3">
-      <% if collection.searchable? %>
-        <form method="get" action="<%= request.path %>" class="d-flex gap-1" data-turbo-action="advance">
-          <% collection.preserved_params.each do |name, value| %>
-            <%= hidden_field_tag name, value, id: nil %>
-          <% end %>
-          <%= tag.input type: 'search', name: collection.search_param_name,
-                        value: collection.search_value, class: css.input_sm, placeholder: 'Search' %>
-          <button class="<%= css.button %>">Search</button>
-          <% if collection.filtered? %>
-            <%= link_to 'Reset', collection.reset_url, class: css.button %>
-          <% end %>
-        </form>
-      <% end %>
-      <% if collection.collection_actions&.any? %>
-        <%= render 'crud_components/actions', actions: collection.collection_actions %>
-      <% end %>
-    </div>
-  <% end %>
+  <%# The toolbar (search + reset + collection actions) is a gem partial — a
+      custom layout reuses it instead of reimplementing search. %>
+  <%= render 'crud_components/toolbar', collection: collection %>
 
   <div class="row row-cols-1 row-cols-md-2 row-cols-xl-3 g-3">
     <% collection.records.each do |record| %>

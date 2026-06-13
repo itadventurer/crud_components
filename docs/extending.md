@@ -1,23 +1,90 @@
 # Extending & styling
 
-Everything visual is a partial, and a file at the same path in your app wins (standard
-Rails view-path precedence — the same mechanism as Devise or Kaminari views). **That one
-rule is the entire extension API. There are no registries.**
+The gem ships **no CSS** and is built to drop into an app that has its own design — even
+one on a CSS framework that works nothing like Bootstrap. Two facts make that practical:
+
+1. **Everything visual is a partial**, and a file at the same path in your app wins
+   (standard Rails view-path precedence — the same mechanism as Devise or Kaminari
+   views). That one rule is the entire extension API; there are no registries.
+2. **The surfaces are decomposed**, so overriding one piece doesn't mean reimplementing
+   the others — you reuse the presenter and the sub-partials.
+
+## How far do you need to go?
+
+| You want to… | Do this | Reach for |
+| --- | --- | --- |
+| tweak colours / button styles | change CSS class names | the [class map](#styling) |
+| restructure **one** surface (different table markup, your grid) | override **one** partial | `rails g crud_components:views`, then edit |
+| add a whole new arrangement (cards, list, kanban) | add a layout partial | [Add a layout](#add-a-layout) |
+| change a single field's rendering / a form input | add a renderer / input partial | [renderers](#add-a-field-renderer) |
+| move to a different CSS framework | override the partials (class map covers the easy bits) | this whole doc |
+
+The class map is the *simplest* lever and deliberately covers only the common, cosmetic
+cases — colours, sizes, button variants. It is **not** a full theming engine: structural
+and utility classes (`d-flex`, `input-group`, `form-check`, `table-responsive`) live in
+the partials, because pretending every framework shares Bootstrap's class vocabulary
+would be a leaky abstraction. For a framework that works differently, you override the
+relevant partials — and because they're small and decomposed, that stays cheap.
+**When in doubt, copy the whole partial and rewrite it; that is a supported, first-class
+path, not a failure.**
 
 ```sh
 bin/rails generate crud_components:views   # copy the gem's partials into your app to edit
 ```
 
-The partials live under `app/views/crud_components/`:
-
 ```
 crud_components/
   layouts/_table.html.erb          # collection layouts (as: :table, …)
+  _toolbar.html.erb                # search box + reset + collection actions (reused by layouts)
+  _actions.html.erb                # a group of action buttons
   fields/_string.html.erb …        # value renderers (as: :string, …)
   filters/_text.html.erb …         # filter controls
   forms/_string.html.erb …         # form inputs
-  _record.html.erb _filter.html.erb _actions.html.erb _form.html.erb
+  _record.html.erb _filter.html.erb _form.html.erb
 ```
+
+## Overriding one surface without rewriting the rest
+
+Say you want a completely different collection table — your own `<table>` markup, your
+framework's classes. Override `crud_components/layouts/_table.html.erb` and rewrite the
+shell only. You do **not** reimplement search, filtering, sorting, cells or actions —
+the `collection` presenter and the sub-partials hand them to you:
+
+```erb
+<%# your app/views/crud_components/layouts/_table.html.erb %>
+<%= render 'crud_components/toolbar', collection: collection %>   <%# search + actions %>
+<table class="my-table">
+  <thead><tr>
+    <% collection.fields.each do |field| %>
+      <th>
+        <% if collection.sortable_field?(field) %>
+          <a href="<%= collection.sort_url(field) %>"><%= field.human_name %><%= collection.sort_indicator(field) %></a>
+        <% else %>
+          <%= field.human_name %>
+        <% end %>
+      </th>
+    <% end %>
+  </tr></thead>
+  <tbody>
+    <% collection.records.each do |record| %>
+      <tr id="<%= dom_id(record) %>">
+        <% collection.fields.each do |field| %>
+          <td><%= collection.cell(field, record) %></td>   <%# type-aware cell, links, click-to-filter %>
+        <% end %>
+        <td><%= render 'crud_components/actions', actions: collection.row_actions(record) %></td>
+      </tr>
+    <% end %>
+  </tbody>
+</table>
+```
+
+The reusable building blocks the `collection` presenter exposes: `fields`, `records`,
+`cell(field, record)`, `sortable_field?` / `sort_url` / `sort_indicator`,
+`filterable_field?` / `render_filter_control(field, query, …)`, `row_actions(record)`,
+`collection_actions`, `searchable?` / `search_param_name`, `filtered?` / `reset_url`,
+`filter_form_id` / `preserved_params`. Sub-partials you can drop in: `_toolbar`,
+`_actions`. Filtering and the whitelist are never reimplemented in a layout — the
+presenter has already done that.
 
 ## Add a field renderer
 
@@ -95,7 +162,8 @@ so the form submits identically with or without JS. The recipe:
 ## Styling
 
 The gem ships **no CSS** and produces markup meant to look native in the host app —
-Bootstrap 5 class names by default, concentrated in one overridable class map:
+Bootstrap 5 class names by default, concentrated in one overridable class map for the
+common cosmetic cases:
 
 ```ruby
 # config/initializers/crud_components.rb  (created by `rails g crud_components:install`)
@@ -107,9 +175,48 @@ CrudComponents.configure do |config|
 end
 ```
 
-The full key list is `CrudComponents::Config::DEFAULT_CSS`. Swapping the CSS framework
-entirely means a class map plus a handful of partials — never a fork. For structural
-changes, override the markup itself (above).
+The full key list is `CrudComponents::Config::DEFAULT_CSS`. Each key feeds the `class="…"`
+of one kind of element (table, button, badge, inputs, the toolbar, the filter row, …).
+
+**Scope, honestly.** The class map is the *simplest* lever, not a theming engine. It
+covers the elements whose class is a single configurable value. It does **not** abstract
+away structure — utility classes like `d-flex`, `input-group`, `form-check` and
+`table-responsive` live in the partials, because a class map that tried to model every
+framework's layout primitives would be a leaky abstraction that helps no one. Icons are
+rendered as `<i class="bi bi-…">` in `_actions.html.erb`; a different icon set means
+overriding that one partial.
+
+So the real cost of a different framework is: **swap the class map for the cosmetic
+classes, and override the few partials whose structure differs.** For a utility-first
+framework like Tailwind (no semantic class names at all), you put the utility strings in
+the map and override the structural partials:
+
+```ruby
+config.css.button     = 'inline-flex items-center rounded px-3 py-1.5 bg-gray-100 hover:bg-gray-200'
+config.css.input      = 'block w-full rounded border-gray-300'
+config.css.toolbar    = 'flex items-center justify-between gap-2 mb-2'
+config.css.badge      = 'inline-flex rounded-full bg-gray-100 px-2 text-xs'
+# …then `rails g crud_components:views` and adjust _form / _toolbar / the filter
+#   controls where the *structure* (not just the class) needs to change.
+```
+
+This is the intended path, not a fork: you keep all the derivation, the query layer and
+the presenters; you rewrite only the markup that your framework shapes differently.
+
+## Forms and your design system
+
+Two things are worth knowing when forms land in a custom-designed app:
+
+- **`field_with_errors`.** On a validation failure Rails wraps the errored label+input in
+  `<div class="field_with_errors">` (a global `ActionView` default, not something the gem
+  controls). Under some frameworks that extra block element disturbs the layout. The
+  common fix is one line in your app: `config.action_view.field_error_proc = ->(html, _) { html }`.
+- **simple_form.** If your app already uses [simple_form](https://github.com/heartcombo/simple_form),
+  its wrappers are the canonical way to make form markup match a design system (it ships a
+  Bootstrap config; the community ships Tailwind/Bulma/Foundation). Because the form is a
+  partial, you can override `crud_components/_form.html.erb` to render through
+  `simple_form_for` + `f.input` and inherit your wrappers — the gem still derives *which*
+  fields, their types, and the [permit list](forms.md).
 
 ## i18n
 

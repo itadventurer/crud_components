@@ -6,6 +6,8 @@ module CrudComponents
     DEFAULT_CSS = {
       table: 'table align-middle',
       thead: '',
+      toolbar: 'd-flex justify-content-between align-items-center gap-2 mb-2',
+      search_form: 'd-flex gap-1',
       filter_row: 'crud-filter-row',
       sort_link: 'text-reset text-decoration-none',
       record_link: 'fw-medium',

@@ -15,36 +15,7 @@
     </form>
   <% end %>
 
-  <% if collection.searchable? || collection.collection_actions&.any? %>
-    <div class="d-flex justify-content-between align-items-center gap-2 mb-2">
-      <div>
-        <% if collection.searchable? %>
-          <%# Global ?q= search — a plain GET form, no JS required. %>
-          <form method="get" action="<%= request.path %>" class="d-flex gap-1"
-                data-controller="crud-filter" data-action="submit->crud-filter#clean"
-                data-turbo-action="advance">
-            <% collection.preserved_params.each do |name, value| %>
-              <%= hidden_field_tag name, value, id: nil %>
-            <% end %>
-            <%= tag.input type: 'search', name: collection.search_param_name,
-                          value: collection.search_value, class: css.input_sm,
-                          placeholder: t('crud_components.filter.search', default: 'Search'),
-                          aria: { label: t('crud_components.filter.search', default: 'Search') } %>
-            <button type="submit" class="<%= css.button %>">
-              <%= t('crud_components.filter.search', default: 'Search') %>
-            </button>
-            <% if collection.filtered? %>
-              <%= link_to t('crud_components.filter.reset', default: 'Reset'),
-                          collection.reset_url, class: css.button, data: { turbo_action: 'advance' } %>
-            <% end %>
-          </form>
-        <% end %>
-      </div>
-      <% if collection.collection_actions&.any? %>
-        <%= render 'crud_components/actions', actions: collection.collection_actions %>
-      <% end %>
-    </div>
-  <% end %>
+  <%= render 'crud_components/toolbar', collection: collection %>
 
   <div class="table-responsive">
     <table class="<%= css.table %>">
