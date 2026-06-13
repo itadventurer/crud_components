@@ -9,7 +9,8 @@ Gem::Specification.new do |spec|
   spec.summary = 'Declarative CRUD UI for ActiveRecord models, rendered inside your app'
   spec.description = 'Tables, record views and filter forms derived from what Rails ' \
                      'already knows about your models. Zero configuration works; ' \
-                     'declarations only improve. No runtime dependencies outside Rails.'
+                     'declarations only improve. Forms render through simple_form; ' \
+                     'nothing beyond Rails is otherwise required.'
   spec.homepage = 'https://github.com/itadventurer/crud_components'
   spec.license = 'MIT'
   spec.required_ruby_version = '>= 3.2'
@@ -18,7 +19,7 @@ Gem::Specification.new do |spec|
   spec.metadata['source_code_uri'] = spec.homepage
 
   spec.files = `git ls-files -z`.split("\x0").reject do |f|
-    f.start_with?('test/', 'script/', '.github/') || %w[PROMPT.md DESIGN.md].include?(f)
+    f.start_with?('test/', 'script/', '.github/') || f == 'AGENTS.md'
   end
   spec.require_paths = ['lib']
 

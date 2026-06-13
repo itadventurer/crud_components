@@ -14,6 +14,7 @@ Rails.application.routes.draw do
   resources :reviews, only: %i[index show edit update destroy]
 
   get 'dashboard', to: 'dashboard#show'
+  get 'pagination', to: 'pagination#index'   # how to paginate a big table (bring your own pager)
   get 'live', to: 'live#index'
   post 'live/poke', to: 'live#poke'
   post 'toggle_admin', to: 'application#toggle_admin'

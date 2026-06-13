@@ -7,6 +7,7 @@ require 'action_controller/railtie'
 require 'action_view/railtie'
 
 require 'crud_components'
+require 'kaminari' # playground only: powers the pagination demo (PaginationController)
 
 module Dummy
   class Application < Rails::Application

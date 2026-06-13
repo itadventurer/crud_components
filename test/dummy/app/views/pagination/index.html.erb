@@ -1,0 +1,19 @@
+<h1>Pagination</h1>
+<p class="text-muted mb-1">
+  The gem ships <strong>no pager</strong> — it stays out of pagination so it
+  needn't depend on (or guess) yours. For a big table you take the query into
+  your own hands and add your pagination gem. Here it's
+  <a href="https://github.com/kaminari/kaminari">kaminari</a>, and the whole
+  integration is two lines (<a href="https://github.com/itadventurer/crud_components/blob/main/test/dummy/app/controllers/pagination_controller.rb">controller</a>):
+</p>
+<pre class="bg-body-tertiary border rounded p-3 small mb-3"><code>@query = CrudComponents::Query.new(Book, params, ability: current_ability)
+@books = @query.apply(Book.all).page(params[:page]).per(15)   # kaminari (pagy is similar)</code></pre>
+
+<p class="text-muted small">
+  120 seeded books, 15 per page. Filtering, search and sort still work — the
+  pager's <code>?page=</code> is a plain GET param, so it composes with the
+  gem's own filter params. Try sorting a column, then turning the page.
+</p>
+
+<%= crud_collection @books, query: @query %>
+<%= paginate @books %>
