@@ -158,8 +158,8 @@ module CrudComponents
         Permission.permitted?(condition, model, context, record)
       end
 
-      # The form control partial (crud_components/forms/_<name>); nil = the
-      # field cannot be edited (rendered read-only instead).
+      # The form-input flavor (mapped to a simple_form call in
+      # Presenters::Form#simple_input); nil = no form representation.
       def form_control
         nil
       end

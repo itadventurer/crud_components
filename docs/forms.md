@@ -77,37 +77,70 @@ Override with `url:` / `method:` when routes aren't conventional:
 <%= crud_form @book, url: publisher_book_path(@publisher, @book), method: :patch %>
 ```
 
-## Form controls per field
+## Rendering: simple_form
 
-One input per field flavor, derived like the filter controls:
+Forms render through [simple_form](https://github.com/heartcombo/simple_form) (a runtime
+dependency). The gem decides *which* fields appear, their flavor, the permit list and the
+read-only/permission logic; simple_form does the markup — labels, inputs, wrappers,
+required marks, and **per-field error display** — through your app's wrapper config
+(Bootstrap by default; the community ships Tailwind/Bulma/Foundation). So the gem's forms
+inherit your design system automatically, and there's no hand-rolled `field_with_errors`
+to fight.
 
-| Field | Control |
+The flavor → simple_form mapping (`Presenters::Form#simple_input`):
+
+| Field | simple_form call |
 | --- | --- |
-| string / text | text field / textarea |
-| number | number field |
-| date / datetime | date / datetime-local field |
-| boolean | checkbox |
-| enum | select of keys |
-| `belongs_to` | select of records — submits the real **id** (forms are POST bodies, not shareable URLs, unlike filters which use `identify_by`) |
-| habtm | checkbox list ≤ `select_limit`, multiselect above; submits an id array |
-| single attachment | file field (shows "attached" when present) |
-| read-only (not editable) | compact `label: value`, not submitted |
+| string / number / date / datetime | `f.input :name` (type inferred from the column) |
+| text | `f.input :name, as: :text` |
+| boolean | `f.input :name, as: :boolean` |
+| enum | `f.input :name, collection: …` (your i18n'd keys) |
+| `belongs_to` | `f.association :publisher, collection: …` — submits the real **id** (forms are POST bodies, not shareable URLs, unlike filters which use `identify_by`) |
+| habtm | `f.association :authors, as: :check_boxes, collection: …` |
+| single attachment | `f.input :cover, as: :file` |
+| read-only (not editable) | rendered by the gem as a compact `label: value`, not submitted |
 
-Validation errors render inline under each field (`record.errors[field.name]`), with a
-summary banner.
+Errors: simple_form shows per-field errors inline; the gem adds a summary for base
+errors (`errors[:base]`) and any error on a column the form doesn't show, so "fix N
+errors" is never a dead end (see [validation errors](#validation-errors) below).
+
+To customise an input, override the *field's* simple_form options by replacing
+`_form.html.erb` (it's a partial) — or use simple_form's own wrapper/component config,
+which the gem inherits.
 
 ## Associations and attachments
 
 - **belongs_to** → a select valued by record id; permit `:publisher_id`.
-- **habtm** → a checkbox list (good UX, accessible, no JS) up to `config.select_limit`,
-  a multiselect above; permit `{ author_ids: [] }`. The checkbox list is the no-JS
-  baseline; an optional Stimulus controller can enhance it into a chip widget (see
-  [Extending → progressive enhancement](extending.md#progressive-enhancement)) — the
-  checkboxes remain the source of truth, so the form submits identically with or without
-  JS.
+- **habtm** → simple_form check_boxes; permit `{ author_ids: [] }`.
 - **single attachment** → a file field; permit `:cover`.
 - **has_many_attached** → a file field with `multiple`; add/remove of *existing* items is
-  the one place that genuinely wants JavaScript and is a later version.
+  a later version.
+
+## Validation errors
+
+Validations live on your model; the gem re-renders the form correctly after a failed
+save. Your controller renders the form again with the invalid record and a 422:
+
+```ruby
+def update
+  @book = find_book
+  if @book.update(book_params)
+    redirect_to @book
+  else
+    render :edit, status: :unprocessable_entity   # crud_form @book re-renders with errors
+  end
+end
+```
+
+On that re-render:
+
+- **Entered values are kept** — `simple_form_for` reads the in-memory record, which holds
+  the submitted (invalid) attributes, so nothing the user typed is lost.
+- **Per-field errors** render inline (simple_form, via your wrapper config — Bootstrap's
+  `.invalid-feedback` by default).
+- **Base / non-field errors** — `errors[:base]`, or errors on a column the form doesn't
+  show — render in a summary at the top, so a counted error always has somewhere to be
+  fixed.
 
 ## Scope (v1)
 

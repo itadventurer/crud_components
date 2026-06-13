@@ -28,8 +28,8 @@ filters and sorts it, with or without JavaScript. No controller code, no model c
 gem 'crud_components'
 ```
 
-Requires Rails >= 7.1 and Ruby >= 3.2. There are **no runtime dependencies outside
-Rails itself** — see [Dependencies](#dependencies).
+Requires Rails >= 7.1 and Ruby >= 3.2. The only third-party runtime dependency is
+simple_form (forms only) — see [Dependencies](#dependencies).
 
 ## The running example
 
@@ -183,8 +183,9 @@ including the query layer*. → [Security → permissions](docs/security.md#perm
 <%= crud_form @book %>          <%# edit if persisted, new if not %>
 ```
 
-The gem renders the form; your controller saves it, using the matching permit list so
-the two can't drift:
+The gem derives the fields and renders the form through **simple_form** (so it inherits
+your app's design-system wrappers); your controller saves it, using the matching permit
+list so the two can't drift:
 
 ```ruby
 params.require(:book).permit(*Book.crud_attribute_names(action_name.to_sym, ability: current_ability))
@@ -275,11 +276,11 @@ is in [Security & the URL model](docs/security.md).
 ## No JavaScript required
 
 Everything works with JS disabled: filtering and sorting are plain GET forms and links;
-the inline filter row binds to an external form via the HTML `form` attribute; a habtm
-field is a checkbox list. Niceties layer on as **one mechanism, not a fork**: the markup
-is always the plain baseline, and Stimulus controllers enhance it *in place* via
+the inline filter row binds to an external form via the HTML `form` attribute; forms are
+plain (simple_form) markup. Niceties layer on as **one mechanism, not a fork**: the
+markup is always the plain baseline, and Stimulus controllers enhance it *in place* via
 `data-controller` (no parallel template trees; framework choice lives in the class map).
-The gem ships one optional controller and depends on no JS. →
+The gem ships one optional controller (`crud-filter`) and depends on no JS. →
 [Extending → progressive enhancement](docs/extending.md#progressive-enhancement)
 
 ## Turbo Streams
@@ -361,11 +362,13 @@ CrudComponents.configure { |config| … }     # css map, select_limit, defaults
 | `activerecord` (>= 7.1) | deriving structure from AR reflection is the whole point |
 | `activesupport` (>= 7.1) | core extensions, i18n |
 | `actionview` (>= 7.1) | rendering (partials, helpers) |
+| `simple_form` (>= 5.0) | form rendering — its wrappers make form markup match your design system across frameworks; deferring to it is less code and a better fit than reinventing wrappers. Light + ubiquitous |
 
-All three ship with Rails — **the gem has no third-party runtime dependencies.**
-CanCanCan, simple_form, turbo-rails, Stimulus, Bootstrap, kaminari/pagy, markdown and
-highlighting gems: feature-detected or documented integration points, never required.
-Development: `minitest`, `rake`, `sqlite3`, plus a minimal dummy Rails app.
+The first three ship with Rails; simple_form is the one deliberate third-party
+dependency, and only the form surface uses it. Everything else stays
+integration-by-detection: CanCanCan, turbo-rails, Stimulus, Bootstrap, kaminari/pagy,
+markdown and highlighting gems are feature-detected or documented integration points,
+never required. Development: `minitest`, `rake`, `sqlite3`, plus a minimal dummy Rails app.
 
 ## Development
 

@@ -31,12 +31,19 @@ module CrudComponents
         field.editable? && field.editable_permitted?(permission_context, record)
       end
 
-      def control(field)
-        editable?(field) ? field.form_control : :readonly
-      end
-
-      def errors_for(field)
-        record.errors[field.name]
+      # Renders one editable field through the simple_form builder `f`, mapping
+      # the field flavor to the right simple_form input. simple_form supplies
+      # the label, wrapper, per-field error and your design-system styling.
+      def simple_input(f, field)
+        case field.form_control
+        when :text       then f.input field.name, as: :text
+        when :boolean    then f.input field.name, as: :boolean
+        when :enum       then f.input field.name, collection: field.form_choices
+        when :belongs_to then f.association field.reflection.name, collection: field.form_choices
+        when :habtm      then f.association field.reflection.name, as: :check_boxes, collection: field.form_choices
+        when :file       then f.input field.name, as: :file
+        else                  f.input field.name
+        end
       end
 
       def any_errors?

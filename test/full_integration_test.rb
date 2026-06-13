@@ -330,7 +330,7 @@ class FullIntegrationTest < ActionDispatch::IntegrationTest
   test 'a failed save re-renders the form: inline field errors, entered values kept' do
     patch book_path(@hobbit), params: { book: { title: '', price: '42' } }
     assert_response :unprocessable_entity
-    assert_select '.crud-form-field .text-danger', text: /blank/i        # inline, under Title
+    assert_select '.invalid-feedback', text: /blank/i                    # simple_form's inline error
     assert_select "input[name='book[price]'][value='42']"                # entered value kept
     assert_equal 'The Hobbit', @hobbit.reload.title                       # not persisted
   end
@@ -345,7 +345,7 @@ class FullIntegrationTest < ActionDispatch::IntegrationTest
   test 'a failed save on a zero-config model also shows errors' do
     post authors_path, params: { author: { name: '' } }
     assert_response :unprocessable_entity
-    assert_select '.crud-form-field .text-danger', text: /blank/i
+    assert_select '.invalid-feedback', text: /blank/i
   end
 
   test 'review edit/update work, including the belongs_to select' do

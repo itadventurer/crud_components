@@ -25,6 +25,7 @@ module CrudComponents
       select_input: 'form-select',
       select_input_sm: 'form-select form-select-sm',
       form_label: 'form-label',
+      form_summary: 'alert alert-danger',
       filter_grid: 'row row-cols-1 g-2',
       input_group: 'input-group flex-nowrap',
       boolean_true: 'text-success',

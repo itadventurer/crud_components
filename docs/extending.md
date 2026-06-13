@@ -16,7 +16,7 @@ one on a CSS framework that works nothing like Bootstrap. Two facts make that pr
 | tweak colours / button styles | change CSS class names | the [class map](#styling) |
 | restructure **one** surface (different table markup, your grid) | override **one** partial | `rails g crud_components:views`, then edit |
 | add a whole new arrangement (cards, list, kanban) | add a layout partial | [Add a layout](#add-a-layout) |
-| change a single field's rendering / a form input | add a renderer / input partial | [renderers](#add-a-field-renderer) |
+| change a single field's display rendering | add a renderer partial | [renderers](#add-a-field-renderer) |
 | move to a different CSS framework | override the partials (class map covers the easy bits) | this whole doc |
 
 The class map is the *simplest* lever and deliberately covers only the common, cosmetic
@@ -39,8 +39,7 @@ crud_components/
   _actions.html.erb                # a group of action buttons
   fields/_string.html.erb …        # value renderers (as: :string, …)
   filters/_text.html.erb …         # filter controls
-  forms/_string.html.erb …         # form inputs
-  _record.html.erb _filter.html.erb _form.html.erb
+  _record.html.erb _filter.html.erb _form.html.erb   # _form renders via simple_form
 ```
 
 ## Overriding one surface without rewriting the rest
@@ -105,11 +104,12 @@ attribute :rating, as: :stars
 `:image` sizes itself. Built-in renderers are the same kind of partial at the same paths —
 **shadow one in your app to change it everywhere.**
 
-## Add a form input
+## Form inputs
 
-Form inputs work identically: `crud_components/forms/_<control>.html.erb`, receiving the
-form builder `f`, the `field`, and the `form` presenter. Map a field to a control with
-`as:` on the attribute, or override an existing control by shadowing its partial.
+Form inputs are simple_form's job, not a per-control partial — see
+[Forms and your design system](#forms-and-your-design-system). The flavor → simple_form
+mapping lives in `Presenters::Form#simple_input`; to change it, override
+`crud_components/_form.html.erb`.
 
 ## Add a layout
 
@@ -147,16 +147,14 @@ bin/rails generate crud_components:install   # initializer + the crud-filter con
 inline filter row only (the standalone filter form never auto-submits — users compose
 several filters there).
 
-Richer widgets follow the same pattern. The dummy app ships a worked example: a
-token/chip controller that upgrades the habtm **checkbox list** (the no-JS baseline) into
-removable chips + an "add" dropdown, keeping the checkboxes as the hidden source of truth
-so the form submits identically with or without JS. The recipe:
+Richer widgets follow the same pattern — to enhance any baseline markup (a multiselect
+into a token/chip picker, a belongs_to text input into an autocomplete, …):
 
-1. The gem's partial renders the accessible baseline and adds a `data-controller` hook
-   (e.g. the habtm checkbox list carries `data-controller="crud-tokens"`).
+1. The gem's partial renders the accessible baseline (and, where useful, carries a
+   `data-controller` hook).
 2. Your Stimulus controller reads that markup and enhances it in place, manipulating the
-   underlying inputs so form submission is unchanged.
-3. Ship the controller however you ship Stimulus (importmap pin, `app/javascript`, etc.).
+   underlying inputs so form submission is unchanged with or without JS.
+3. Ship the controller however you ship Stimulus (importmap pin, `app/javascript`, …).
    The gem never depends on it.
 
 ## Styling
@@ -205,18 +203,18 @@ the presenters; you rewrite only the markup that your framework shapes different
 
 ## Forms and your design system
 
-Two things are worth knowing when forms land in a custom-designed app:
+Forms are the **one** surface you mostly don't have to reskin by hand: they render through
+[simple_form](https://github.com/heartcombo/simple_form), so they inherit your app's
+simple_form wrapper config automatically — Bootstrap by default, and the community ships
+Tailwind/Bulma/Foundation wrappers. Configure simple_form for your framework (its install
+generator does this) and the gem's forms follow, including per-field error display (so
+there's no `field_with_errors` wart to neutralize). The gem still derives *which* fields,
+their types, the [permit list](forms.md) and the read-only/permission rules; simple_form
+owns the markup.
 
-- **`field_with_errors`.** On a validation failure Rails wraps the errored label+input in
-  `<div class="field_with_errors">` (a global `ActionView` default, not something the gem
-  controls). Under some frameworks that extra block element disturbs the layout. The
-  common fix is one line in your app: `config.action_view.field_error_proc = ->(html, _) { html }`.
-- **simple_form.** If your app already uses [simple_form](https://github.com/heartcombo/simple_form),
-  its wrappers are the canonical way to make form markup match a design system (it ships a
-  Bootstrap config; the community ships Tailwind/Bulma/Foundation). Because the form is a
-  partial, you can override `crud_components/_form.html.erb` to render through
-  `simple_form_for` + `f.input` and inherit your wrappers — the gem still derives *which*
-  fields, their types, and the [permit list](forms.md).
+Need to go further than wrappers allow? `crud_components/_form.html.erb` is a partial —
+override it and render the fields however you like (the `form` presenter hands you
+`fields`, `editable?`, `simple_input(f, field)`, `summary_errors`, `display`).
 
 ## i18n
 

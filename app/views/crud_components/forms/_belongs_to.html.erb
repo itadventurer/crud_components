@@ -1,5 +1,0 @@
-<%# Locals: f, field, form — submits the real id (forms are POST bodies,
-    not shareable URLs; assignment by id is standard) %>
-<%= f.select field.reflection.foreign_key,
-             options_for_select(field.form_choices, form.record.public_send(field.reflection.foreign_key)),
-             { include_blank: true }, class: form.css.select_input %>

@@ -25,4 +25,8 @@ Gem::Specification.new do |spec|
   spec.add_dependency 'actionview', '>= 7.1'
   spec.add_dependency 'activerecord', '>= 7.1'
   spec.add_dependency 'activesupport', '>= 7.1'
+  # Form rendering. simple_form's wrappers are the standard way to make form
+  # markup match a design system (Bootstrap/Tailwind/Bulma/…); deferring to it
+  # is less code and a better fit than reinventing wrappers. Light + ubiquitous.
+  spec.add_dependency 'simple_form', '>= 5.0'
 end

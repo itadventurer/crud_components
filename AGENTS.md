@@ -31,7 +31,7 @@ host-app-specific material.
   mental model / tour; the matching `docs/*.md` for the detail) in the same commit.
 - Every raising DSL combination has a test in `dsl_validation_test.rb`; every
   security guarantee has one in `query_security_test.rb`.
-- No runtime dependencies outside Rails (activerecord/activesupport/actionview).
+- Runtime deps: activerecord/activesupport/actionview + simple_form (forms only).
   CanCanCan, Turbo, Stimulus, markdown/rouge gems: feature-detected only.
 - Renderers and layouts are partials resolved by naming convention — no
   registries. Renderer locals: `value`, `record`, `field`, `surface`.
