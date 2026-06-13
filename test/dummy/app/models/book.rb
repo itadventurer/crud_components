@@ -8,6 +8,10 @@ class Book < ApplicationRecord
 
   enum :genre, { fiction: 0, scifi: 1, nonfiction: 2 }
 
+  validates :title, presence: true
+  # a base (whole-record) error, to exercise the "not tied to a field" path
+  validate { errors.add(:base, 'A book priced at 0 must be inactive (free giveaway).') if price&.zero? && active? }
+
   before_validation { self.slug = title.to_s.parameterize if slug.blank? }
 
   def to_param = slug

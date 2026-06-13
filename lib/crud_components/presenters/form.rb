@@ -43,6 +43,14 @@ module CrudComponents
         record.errors.any?
       end
 
+      # Errors not attached to a visible field — base errors, or errors on a
+      # column the form doesn't show. Rendered in the summary so "fix N errors"
+      # is never a dead end with nothing to fix.
+      def summary_errors
+        shown = fields.map(&:name)
+        record.errors.reject { |error| shown.include?(error.attribute) }.map(&:full_message)
+      end
+
       # form_with options; nil url/method let Rails infer from the record.
       def form_options
         { url: @url, method: @method }.compact

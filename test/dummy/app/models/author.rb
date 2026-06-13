@@ -2,4 +2,6 @@
 # include. The proof of rule zero: a bare model renders, filters and sorts.
 class Author < ApplicationRecord
   has_and_belongs_to_many :books
+
+  validates :name, presence: true   # exercised in the form even with zero CrudComponents config
 end

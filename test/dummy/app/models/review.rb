@@ -3,6 +3,8 @@ class Review < ApplicationRecord
 
   belongs_to :book
 
+  validates :rating, inclusion: { in: 1..5, message: 'must be between 1 and 5' }
+
   crud_structure do
     label { |review| "#{review.reviewer_name} on #{review.book.title}" }
     search_in :reviewer_name, :body, :book   # :book delegates to Book's search_in

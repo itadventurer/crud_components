@@ -327,6 +327,27 @@ class FullIntegrationTest < ActionDispatch::IntegrationTest
     assert Publisher.find_by(slug: 'new-press'), 'slug auto-generated'
   end
 
+  test 'a failed save re-renders the form: inline field errors, entered values kept' do
+    patch book_path(@hobbit), params: { book: { title: '', price: '42' } }
+    assert_response :unprocessable_entity
+    assert_select '.crud-form-field .text-danger', text: /blank/i        # inline, under Title
+    assert_select "input[name='book[price]'][value='42']"                # entered value kept
+    assert_equal 'The Hobbit', @hobbit.reload.title                       # not persisted
+  end
+
+  test 'base (whole-record) errors surface in the summary, not just the count' do
+    post toggle_admin_path   # so `active` is editable
+    patch book_path(@hobbit), params: { book: { price: '0', active: '1' } }
+    assert_response :unprocessable_entity
+    assert_select '.alert-danger li', text: /priced at 0 must be inactive/i
+  end
+
+  test 'a failed save on a zero-config model also shows errors' do
+    post authors_path, params: { author: { name: '' } }
+    assert_response :unprocessable_entity
+    assert_select '.crud-form-field .text-danger', text: /blank/i
+  end
+
   test 'review edit/update work, including the belongs_to select' do
     get edit_review_path(@review)
     assert_select "select[name='review[book_id]']"

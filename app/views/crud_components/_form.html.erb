@@ -6,6 +6,11 @@
       <%= t('crud_components.form.errors',
             count: form.record.errors.count,
             default: 'Please fix %{count} error(s) below.') %>
+      <% if form.summary_errors.any? %>
+        <ul class="mb-0 mt-1">
+          <% form.summary_errors.each do |message| %><li><%= message %></li><% end %>
+        </ul>
+      <% end %>
     </div>
   <% end %>
 
