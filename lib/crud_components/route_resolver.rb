@@ -35,27 +35,53 @@ module CrudComponents
       try_helpers(view, member_candidates(nil, record, owner))
     end
 
-    # The index a has_many "+n more" link points at: the nested index under
-    # the owner (publisher_books_path(publisher)) if it resolves, else the
-    # target's index filtered by the owner (books_path(publisher: owner)),
-    # else nil. `assoc_name` is the owner's reflection name.
+    # The index a has_many "+n more" link points at:
+    #   1. the nested index under the owner (publisher_books_path(publisher)),
+    #   2. else the target's index filtered by the owner — but ONLY when the
+    #      target actually has a filterable belongs_to back to the owner
+    #      (publisher→books works; a habtm like author↔books does not, so we
+    #      do not emit a link that would silently show everything),
+    #   3. else nil (the renderer shows "+n more" as plain text).
+    # `assoc_name` is the owner's reflection name (e.g. :books).
     def collection_index_path(view, target, owner, assoc_name)
       return nil unless owner
 
       key = target.model_name.route_key
       owner_key = owner.model_name.singular_route_key
       nested = "#{owner_key}_#{key}_path"
-      return view.public_send(nested, owner) if view.respond_to?(nested)
+      return safe_url(view, nested, owner) if view.respond_to?(nested)
 
       flat = "#{key}_path"
-      if view.respond_to?(flat)
-        param = owner.class.model_name.param_key
-        begin
-          return view.public_send(flat, param => owner.to_param)
-        rescue ActionController::UrlGenerationError, NoMethodError
-          return nil
-        end
-      end
+      return nil unless view.respond_to?(flat)
+
+      filter = inverse_filter(target, owner, assoc_name)
+      return nil unless filter
+
+      safe_url(view, flat, **{ filter[:param] => filter[:value] })
+    end
+
+    # The target's belongs_to that mirrors the owner's collection (matched by
+    # foreign key), if it is filterable — with the owner's identify_by value.
+    def inverse_filter(target, owner, assoc_name)
+      owner_reflection = owner.class.reflect_on_association(assoc_name)
+      return nil unless owner_reflection&.foreign_key
+
+      fk = owner_reflection.foreign_key.to_s
+      inverse = target.reflect_on_all_associations(:belongs_to).find { |r| r.foreign_key.to_s == fk }
+      return nil unless inverse
+
+      field = Structure.for(target).field(inverse.name)
+      return nil unless field.filterable?
+
+      identify = Structure.for(owner.class).identify_by
+      { param: inverse.name, value: owner.public_send(identify) }
+    rescue CrudComponents::DefinitionError
+      nil
+    end
+
+    def safe_url(view, helper, *args, **kwargs)
+      kwargs.empty? ? view.public_send(helper, *args) : view.public_send(helper, *args, **kwargs)
+    rescue ActionController::UrlGenerationError, NoMethodError
       nil
     end
 

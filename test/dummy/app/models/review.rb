@@ -10,5 +10,6 @@ class Review < ApplicationRecord
     attribute :rating, as: :stars            # custom renderer partial in the host app
 
     fieldset :index, %i[book reviewer_name rating body created_at]
+    fieldset :form,  %i[book rating body reviewer_name]
   end
 end

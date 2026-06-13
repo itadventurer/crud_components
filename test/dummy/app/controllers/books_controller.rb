@@ -3,6 +3,7 @@ class BooksController < ApplicationController
   # request params, builds the query and applies it.
   def index
     @publisher = Publisher.find_by(slug: params[:publisher_id]) if params[:publisher_id]
+    @author = Author.find(params[:author_id]) if params[:author_id]
   end
 
   def show

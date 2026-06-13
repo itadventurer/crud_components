@@ -216,10 +216,29 @@ class FullIntegrationTest < ActionDispatch::IntegrationTest
     assert_select "a[href='#{publisher_books_path(@tor)}']"
   end
 
-  test 'has_many +n more falls back to the filtered flat index' do
+  test 'has_many +n more falls back to the filtered flat index (belongs_to inverse)' do
     5.times { |i| @hobbit.reviews.create!(rating: 3, reviewer_name: "R#{i}", body: 'x') }
     get books_path(view: 'catalog')
-    assert_select "a[href*='/reviews?book=hobbit']"   # no nested book_reviews route exists
+    # no nested book_reviews route, but Review belongs_to :book and filters by slug
+    assert_select "a[href*='/reviews?book=hobbit']", text: /\+\d+ more/
+  end
+
+  test 'has_many +n more on a habtm uses the nested route, never a misleading filter param' do
+    author = Author.create!(name: 'Prolific')
+    4.times { |i| author.books << Book.create!(title: "B#{i}", slug: "habtm-b#{i}") }
+    get authors_path
+    assert_select "a[href='#{author_books_path(author)}']", text: /\+1 more/
+    # the old behavior linked to /books?author=<id>, which silently showed everything
+    assert_select "a[href*='/books?author=']", count: 0
+  end
+
+  test 'the nested author books index scopes to that author' do
+    author = Author.create!(name: 'Scoped')
+    hers = Book.create!(title: 'Hers Alone', slug: 'hers'); author.books << hers
+    Book.create!(title: 'Not Hers', slug: 'not-hers')
+    get author_books_path(author)
+    assert_select 'td', text: /Hers Alone/
+    assert_select 'td', { text: /Not Hers/, count: 0 }
   end
 
   # ── custom layout & custom collection action ──────────────────────────────
@@ -294,5 +313,27 @@ class FullIntegrationTest < ActionDispatch::IntegrationTest
     assert_difference 'Author.count', 1 do
       post authors_path, params: { author: { name: 'New Author', email: 'new@example.com' } }
     end
+  end
+
+  test 'publisher edit/update/create all work' do
+    get edit_publisher_path(@tor)
+    assert_select "input[name='publisher[name]']"
+    patch publisher_path(@tor), params: { publisher: { name: 'Tor (renamed)' } }
+    assert_equal 'Tor (renamed)', @tor.reload.name
+
+    assert_difference 'Publisher.count', 1 do
+      post publishers_path, params: { publisher: { name: 'New Press' } }
+    end
+    assert Publisher.find_by(slug: 'new-press'), 'slug auto-generated'
+  end
+
+  test 'review edit/update work, including the belongs_to select' do
+    get edit_review_path(@review)
+    assert_select "select[name='review[book_id]']"
+    assert_select "input[name='review[reviewer_name]']"
+    patch review_path(@review), params: { review: { rating: 2, reviewer_name: 'Renamed' } }
+    @review.reload
+    assert_equal 2, @review.rating
+    assert_equal 'Renamed', @review.reviewer_name
   end
 end

@@ -8,8 +8,10 @@ Rails.application.routes.draw do
   resources :publishers do
     resources :books, only: %i[index edit]
   end
-  resources :authors          # full CRUD — proves derived actions/forms on a zero-config model
-  resources :reviews, only: %i[index show edit destroy]
+  resources :authors do       # full CRUD — proves derived actions/forms on a zero-config model
+    resources :books, only: :index   # nested index so an author's "+n more" books link resolves
+  end
+  resources :reviews, only: %i[index show edit update destroy]
 
   get 'dashboard', to: 'dashboard#show'
   get 'live', to: 'live#index'

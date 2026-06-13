@@ -1,7 +1,8 @@
 <% fieldset = params[:view] == 'catalog' ? :catalog : :index %>
 <% layout = params[:layout] == 'cards' ? :cards : :table %>
+<% scope = @publisher&.books || @author&.books || Book %>
 <div class="d-flex justify-content-between align-items-center mb-3">
-  <h1><%= @publisher ? "Books by #{@publisher.name}" : 'Books' %></h1>
+  <h1><%= @publisher ? "Books by #{@publisher.name}" : @author ? "Books by #{@author.name}" : 'Books' %></h1>
   <div class="d-flex gap-2">
     <div class="btn-group">
       <%= link_to 'Curated', url_for(view: nil),
@@ -21,7 +22,7 @@
 <div class="row">
   <div class="col-xl-9">
     <div class="card"><div class="card-body">
-      <%= crud_collection (@publisher ? @publisher.books : Book), fieldset: fieldset, as: layout %>
+      <%= crud_collection scope, fieldset: fieldset, as: layout %>
     </div></div>
   </div>
   <div class="col-xl-3">
