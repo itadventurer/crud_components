@@ -50,12 +50,20 @@ module CrudComponents
 
       # ── cells ────────────────────────────────────────────────────────────
       def cell(field, record)
-        html = render_cell(field, record, surface: :collection)
+        html = render_cell(field, record, surface: :collection, cell_context: cell_context)
         if label_link_field?(field) && (path = record_link(record))
-          view.link_to(html, path, class: css.sort_link, data: { turbo_action: 'advance' })
+          view.link_to(html, path, class: css.record_link, data: { turbo_action: 'advance' })
         else
           html
         end
+      end
+
+      # Click-to-filter context for value renderers — only when this
+      # collection actually has a live query.
+      def cell_context
+        return nil if static? || query.nil?
+
+        @cell_context ||= CellContext.new(view: view, query: query)
       end
 
       def label_link_field?(field)
@@ -92,6 +100,30 @@ module CrudComponents
         "crud_filter_#{model.model_name.plural}#{suffix}"
       end
 
+      # ── header search (?q=) and reset ──────────────────────────────────────
+      def searchable?
+        !static? && query && query.searchable?
+      end
+
+      def search_param_name
+        query.param_name('q')
+      end
+
+      def search_value
+        query&.value('q')
+      end
+
+      def filtered?
+        !static? && query&.active?
+      end
+
+      # Reset clears *this* collection's filter/search/sort/page params and
+      # keeps everyone else's (other prefixes, the page's own params).
+      def reset_url
+        kept = view.request.query_parameters.reject { |key, _| own_param_keys.include?(key) }
+        kept.any? ? "#{view.request.path}?#{kept.to_query}" : view.request.path
+      end
+
       # Hidden inputs for the filter form: keep this collection's sort and
       # every param that belongs to someone else (other prefixes, the page's
       # own params). Drop our own filter/search params — the controls
@@ -100,6 +132,12 @@ module CrudComponents
         own = filter_fields.flat_map { |f| [pn(f.name.to_s), pn("#{f.name}_geq"), pn("#{f.name}_leq")] }
         own += [pn('q'), pn('page'), pn('per')]
         view.request.query_parameters.reject { |key, _| own.include?(key) }
+      end
+
+      # Every param key this collection owns (for reset).
+      def own_param_keys
+        keys = filter_fields.flat_map { |f| [pn(f.name.to_s), pn("#{f.name}_geq"), pn("#{f.name}_leq")] }
+        keys + %w[q sort dir page per].map { |k| pn(k) }
       end
 
       # ── sorting ──────────────────────────────────────────────────────────

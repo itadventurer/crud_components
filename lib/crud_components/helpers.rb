@@ -23,6 +23,15 @@ module CrudComponents
       render 'crud_components/filter', filter: presenter
     end
 
+    # A derived create/edit form. `record` is an instance (new or persisted).
+    # The gem renders; your controller saves using the matching permit list
+    # (CrudComponents.permitted_attributes / Model.crud_attribute_names).
+    def crud_form(record, fieldset: nil, action: nil, url: nil, method: nil)
+      presenter = Presenters::Form.new(view: self, record: record, fieldset: fieldset,
+                                       action: action, url: url, method: method)
+      render 'crud_components/form', form: presenter
+    end
+
     # The action buttons of a record (row actions) or a model class
     # (collection actions) — for manual placement with `actions: false`.
     def crud_actions(subject, fieldset: nil)
@@ -43,6 +52,12 @@ module CrudComponents
     def crud_record_path(record, owner: nil)
       found = RouteResolver.record_path(self, record, owner: owner)
       found&.first
+    end
+
+    # The index a has_many cell links to: nested under the owner, else the
+    # target's filtered index, else nil. `field` is the HasManyField.
+    def crud_association_index_path(owner, field)
+      RouteResolver.collection_index_path(self, field.target, owner, field.name)
     end
   end
 end

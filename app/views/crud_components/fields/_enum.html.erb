@@ -1,8 +1,14 @@
-<%# Locals: value, record, field, surface %>
+<%# Locals: value, record, field, surface, cell_context %>
+<% css = CrudComponents.config.css %>
 <%- if value.nil? -%>
-  <span class="<%= CrudComponents.config.css.muted %>">—</span>
+  <span class="<%= css.muted %>">—</span>
 <%- else -%>
-  <span class="<%= CrudComponents.config.css.badge %>">
-    <%= field.respond_to?(:human_value) ? field.human_value(value) : value %>
-  </span>
+  <% label = field.respond_to?(:human_value) ? field.human_value(value) : value %>
+  <% badge = tag.span(label, class: css.badge) %>
+  <%- if cell_context&.filterable?(field) -%>
+    <%= link_to badge, cell_context.filter_url(field, value), class: css.filter_link,
+                data: { turbo_action: 'advance' }, title: t('crud_components.filter_by', name: label, default: "Filter by #{label}") %>
+  <%- else -%>
+    <%= badge %>
+  <%- end -%>
 <%- end -%>

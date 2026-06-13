@@ -1,5 +1,5 @@
 <%# Locals: field, query, form_id, compact, autosubmit, param_name, css %>
-<div class="<%= css.input_group %>">
+<div class="<%= compact ? 'd-flex flex-column gap-1' : css.input_group %>">
   <%= tag.input type: 'date', name: "#{param_name}_geq",
                 value: query.value("#{field.name}_geq"),
                 class: compact ? css.input_sm : css.input, form: form_id,

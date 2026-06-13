@@ -49,6 +49,16 @@ module CrudComponents
     def structure_for(model)
       Structure.for(model)
     end
+
+    # The strong-params permit list for a model's derived form — the same
+    # field metadata the form renders from, so the two can't drift. Use in a
+    # controller:
+    #   params.require(:book)
+    #         .permit(*CrudComponents.permitted_attributes(Book, action: :update,
+    #                                                       ability: current_ability))
+    def permitted_attributes(model, action: :update, ability: nil)
+      Structure.for(model).permitted_params(action, PermissionContext.new(ability))
+    end
   end
 end
 

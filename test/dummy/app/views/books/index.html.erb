@@ -1,18 +1,27 @@
 <% fieldset = params[:view] == 'catalog' ? :catalog : :index %>
+<% layout = params[:layout] == 'cards' ? :cards : :table %>
 <div class="d-flex justify-content-between align-items-center mb-3">
   <h1><%= @publisher ? "Books by #{@publisher.name}" : 'Books' %></h1>
-  <div class="btn-group">
-    <%= link_to 'Curated', url_for(view: nil),
-                class: "btn btn-sm #{fieldset == :index ? 'btn-secondary' : 'btn-outline-secondary'}" %>
-    <%= link_to 'Catalog (all columns)', url_for(view: 'catalog'),
-                class: "btn btn-sm #{fieldset == :catalog ? 'btn-secondary' : 'btn-outline-secondary'}" %>
+  <div class="d-flex gap-2">
+    <div class="btn-group">
+      <%= link_to 'Curated', url_for(view: nil),
+                  class: "btn btn-sm #{fieldset == :index ? 'btn-secondary' : 'btn-outline-secondary'}" %>
+      <%= link_to 'Catalog', url_for(view: 'catalog'),
+                  class: "btn btn-sm #{fieldset == :catalog ? 'btn-secondary' : 'btn-outline-secondary'}" %>
+    </div>
+    <div class="btn-group">
+      <%= link_to 'Table', url_for(layout: nil),
+                  class: "btn btn-sm #{layout == :table ? 'btn-dark' : 'btn-outline-dark'}" %>
+      <%= link_to 'Cards', url_for(layout: 'cards'),
+                  class: "btn btn-sm #{layout == :cards ? 'btn-dark' : 'btn-outline-dark'}" %>
+    </div>
   </div>
 </div>
 
 <div class="row">
   <div class="col-xl-9">
     <div class="card"><div class="card-body">
-      <%= crud_collection (@publisher ? @publisher.books : Book), fieldset: fieldset %>
+      <%= crud_collection (@publisher ? @publisher.books : Book), fieldset: fieldset, as: layout %>
     </div></div>
   </div>
   <div class="col-xl-3">

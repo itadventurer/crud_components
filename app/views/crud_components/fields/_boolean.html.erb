@@ -1,9 +1,13 @@
-<%# Locals: value, record, field, surface %>
+<%# Locals: value, record, field, surface, cell_context %>
 <% css = CrudComponents.config.css %>
 <%- if value.nil? -%>
   <span class="<%= css.muted %>">—</span>
-<%- elsif value -%>
-  <span class="<%= css.boolean_true %>">✓</span>
 <%- else -%>
-  <span class="<%= css.boolean_false %>">✗</span>
+  <% icon = tag.span(value ? '✓' : '✗', class: value ? css.boolean_true : css.boolean_false) %>
+  <%- if cell_context&.filterable?(field) -%>
+    <%= link_to icon, cell_context.filter_url(field, value), class: css.filter_link,
+                data: { turbo_action: 'advance' } %>
+  <%- else -%>
+    <%= icon %>
+  <%- end -%>
 <%- end -%>

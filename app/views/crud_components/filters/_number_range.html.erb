@@ -1,5 +1,7 @@
-<%# Locals: field, query, form_id, compact, autosubmit, param_name, css %>
-<div class="<%= css.input_group %>">
+<%# Locals: field, query, form_id, compact, autosubmit, param_name, css
+    Inline (compact) stacks the two inputs tightly; the sidebar lays them out
+    as a horizontal group. %>
+<div class="<%= compact ? 'd-flex flex-column gap-1' : css.input_group %>">
   <%= tag.input type: 'number', step: 'any', name: "#{param_name}_geq",
                 value: query.value("#{field.name}_geq"),
                 class: compact ? css.input_sm : css.input, form: form_id,

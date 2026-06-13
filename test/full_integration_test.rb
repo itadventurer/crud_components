@@ -126,11 +126,12 @@ class FullIntegrationTest < ActionDispatch::IntegrationTest
     assert_select "a[href='#{edit_publisher_book_path(@tor, @hobbit)}']"
   end
 
-  test 'a model without routes gets no broken buttons' do
-    # Authors have only an index route — no show/edit/destroy/new.
-    get authors_path
-    assert_select 'a[href*="/authors/"]', count: 0
-    assert_select 'form[action*="/authors/"]', count: 0
+  test 'derived actions self-disable when their route is missing' do
+    # Reviews have no :new route — the derived :new action is omitted, while
+    # :edit (which does have a route) is rendered.
+    get reviews_path
+    assert_select "a[href*='/reviews/new']", count: 0
+    assert_select "a[href='#{edit_review_path(@review)}']"
   end
 
   test 'destroy works end to end' do
@@ -171,5 +172,123 @@ class FullIntegrationTest < ActionDispatch::IntegrationTest
     get books_path(q: 'tor books')
     assert_select 'td', text: /The Hobbit/
     assert_select 'td', { text: /The Dispossessed/, count: 0 }
+  end
+
+  test 'the header has a global search box and books are searchable by author' do
+    get books_path
+    assert_select 'input[type=search][name=q]'
+    get books_path(q: 'tolkien')        # delegates through :authors
+    assert_select 'td', text: /The Hobbit/
+    assert_select 'td', { text: /The Dispossessed/, count: 0 }
+  end
+
+  test 'a reset link appears in the filter row only when filtering' do
+    get books_path
+    assert_select 'tr.crud-filter-row a', { text: /Reset/, count: 0 }
+    get books_path(genre: 'fiction')
+    assert_select 'tr.crud-filter-row a', text: /Reset/
+  end
+
+  # ── click-to-filter ───────────────────────────────────────────────────────
+  test 'enum badges link to a click-to-filter URL' do
+    get books_path
+    assert_select "a[href*='genre=fiction'] span.badge", text: /Fiction/
+  end
+
+  test 'click-to-filter respects param_prefix' do
+    get dashboard_path
+    assert_select "a[href*='books_genre=']"   # prefixed, not bare genre=
+  end
+
+  # ── auto association columns & has_many links ─────────────────────────────
+  test 'a zero-config model auto-derives association columns' do
+    get authors_path
+    assert_select 'th', text: /Books/
+  end
+
+  test 'has_many +n more prefers the nested index' do
+    6.times { |i| @tor.books.create!(title: "Extra #{i}", slug: "extra-#{i}") }
+    get publisher_path(@tor)
+    assert_select "a[href='#{publisher_books_path(@tor)}']"
+  end
+
+  test 'has_many +n more falls back to the filtered flat index' do
+    5.times { |i| @hobbit.reviews.create!(rating: 3, reviewer_name: "R#{i}", body: 'x') }
+    get books_path(view: 'catalog')
+    assert_select "a[href*='/reviews?book=hobbit']"   # no nested book_reviews route exists
+  end
+
+  # ── custom layout & custom collection action ──────────────────────────────
+  test 'a host-app layout renders via as:' do
+    get books_path(layout: 'cards')
+    assert_select '.card.h-100'
+  end
+
+  test 'a custom collection action renders and resolves its route' do
+    get books_path
+    assert_select "a[href='#{import_books_path}']"
+  end
+
+  # ── forms ─────────────────────────────────────────────────────────────────
+  test 'the derived edit form has type-appropriate inputs' do
+    get edit_book_path(@hobbit)
+    assert_select "input[name='book[title]']"
+    assert_select "textarea[name='book[blurb]']"
+    assert_select "select[name='book[publisher_id]']"
+    assert_select "select[name='book[author_ids][]'][multiple]"
+    assert_select "input[name='book[cover]'][type=file]"
+  end
+
+  test 'editable: false renders read-only; editable: permission gates the input' do
+    get edit_book_path(@hobbit)
+    assert_select '.form-control-plaintext'                 # slug (and active, for non-admin)
+    assert_select "input[name='book[active]']", count: 0    # not editable for non-admin
+    assert_select "input[name='book[purchase_price]']", count: 0  # not even visible
+    assert_select "label", { text: /Purchase price/, count: 0 }
+
+    post toggle_admin_path
+    get edit_book_path(@hobbit)
+    assert_select "input[name='book[active]']"              # editable for admin
+    assert_select "input[name='book[purchase_price]']"      # visible & editable for admin
+  end
+
+  test 'create through the derived form + permit list' do
+    assert_difference 'Book.count', 1 do
+      post books_path, params: { book: {
+        title: 'A New Hope', slug: 'a-new-hope', price: '9.99', genre: 'scifi',
+        publisher_id: @tor.id, author_ids: [@tolkien.id]
+      } }
+    end
+    book = Book.find_by(slug: 'a-new-hope')
+    assert_equal 'A New Hope', book.title
+    assert_equal @tor, book.publisher
+    assert_equal [@tolkien], book.authors
+  end
+
+  test 'the permit list blocks gated fields for non-admins on update' do
+    patch book_path(@hobbit), params: { book: {
+      title: 'Renamed', slug: 'hacked-slug', active: '0', purchase_price: '999'
+    } }
+    @hobbit.reload
+    assert_equal 'Renamed', @hobbit.title              # editable field went through
+    assert_equal 'hobbit', @hobbit.slug                # editable: false — untouched
+    assert @hobbit.active, 'editable: :manage — non-admin cannot change it'
+    assert_equal 6, @hobbit.purchase_price.to_i        # if: :manage — untouched
+  end
+
+  test 'an admin can update gated fields' do
+    post toggle_admin_path
+    patch book_path(@hobbit), params: { book: { active: '0', purchase_price: '4' } }
+    @hobbit.reload
+    refute @hobbit.active
+    assert_equal 4, @hobbit.purchase_price.to_i
+  end
+
+  test 'forms work on a zero-config model' do
+    get new_author_path
+    assert_select "input[name='author[name]']"
+    assert_difference 'Author.count', 1 do
+      post authors_path, params: { author: { name: 'New Author', email: 'new@example.com' } }
+    end
   end
 end

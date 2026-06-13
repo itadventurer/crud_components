@@ -2,11 +2,14 @@ require 'active_support/ordered_options'
 
 module CrudComponents
   class Config
+    # When changed, add it to initializer.rb
     DEFAULT_CSS = {
       table: 'table align-middle',
       thead: '',
       filter_row: 'crud-filter-row',
       sort_link: 'text-reset text-decoration-none',
+      record_link: 'fw-medium',
+      filter_link: 'text-reset text-decoration-none',
       actions_cell: 'text-end',
       button_group: 'btn-group btn-group-sm',
       button: 'btn btn-sm btn-outline-secondary',

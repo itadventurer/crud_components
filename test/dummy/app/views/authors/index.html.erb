@@ -1,6 +1,8 @@
 <h1>Authors</h1>
 <p class="text-muted">This model has <strong>zero configuration</strong> — not even
-<code>include CrudComponents::Model</code>. Everything below is derived.</p>
+<code>include CrudComponents::Model</code>. The table, the record view, the form, the
+derived actions, and the <code>Books</code> column (an auto-derived habtm) are all
+inferred from the schema.</p>
 <div class="card"><div class="card-body">
   <%= crud_collection Author %>
 </div></div>

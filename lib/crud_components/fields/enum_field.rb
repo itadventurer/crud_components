@@ -7,6 +7,12 @@ module CrudComponents
       def derived_filterable? = true
       def derived_sortable? = true
       def derived_filter_control = :select
+      def default_editable? = true
+      def form_control = :enum
+
+      def form_choices
+        enum_keys.map { |key| [human_value(key), key] }
+      end
 
       def enum_keys
         model.defined_enums[name.to_s].keys

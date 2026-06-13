@@ -7,6 +7,8 @@ module CrudComponents
       def derived_filterable? = true
       def derived_sortable? = true
       def derived_filter_control = :boolean
+      def default_editable? = true
+      def form_control = :boolean
 
       # Stricter than ActiveModel's cast (which makes any junk string true):
       # only recognizable values filter, everything else is ignored.

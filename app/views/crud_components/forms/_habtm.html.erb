@@ -1,0 +1,4 @@
+<%# Locals: f, field, form — multiselect of ids (*_ids setter) %>
+<%= f.select field.ids_method,
+             options_for_select(field.form_choices, form.record.public_send(field.ids_method)),
+             {}, multiple: true, size: 6, class: form.css.select_input %>

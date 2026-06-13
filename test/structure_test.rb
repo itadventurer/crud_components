@@ -2,12 +2,22 @@ require 'test_helper'
 
 class StructureTest < ActiveSupport::TestCase
   # ── rule zero: a model with no configuration at all ───────────────────────
-  test 'zero-config model resolves all columns with derived flavors' do
+  test 'zero-config model resolves all columns and associations with derived flavors' do
     structure = structure_of(Author) # Author has no include, no declarations
-    assert_equal %i[id name email created_at updated_at], structure.default_field_names
+    # columns first, then non-belongs_to associations (the habtm :books)
+    assert_equal %i[id name email created_at updated_at books], structure.default_field_names
     assert_instance_of CrudComponents::Fields::StringField, structure.field(:name)
     assert_instance_of CrudComponents::Fields::NumericField, structure.field(:id)
     assert_instance_of CrudComponents::Fields::DateField, structure.field(:created_at)
+    assert_instance_of CrudComponents::Fields::HasManyField, structure.field(:books)
+  end
+
+  test 'belongs_to arrives via the FK swap, has_many/habtm appended' do
+    names = structure_of(Book).default_field_names
+    assert_includes names, :publisher           # belongs_to, FK-swapped
+    assert_includes names, :reviews             # has_many, appended
+    assert_includes names, :authors             # habtm, appended
+    refute_includes names, :publisher_id
   end
 
   test 'zero-config identity: label, identify_by, search_in are derived' do
@@ -132,7 +142,7 @@ class StructureTest < ActiveSupport::TestCase
   # ── actions ────────────────────────────────────────────────────────────────
   test 'default actions exist; declared customs slot in before destroy' do
     actions = structure_of(Book).actions
-    assert_equal %i[new show edit preview destroy], actions.keys
+    assert_equal %i[new show edit preview import destroy], actions.keys
     assert actions[:new].collection?
     assert actions[:destroy].danger?
     assert_equal :delete, actions[:destroy].http_method
@@ -144,7 +154,7 @@ class StructureTest < ActiveSupport::TestCase
     row = structure.fieldset_actions(fieldset, on: :row)
     assert_equal %i[preview edit destroy], row.map(&:name)
     collection = structure.fieldset_actions(structure.default_fieldset, on: :collection)
-    assert_equal %i[new], collection.map(&:name)
+    assert_equal %i[new import], collection.map(&:name)
   end
 
   # ── fieldsets ──────────────────────────────────────────────────────────────

@@ -8,6 +8,8 @@ class Book < ApplicationRecord
 
   enum :genre, { fiction: 0, scifi: 1, nonfiction: 2 }
 
+  before_validation { self.slug = title.to_s.parameterize if slug.blank? }
+
   def to_param = slug
 
   def shop_margin
@@ -16,10 +18,12 @@ class Book < ApplicationRecord
 
   crud_structure do
     identify_by :slug
-    search_in :title, :subtitle, :publisher
+    search_in :title, :subtitle, :publisher, :authors   # :authors delegates to Author's spec
 
     attribute :price, as: :number, unit: '€', digits: 2
-    attributes :purchase_price, :shop_margin, if: :manage
+    attributes :purchase_price, :shop_margin, if: :manage   # visible only to managers
+    attribute :slug, editable: false                        # shown in forms, but read-only
+    attribute :active, editable: :manage                    # everyone sees it; only managers edit it
     attribute :cover, as: :image
 
     attribute :author_names do
@@ -29,6 +33,7 @@ class Book < ApplicationRecord
     end
 
     action :preview, icon: 'eye'
+    action :import, on: :collection, icon: 'upload'
 
     fieldset :index, %i[cover title author_names genre price publisher active],
              actions: %i[preview edit destroy]
@@ -36,5 +41,7 @@ class Book < ApplicationRecord
                           shop_margin pages published_on publisher reviews active],
              filters: %i[blurb]
     fieldset :compact, %i[title price]
+    fieldset :form, %i[title subtitle slug blurb price purchase_price pages
+                       published_on genre active publisher authors cover]
   end
 end

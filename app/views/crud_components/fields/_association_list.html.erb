@@ -1,8 +1,10 @@
-<%# Locals: value (a collection), record, field, surface —
-    truncated list of links: "a, b +3 more" %>
+<%# Locals: value (a collection), record, field, surface, cell_context —
+    truncated list of links: "a, b +3 more" (the "more" link goes to the
+    nested/filtered index when one resolves) %>
 <% items = value.to_a %>
+<% css = CrudComponents.config.css %>
 <%- if items.empty? -%>
-  <span class="<%= CrudComponents.config.css.muted %>">—</span>
+  <span class="<%= css.muted %>">—</span>
 <%- else -%>
   <% shown = surface == :collection ? items.first(3) : items %>
   <%= safe_join(shown.map { |item|
@@ -10,8 +12,12 @@
         path ? link_to(crud_label(item), path, data: { turbo_action: 'advance' }) : crud_label(item).to_s
       }, ', ') %>
   <%- if items.size > shown.size -%>
-    <span class="<%= CrudComponents.config.css.muted %>">
-      <%= t('crud_components.more', count: items.size - shown.size, default: '+%{count} more') %>
-    </span>
+    <% more = t('crud_components.more', count: items.size - shown.size, default: '+%{count} more') %>
+    <% index_path = crud_association_index_path(record, field) %>
+    <%- if index_path -%>
+      <%= link_to more, index_path, class: css.muted, data: { turbo_action: 'advance' } %>
+    <%- else -%>
+      <span class="<%= css.muted %>"><%= more %></span>
+    <%- end -%>
   <%- end -%>
 <%- end -%>

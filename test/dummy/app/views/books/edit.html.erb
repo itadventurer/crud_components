@@ -1,4 +1,11 @@
 <h1>Edit: <%= crud_label(@book) %></h1>
-<p class="text-muted">Form views are a later version — this page exists so the
-derived <code>:edit</code> action has a real route<%= @publisher ? ' (you reached it via the nested publisher route)' : '' %>.</p>
-<%= crud_record @book, fieldset: :compact %>
+<p class="text-muted">
+  The form is fully derived. <code>slug</code> is read-only
+  (<code>editable: false</code>); <code>active</code> is editable only by managers
+  (<code>editable: :manage</code> — toggle admin to see it become an input);
+  <code>purchase_price</code> is invisible to non-managers entirely
+  (<code>if: :manage</code>).
+</p>
+<div class="card"><div class="card-body">
+  <%= crud_form @book %>
+</div></div>

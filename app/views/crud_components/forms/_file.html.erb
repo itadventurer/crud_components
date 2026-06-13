@@ -1,0 +1,11 @@
+<%# Locals: f, field, form. Single attachment: replace on upload.
+    has_many_attached add/remove-existing UI is the one place that wants JS —
+    a later version; this baseline adds files without removing existing ones. %>
+<% attachment = field.value(form.record) %>
+<% if attachment.respond_to?(:attached?) && attachment.attached? %>
+  <div class="mb-1 small text-muted">
+    <%= field.many? ? t('crud_components.form.attached_count', count: attachment.attachments.size,
+                        default: '%{count} attached') : t('crud_components.form.attached', default: 'attached') %>
+  </div>
+<% end %>
+<%= f.file_field field.name, multiple: field.many?, class: form.css.input %>

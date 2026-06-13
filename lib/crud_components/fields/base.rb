@@ -132,6 +132,44 @@ module CrudComponents
         end
       end
 
+      # ── forms ──────────────────────────────────────────────────────────────
+      # Columns that exist but are never user-editable in a derived form.
+      NON_EDITABLE_COLUMNS = %w[id created_at updated_at].freeze
+
+      # Whether this field appears as an *input* in a derived form. `editable:`
+      # overrides; a symbol/Proc means "editable, subject to a can? check"
+      # (see editable_permitted?).
+      def editable?
+        case options[:editable]
+        when false then false
+        when nil then default_editable?
+        else true
+        end
+      end
+
+      def default_editable?
+        false
+      end
+
+      def editable_permitted?(context, record = nil)
+        condition = options[:editable]
+        return true unless condition.is_a?(Symbol) || condition.is_a?(Proc)
+
+        Permission.permitted?(condition, model, context, record)
+      end
+
+      # The form control partial (crud_components/forms/_<name>); nil = the
+      # field cannot be edited (rendered read-only instead).
+      def form_control
+        nil
+      end
+
+      # What this field contributes to a strong-params permit list — a symbol
+      # or a nested hash; collected by Structure#permitted_params.
+      def permit_param
+        name
+      end
+
       # ── loading ──────────────────────────────────────────────────────────
       # Association to eager-load when this field is visible.
       def eager_load_name

@@ -70,7 +70,8 @@ With zero configuration, derived from what Rails already knows:
 - every column gets a type-appropriate cell and filter control (the full mapping is in
   the [combination table](#the-combination-table));
 - `genre` renders as a badge and filters as a select of the enum keys;
-- `publisher` renders as a nil-safe link, `authors` as a truncated list
+- **associations become columns automatically** — `publisher` (belongs_to) as a
+  nil-safe link, `authors` and `reviews` (has_many / habtm) as a truncated list
   ("Tolkien, Lewis +3 more"), `cover` as a thumbnail;
 - headers come from `human_attribute_name`, so your existing model i18n applies;
 - filtering, search and sorting are read from the request params automatically —
@@ -389,6 +390,62 @@ A field hidden by permission is hidden **everywhere, including the query layer**
 URL params are inert for that user. There is no way to filter by a column you're not
 allowed to see.
 
+## "I want to create and edit records"
+
+`crud_form` derives a form from the same field metadata everything else uses — a
+type-appropriate input per field (text, number, date, a select for an enum or a
+belongs_to, a multiselect for a habtm, a file field for an attachment):
+
+```erb
+<%= crud_form @book %>          <%# edit if persisted, new if not %>
+```
+
+The gem renders the form; **your controller saves it.** No gem-owned controller, no
+gem-owned routes — the form posts to the conventional route, and your strong-params
+permit the attributes. The gem just makes sure the two never drift, by handing you the
+permit list it derived the form from:
+
+```ruby
+def book_params
+  params.require(:book)
+        .permit(*Book.crud_attribute_names(action_name.to_sym, ability: current_ability))
+end
+```
+
+Because the form and the permit list come from the same metadata, a field can't be in
+one and missing from the other — the classic "I added a field and it silently doesn't
+save" bug is structurally impossible. (`CrudComponents.permitted_attributes(Model, …)`
+is the same thing for models that don't `include CrudComponents::Model`.)
+
+### Two permission dimensions
+
+Editing introduces a question viewing doesn't: you may *see* a field but not be allowed
+to *change* it. So `editable:` sits alongside `if:`:
+
+```ruby
+attribute :slug,           editable: false        # shown read-only in the form
+attribute :state,          editable: :publish      # editable only if can?(:publish, Book)
+attribute :purchase_price, if: :manage             # invisible to non-managers, here and everywhere
+```
+
+- `if:` controls **visibility** (and, as above, filterability) — a field you can't see
+  isn't in the form, the permit list, or the query.
+- `editable:` controls **writability** — a visible-but-not-editable field renders as
+  read-only text and is left out of the permit list. Same callable contract as `if:`.
+
+### Which fields, and where it submits
+
+Form field selection falls back **action → `:form` → `:default`**: declare
+`fieldset :form, %i[…]` for all forms, or `fieldset :edit, %i[…]` to override just the
+edit form; otherwise the `:default` set is used. New vs. edit (POST vs. PATCH) and the
+URL are inferred from the record, or pass `url:`/`method:` to override.
+
+belongs_to selects submit the real id (forms are POST bodies, not shareable URLs —
+unlike filters, which use `identify_by`); habtm submits an id array. Single
+attachments use a file field. The one thing that needs JavaScript — add/remove of
+*existing* items in a `has_many_attached` — is a later version; everything else works
+no-JS.
+
 ## "I have 50,000 books" — pagination and the manual query
 
 By default `crud_collection` reads the request params itself, builds the query, applies
@@ -470,12 +527,17 @@ Keyed by what a field *is* — with zero config, every row applies without decla
 | text column | truncated in collections, line breaks preserved on records | text input | `ILIKE %v%`, wildcards escaped | yes |
 | numeric column | number (`as: :number` for `unit:`/`digits:`) | min–max pair | `_geq`/`_leq` ranges, plus `?field=v` exact; unparsable ignored | yes |
 | date / datetime column | localized | from–to pair | whole-day-inclusive ranges, plus exact day | yes |
-| boolean column | ✓/✗ icon | any/yes/no select | cast & validated; invalid ignored | yes |
-| enum | badge, i18n'd | select of enum keys | validated against the enum | yes |
+| boolean column | ✓/✗ icon (click to filter) | any/yes/no select | cast & validated; invalid ignored | yes |
+| enum | badge, i18n'd (click to filter) | select of enum keys | validated against the enum | yes |
 | json column | pretty-printed `<pre>` (rouge-highlighted if available) | — | — | no |
 | Active Storage attachment | image thumb (larger on records) | — | — | no |
 | `belongs_to` | nil-safe link via target's `label` | ≤ 250 records: select valued by target's `identify_by`; above: text input over target's `search_in` | `where(assoc: Target.where(identify_by => v))`, or delegated ILIKE | v2 |
-| `has_many` / habtm | truncated list of links ("a, b +3 more") | off by default; opt-in `filter like: :authors` | delegated joins + ILIKE | no |
+| `has_many` / habtm | truncated list of links; "+n more" links to the nested or filtered index | off by default; opt-in `filter like: :authors` | delegated joins + ILIKE | no |
+
+In a collection, an enum badge and a boolean icon are click-to-filter links (they set
+their own column's filter, respecting the fieldset whitelist and `param_prefix`). The
+inline filter row uses compact controls; the standalone `crud_filter` form uses the
+full ones.
 | public model method | by value type | — | — | — |
 | `render` block / `as:` | as declared | — | — | — |
 | … + `filter` facet | | text input | like-spec / block | — |
@@ -593,7 +655,9 @@ attribute :rating, as: :stars
 ```
 
 The built-in renderers are the same kind of partial at the same paths — shadow one in
-your app to change it everywhere.
+your app to change it everywhere. Form inputs work identically:
+`crud_components/forms/_<control>.html.erb` (receiving the form builder `f`, the
+`field`, and the `form` presenter).
 
 **Add a layout.** A layout named `:cards` is the partial
 `crud_components/layouts/_cards.html.erb`, receiving one `collection` presenter with
@@ -613,6 +677,7 @@ crud_collection(records_or_model, fieldset: nil, as: :table, query: nil,
                 param_prefix: nil, actions: true)
 crud_record(record, fieldset: nil, actions: true)
 crud_filter(model, fieldset: nil, query: nil, param_prefix: nil)
+crud_form(record, fieldset: nil, action: nil, url: nil, method: nil)
 crud_actions(record_or_model)
 ```
 
@@ -631,10 +696,12 @@ A bare model class is sugar for its `all` relation. `query:` is a tri-state:
 label(method = nil, &block)
 identify_by(column)                               # default :id
 search_in(*spec) | search_in { |scope, q| … }     # default: own string/text columns
-attribute(name, as: nil, if: nil, **renderer_options, &block)
+attribute(name, as: nil, if: nil, editable: nil, **renderer_options, &block)
 attributes(*names, **shared_options)
   # bare block (arity 1)  = render markup
   # facet block (arity 0) = render / filter / sort declarations
+  # if:       — visibility (everywhere: column, filter, sort, form)
+  # editable: — writability in forms (read-only when false / unpermitted)
 action(name, icon:, title:, class:, confirm:, method:, on:, if:, &path_block)
 fieldset(name, fields = :all, actions: nil, filters: nil)
 ```
@@ -651,6 +718,8 @@ gem.
 ```ruby
 CrudComponents::Query.new(model, params, fieldset: :default, ability: nil, param_prefix: nil)
                                             # #apply(scope) → relation; #active?
+CrudComponents.permitted_attributes(model, action: :update, ability: nil)  # strong-params list
+Model.crud_attribute_names(action = :update, ability: nil)                 # same, for included models
 CrudComponents.configure { |config| … }     # css map, select_limit, defaults
 ```
 

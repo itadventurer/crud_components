@@ -35,6 +35,30 @@ module CrudComponents
       try_helpers(view, member_candidates(nil, record, owner))
     end
 
+    # The index a has_many "+n more" link points at: the nested index under
+    # the owner (publisher_books_path(publisher)) if it resolves, else the
+    # target's index filtered by the owner (books_path(publisher: owner)),
+    # else nil. `assoc_name` is the owner's reflection name.
+    def collection_index_path(view, target, owner, assoc_name)
+      return nil unless owner
+
+      key = target.model_name.route_key
+      owner_key = owner.model_name.singular_route_key
+      nested = "#{owner_key}_#{key}_path"
+      return view.public_send(nested, owner) if view.respond_to?(nested)
+
+      flat = "#{key}_path"
+      if view.respond_to?(flat)
+        param = owner.class.model_name.param_key
+        begin
+          return view.public_send(flat, param => owner.to_param)
+        rescue ActionController::UrlGenerationError, NoMethodError
+          return nil
+        end
+      end
+      nil
+    end
+
     def member_path(view, action, record, owner)
       prefix = { show: nil, destroy: nil, edit: 'edit_' }.fetch(action.name, "#{action.name}_")
       try_helpers(view, member_candidates(prefix, record, owner))

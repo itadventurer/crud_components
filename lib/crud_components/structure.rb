@@ -58,10 +58,21 @@ module CrudComponents
       @fields[name.to_sym] ||= resolve_field(name.to_sym)
     end
 
-    # The :all set: every column (foreign keys swapped for their belongs_to)
-    # plus declared computed fields, in declaration order.
+    # The :all set: every column (foreign keys swapped for their belongs_to),
+    # then non-belongs_to associations (has_many / habtm / has_one), then any
+    # declared computed fields — all derived, in a stable order.
     def default_field_names
-      @default_field_names ||= column_field_names + (@declarations.keys - column_field_names)
+      @default_field_names ||= begin
+        base = column_field_names + association_field_names
+        base + (@declarations.keys - base)
+      end
+    end
+
+    # has_many / habtm / has_one — belongs_to already arrive via the FK swap.
+    def association_field_names
+      @association_field_names ||=
+        model.reflect_on_all_associations.reject(&:belongs_to?).map(&:name)
+              .reject { |n| n.to_s.start_with?('rich_text_', 'with_attached_') }
     end
 
     # ── fieldsets ────────────────────────────────────────────────────────────
@@ -93,6 +104,26 @@ module CrudComponents
 
     def fieldset_sortable_fields(fieldset)
       fieldset_fields(fieldset).select(&:sortable?)
+    end
+
+    # ── forms ──────────────────────────────────────────────────────────────
+    # Form field selection falls back most-specific-first:
+    #   the action's own fieldset → :form → :default.
+    def form_fieldset(action = nil)
+      names = [action, :form, :default].compact
+      names.each do |name|
+        return @declared_fieldsets[name] if @declared_fieldsets.key?(name)
+      end
+      default_fieldset
+    end
+
+    # Editable, permitted fields of the form fieldset, as a strong-params
+    # permit list (symbols and nested hashes) — the controller's single
+    # source of truth, so form and params can never drift.
+    def permitted_params(action, context)
+      fields = fieldset_fields(form_fieldset(action))
+      fields.select { |f| f.permitted?(context) && f.editable? && f.editable_permitted?(context) && f.form_control }
+            .map(&:permit_param)
     end
 
     # ── identity ─────────────────────────────────────────────────────────────

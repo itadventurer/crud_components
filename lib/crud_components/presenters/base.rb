@@ -35,13 +35,16 @@ module CrudComponents
 
       # Renders one field value: the render block (in view context, record as
       # argument) or the renderer partial `crud_components/fields/_<name>`.
-      def render_cell(field, record, surface:)
+      # `cell_context` (a CellContext or nil) lets value renderers build
+      # click-to-filter links; it is nil on surfaces without a query.
+      def render_cell(field, record, surface:, cell_context: nil)
         if field.render_block
           view.instance_exec(record, &field.render_block)
         else
           renderer = field.renderer(record) || :string
           view.render("crud_components/fields/#{renderer}",
-                      value: field.value(record), record: record, field: field, surface: surface)
+                      value: field.value(record), record: record, field: field,
+                      surface: surface, cell_context: cell_context)
         end
       end
 

@@ -47,6 +47,19 @@ module CrudComponents
         name
       end
 
+      # ── forms ────────────────────────────────────────────────────────────
+      # Assigned via the foreign key; the select submits real ids (forms are
+      # POST bodies, not shareable URLs — unlike the filter, which uses
+      # identify_by).
+      def default_editable? = reflection.belongs_to? && !reflection.polymorphic?
+      def form_control = :belongs_to
+      def permit_param = reflection.foreign_key.to_sym
+
+      def form_choices
+        structure = target_structure
+        target.all.map { |record| [structure.label_for(record).to_s, record.id] }.sort_by(&:first)
+      end
+
       private
 
       def like_subquery(scope, value)

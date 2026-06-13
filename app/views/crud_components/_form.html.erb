@@ -1,0 +1,25 @@
+<%# Derived create/edit form. Local: `form` (Presenters::Form).
+    Saving is the host controller's job — see crud_attribute_names. %>
+<%= form_with(model: form.record, **form.form_options) do |f| %>
+  <% if form.any_errors? %>
+    <div class="alert alert-danger">
+      <%= t('crud_components.form.errors',
+            count: form.record.errors.count,
+            default: 'Please fix %{count} error(s) below.') %>
+    </div>
+  <% end %>
+
+  <% form.fields.each do |field| %>
+    <div class="mb-3 crud-form-field">
+      <%= f.label field.name, field.human_name, class: form.css.form_label %>
+      <%= render "crud_components/forms/#{form.control(field)}", f: f, field: field, form: form %>
+      <% form.errors_for(field).each do |message| %>
+        <div class="text-danger small"><%= message %></div>
+      <% end %>
+    </div>
+  <% end %>
+
+  <div class="d-flex gap-2">
+    <%= f.submit class: form.css.button_primary %>
+  </div>
+<% end %>

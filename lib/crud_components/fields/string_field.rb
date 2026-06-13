@@ -4,6 +4,8 @@ module CrudComponents
     class StringField < Base
       def derived_filterable? = true
       def derived_sortable? = true
+      def default_editable? = !NON_EDITABLE_COLUMNS.include?(name.to_s)
+      def form_control = :string
 
       def apply_derived_filter(scope, exact: nil, **)
         return scope unless exact

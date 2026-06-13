@@ -1,0 +1,49 @@
+<%# A custom layout, living entirely in the host app — the worked example for
+    "add a layout". Same `collection` presenter the table layout gets, so it
+    inherits filtering, the query, actions and cells for free; it only decides
+    the arrangement. Selected with `crud_collection @books, as: :cards`. %>
+<% css = collection.css %>
+<div class="crud-collection">
+  <% if collection.searchable? || collection.collection_actions&.any? %>
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <% if collection.searchable? %>
+        <form method="get" action="<%= request.path %>" class="d-flex gap-1" data-turbo-action="advance">
+          <% collection.preserved_params.each do |name, value| %>
+            <%= hidden_field_tag name, value, id: nil %>
+          <% end %>
+          <%= tag.input type: 'search', name: collection.search_param_name,
+                        value: collection.search_value, class: css.input_sm, placeholder: 'Search' %>
+          <button class="<%= css.button %>">Search</button>
+        </form>
+      <% end %>
+      <% if collection.collection_actions&.any? %>
+        <%= render 'crud_components/actions', actions: collection.collection_actions %>
+      <% end %>
+    </div>
+  <% end %>
+
+  <div class="row row-cols-1 row-cols-md-2 row-cols-xl-3 g-3">
+    <% collection.records.each do |record| %>
+      <div class="col">
+        <div class="card h-100" id="<%= dom_id(record) %>">
+          <div class="card-body">
+            <% collection.fields.each do |field| %>
+              <div class="mb-2">
+                <div class="small text-uppercase text-muted"><%= field.human_name %></div>
+                <div><%= collection.cell(field, record) %></div>
+              </div>
+            <% end %>
+          </div>
+          <% if collection.actions_column? %>
+            <div class="card-footer text-end">
+              <%= render 'crud_components/actions', actions: collection.row_actions(record) %>
+            </div>
+          <% end %>
+        </div>
+      </div>
+    <% end %>
+  </div>
+  <% if collection.records.empty? %>
+    <p class="<%= css.muted %>"><%= t('crud_components.empty', default: 'No records') %></p>
+  <% end %>
+</div>

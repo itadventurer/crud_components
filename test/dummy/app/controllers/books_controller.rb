@@ -9,15 +9,37 @@ class BooksController < ApplicationController
     @book = find_book
   end
 
+  def new
+    @book = Book.new
+  end
+
+  def create
+    @book = Book.new(book_params)
+    if @book.save
+      redirect_to @book, notice: 'Book created.'
+    else
+      render :new, status: :unprocessable_entity
+    end
+  end
+
   def edit
     @book = find_book
+  end
+
+  def update
+    @book = find_book
+    if @book.update(book_params)
+      redirect_to @book, notice: 'Book updated.'
+    else
+      render :edit, status: :unprocessable_entity
+    end
   end
 
   def preview
     @book = find_book
   end
 
-  def new; end
+  def import; end
 
   def destroy
     find_book.destroy!
@@ -28,5 +50,11 @@ class BooksController < ApplicationController
 
   def find_book
     Book.find_by!(slug: params[:id])
+  end
+
+  # The gem is the single source of truth for what's editable — the form and
+  # this permit list derive from the same metadata, so they can't drift.
+  def book_params
+    params.require(:book).permit(*Book.crud_attribute_names(action_name.to_sym, ability: self))
   end
 end
