@@ -1,8 +1,10 @@
 # crud_components — agent & developer notes
 
-Declarative CRUD UI for ActiveRecord models. README.md is the spec — it was
-written before the implementation and the code is built to match it.
-DESIGN.md holds the decision history and host-app-specific material.
+Declarative CRUD UI for ActiveRecord models. README.md is the front door (mental
+model + tour); `docs/` holds the in-depth reference (`fields`, `views`, `forms`,
+`security`, `extending`). Together they are the spec — written before/with the
+implementation and kept in sync. DESIGN.md holds the decision history and
+host-app-specific material.
 
 ## Layout
 
@@ -25,7 +27,8 @@ DESIGN.md holds the decision history and host-app-specific material.
 
 ## Conventions
 
-- README-first: behavior changes update README.md in the same commit.
+- README/docs-first: a behavior change updates the relevant doc (README for the
+  mental model / tour; the matching `docs/*.md` for the detail) in the same commit.
 - Every raising DSL combination has a test in `dsl_validation_test.rb`; every
   security guarantee has one in `query_security_test.rb`.
 - No runtime dependencies outside Rails (activerecord/activesupport/actionview).

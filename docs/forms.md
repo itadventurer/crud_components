@@ -1,0 +1,158 @@
+# Forms
+
+`crud_form` derives a create/edit form from the same field metadata everything else uses.
+The gem renders the form; **your controller saves it** — there is no gem-owned controller
+and no gem-owned routes. The two are kept from drifting by a shared permit list.
+
+```erb
+<%= crud_form @book %>          <%# edit if persisted, new if not %>
+```
+
+## The permit list — why fields can't silently fail to save
+
+The form and your strong-params both derive from the same metadata, so a field can't be
+in one and missing from the other. Use the list the gem derived the form from:
+
+```ruby
+def book_params
+  params.require(:book)
+        .permit(*Book.crud_attribute_names(action_name.to_sym, ability: current_ability))
+end
+```
+
+The classic "I added a field and it silently doesn't save" bug is structurally
+impossible: the permit list *is* the form's field set, projected to param keys. For
+models that don't `include CrudComponents::Model`, use
+`CrudComponents.permitted_attributes(Model, action:, ability:)` — identical result.
+
+What the list contains, per editable field:
+
+| Field | Permit key |
+| --- | --- |
+| column (string/number/date/boolean/enum/text) | `:name` |
+| `belongs_to` | `:publisher_id` (the foreign key) |
+| habtm / has_many (ids) | `{ author_ids: [] }` |
+| single attachment | `:cover` |
+| `has_many_attached` | `{ images: [] }` |
+
+Excluded automatically: `id`, `created_at`, `updated_at`, computed fields (no form
+control), JSON columns (read-only in v1), `has_many` that isn't habtm, and any field that
+is non-editable or not permitted for the current user (below).
+
+## Two permission dimensions
+
+Editing introduces a question viewing doesn't: you may *see* a field but not be allowed
+to *change* it. So `editable:` sits alongside `if:`:
+
+```ruby
+attribute :slug,           editable: false       # shown read-only in the form
+attribute :state,          editable: :publish     # editable only if can?(:publish, Book)
+attribute :purchase_price, if: :manage            # invisible to non-managers, everywhere
+```
+
+- **`if:`** controls **visibility** — a field you can't see isn't in the form, the permit
+  list, the query, or any other surface.
+- **`editable:`** controls **writability** — a visible-but-not-editable field renders as
+  compact read-only text and is left out of the permit list. Same callable contract as
+  `if:` (symbol → `can?`, zero-arity lambda, record lambda / `it`); see
+  [Security → permissions](security.md#permissions).
+
+Because both are enforced on the permit list *and* the form, the two can never disagree:
+a user who can't edit a field can neither see an input for it nor smuggle it through
+params.
+
+## Which fields, and where it submits
+
+Form field selection falls back **action → `:form` → `:default`**:
+
+- `fieldset :form, %i[…]` — fields for all forms.
+- `fieldset :edit, %i[…]` / `fieldset :new, %i[…]` — override one form (`:update` maps to
+  `:edit`, `:create` to `:new`).
+- otherwise the `:default` set is used.
+
+New vs. edit (POST vs. PATCH) and the URL are inferred from the record (`persisted?`).
+Override with `url:` / `method:` when routes aren't conventional:
+
+```erb
+<%= crud_form @book, url: publisher_book_path(@publisher, @book), method: :patch %>
+```
+
+## Form controls per field
+
+One input per field flavor, derived like the filter controls:
+
+| Field | Control |
+| --- | --- |
+| string / text | text field / textarea |
+| number | number field |
+| date / datetime | date / datetime-local field |
+| boolean | checkbox |
+| enum | select of keys |
+| `belongs_to` | select of records — submits the real **id** (forms are POST bodies, not shareable URLs, unlike filters which use `identify_by`) |
+| habtm | checkbox list ≤ `select_limit`, multiselect above; submits an id array |
+| single attachment | file field (shows "attached" when present) |
+| read-only (not editable) | compact `label: value`, not submitted |
+
+Validation errors render inline under each field (`record.errors[field.name]`), with a
+summary banner.
+
+## Associations and attachments
+
+- **belongs_to** → a select valued by record id; permit `:publisher_id`.
+- **habtm** → a checkbox list (good UX, accessible, no JS) up to `config.select_limit`,
+  a multiselect above; permit `{ author_ids: [] }`. The checkbox list is the no-JS
+  baseline; an optional Stimulus controller can enhance it into a chip widget (see
+  [Extending → progressive enhancement](extending.md#progressive-enhancement)) — the
+  checkboxes remain the source of truth, so the form submits identically with or without
+  JS.
+- **single attachment** → a file field; permit `:cover`.
+- **has_many_attached** → a file field with `multiple`; add/remove of *existing* items is
+  the one place that genuinely wants JavaScript and is a later version.
+
+## Scope (v1)
+
+Single record; flat columns plus belongs_to and habtm. No nested forms /
+`accepts_nested_attributes` and no JSON-column editing in v1.
+
+## A complete example
+
+```ruby
+# app/models/book.rb
+crud_structure do
+  attribute :slug,  editable: false
+  attribute :active, editable: :manage
+  attribute :purchase_price, if: :manage
+  fieldset :form, %i[title subtitle slug blurb price purchase_price pages
+                     published_on genre active publisher authors cover]
+end
+```
+
+```ruby
+# app/controllers/books_controller.rb
+def new   = (@book = Book.new)
+def edit  = (@book = Book.find_by!(slug: params[:id]))
+def create
+  @book = Book.new(book_params)
+  @book.save ? redirect_to(@book) : render(:new, status: :unprocessable_entity)
+end
+def update
+  @book.update(book_params) ? redirect_to(@book) : render(:edit, status: :unprocessable_entity)
+end
+
+private
+
+def book_params
+  params.require(:book).permit(*Book.crud_attribute_names(action_name.to_sym, ability: self))
+end
+```
+
+```erb
+<%# app/views/books/edit.html.erb %>
+<%= crud_form @book %>
+```
+
+`slug` shows read-only; `active` is an input only for managers (read-only otherwise);
+`purchase_price` is absent entirely for non-managers — in the form *and* the permit list.
+
+See also: [Fields & rendering](fields.md) · [Views](views.md) · [Security](security.md) ·
+[Extending](extending.md).
