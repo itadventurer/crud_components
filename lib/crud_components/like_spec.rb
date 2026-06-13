@@ -11,7 +11,10 @@ module CrudComponents
   # Specs never contain SQL strings; conditions are built through Arel with
   # LIKE wildcards escaped, so they are parameterized end to end.
   module LikeSpec
-    MAX_DEPTH = 5 # guards against search_in delegation cycles
+    # Only *delegation* hops (an association name resolved through the target's
+    # search_in) can form a cycle; explicit nesting is bounded by the literal
+    # spec. So the guard counts delegations only.
+    MAX_DELEGATIONS = 5
 
     module_function
 
@@ -24,8 +27,10 @@ module CrudComponents
       condition = entries.map { |entry| entry.arel_condition(pattern) }.reduce(:or)
       joins = entries.filter_map(&:join_fragment).reduce({}) { |acc, j| deep_merge(acc, j) }
 
-      scope = scope.left_joins(joins) unless joins.empty?
-      scope.where(condition).distinct
+      return scope.where(condition) if joins.empty?
+
+      # distinct only matters once a join can multiply rows
+      scope.left_joins(joins).where(condition).distinct
     end
 
     Entry = Struct.new(:path, :klass, :column) do
@@ -44,14 +49,17 @@ module CrudComponents
 
     # Resolves a spec into flat [path, klass, column] entries, expanding
     # association names without columns through the target's search_in spec.
-    def expand(model, spec, path = [], depth = 0)
-      raise DefinitionError, "search_in/like delegation deeper than #{MAX_DEPTH} levels " \
-                             "starting at #{model} — most likely a delegation cycle" if depth > MAX_DEPTH
+    # `delegations` counts only delegation hops (the cycle risk).
+    def expand(model, spec, path = [], delegations = 0)
+      if delegations > MAX_DELEGATIONS
+        raise DefinitionError, "search_in/like delegation more than #{MAX_DELEGATIONS} levels deep " \
+                               "starting at #{model} — most likely a delegation cycle"
+      end
 
       Array.wrap(spec).flat_map do |item|
         case item
-        when Symbol, String then expand_name(model, item.to_sym, path, depth)
-        when Hash then item.flat_map { |assoc, sub| expand_assoc(model, assoc.to_sym, sub, path, depth) }
+        when Symbol, String then expand_name(model, item.to_sym, path, delegations)
+        when Hash then item.flat_map { |assoc, sub| expand_assoc(model, assoc.to_sym, sub, path, delegations) }
         else
           raise DefinitionError, "invalid like-spec element #{item.inspect} for #{model} — " \
                                  'use column symbols, association symbols, or { assoc => columns } hashes'
@@ -59,27 +67,29 @@ module CrudComponents
       end
     end
 
-    def expand_name(model, name, path, depth)
+    def expand_name(model, name, path, delegations)
       if model.columns_hash.key?(name.to_s)
         [Entry.new(path, model, name)]
       elsif (reflection = model.reflect_on_association(name))
-        delegate(model, reflection, path, depth)
+        delegate(model, reflection, path, delegations)
       else
         raise DefinitionError, "like-spec references '#{name}', which is neither a column nor " \
                                "an association of #{model}"
       end
     end
 
-    def expand_assoc(model, assoc, sub, path, depth)
+    # Explicit nesting ({ assoc => columns }) — bounded by the spec, not a
+    # cycle risk, so it does not count against the delegation limit.
+    def expand_assoc(model, assoc, sub, path, delegations)
       reflection = model.reflect_on_association(assoc)
       raise DefinitionError, "like-spec references association '#{assoc}', " \
                              "which #{model} does not have" unless reflection
 
-      expand(reflection.klass, sub, path + [assoc], depth + 1)
+      expand(reflection.klass, sub, path + [assoc], delegations)
     end
 
     # Association name without columns: use the target model's search_in spec.
-    def delegate(model, reflection, path, depth)
+    def delegate(model, reflection, path, delegations)
       target = reflection.klass
       target_spec = Structure.for(target).search_in_spec
       if target_spec.nil?
@@ -88,7 +98,7 @@ module CrudComponents
                                "e.g. { #{reflection.name}: %i[...] }"
       end
 
-      expand(target, target_spec, path + [reflection.name], depth + 1)
+      expand(target, target_spec, path + [reflection.name], delegations + 1)
     end
 
     def deep_merge(left, right)

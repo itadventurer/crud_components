@@ -1,8 +1,9 @@
 # CrudComponents
 
-> **Status: design draft, round 3.** This README is written before the implementation
-> (README-first). It is the design document up for sign-off; the code will be built to
-> match it.
+> **Status: v1 implemented.** This README is the spec — written first (README-first) and
+> kept in sync with the code. A runnable bookstore playground lives in `test/dummy`
+> (`cd test/dummy && bin/rails db:schema:load db:seed && bin/rails server`); the design
+> history and decisions are in [DESIGN.md](DESIGN.md).
 
 Declarative CRUD UI for ActiveRecord models, primarily for admin backends — rendered
 **inside your app**: your layout, your routes, your authorization, your styling, mixed
@@ -588,24 +589,36 @@ What holds, by construction — encoded as tests, not conventions:
 - No pagination in automatic mode yet — pass a bounded scope or use the
   [manual query](#i-have-50000-books--pagination-and-the-manual-query) for big tables.
 
-## No JavaScript required
+## No JavaScript required — and how niceties layer on
 
 Everything works with JavaScript disabled: filtering and sorting are plain GET forms
 and links; the standalone filter form has a real submit button; the inline filter row
-submits on Enter and via a visible button. (The inline row lives in `<thead>`; its
-inputs bind to an external form via the HTML `form` attribute.)
+submits on Enter and via a visible button (it lives in `<thead>`, its inputs bound to
+an external form via the HTML `form` attribute); a habtm field is a checkbox list.
 
-On top of that baseline there is exactly **one optional Stimulus controller**: it
-strips empty params on submit (clean URLs) and auto-submits selects in the inline row
-only — the standalone filter form never auto-submits, since users compose several
-filters there. `bin/rails generate crud_components:install` copies it into your app;
-the gem itself has no JS dependency and no build-pipeline integration.
+The progressive-enhancement story is deliberately **one mechanism, not a fork**: the
+markup is *always* the plain, accessible baseline, and JavaScript enhances that same
+markup in place via Stimulus controllers attached with `data-controller`. There are no
+parallel "raw" vs. "fancy" template trees to keep in sync, and Bootstrap-vs-other lives
+in the [class map](#styling), not in template variants. A controller that isn't loaded
+simply leaves the baseline as-is.
+
+The gem ships **one** optional controller (`crud-filter`: strip empty params on submit,
+auto-submit inline selects), copied in by `bin/rails generate crud_components:install`.
+Richer widgets follow the same pattern — e.g. a token/chip controller that upgrades the
+habtm checkbox list into removable chips + an "add" dropdown, keeping the checkboxes as
+the hidden source of truth so the form submits identically with or without JS. (The
+dummy app ships exactly this as a worked example.) The gem itself has no JS dependency
+and no build-pipeline integration.
 
 ## Turbo Streams
 
-Rows carry `dom_id`s and render independently. Rails' own `broadcasts_refreshes` in
-the model plus a `turbo_stream_from` subscription on the page keeps a collection live.
-The gem ships no streaming machinery — its markup is simply stream-friendly.
+Rows carry `dom_id`s and render independently, so the markup is morph- and
+stream-friendly out of the box. Add Rails' own `broadcasts_refreshes` to the model and
+a `turbo_stream_from` subscription to the page and a collection updates live — only the
+changed rows morph, the rest stay put. The gem ships no streaming machinery of its own;
+it just guarantees the markup a broadcast (or a Turbo morph refresh) needs. (The dummy
+app's "Live" page demonstrates this.)
 
 ## i18n
 
@@ -678,7 +691,7 @@ crud_collection(records_or_model, fieldset: nil, as: :table, query: nil,
 crud_record(record, fieldset: nil, actions: true)
 crud_filter(model, fieldset: nil, query: nil, param_prefix: nil)
 crud_form(record, fieldset: nil, action: nil, url: nil, method: nil)
-crud_actions(record_or_model)
+crud_actions(record_or_model, fieldset: nil)
 ```
 
 A bare model class is sugar for its `all` relation. `query:` is a tri-state:

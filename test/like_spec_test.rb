@@ -46,4 +46,23 @@ class LikeSpecTest < ActiveSupport::TestCase
     scope = Book.all.extending(CrudComponents::WhereLike)
     assert_equal [@hobbit], scope.where_like({ publisher: :name }, 'tor').to_a
   end
+
+  test 'a backslash is escaped as a literal, not a LIKE escape character' do
+    winpath = Book.create!(title: 'C:\\Users', slug: 'winpath')
+    assert_equal [winpath], apply(Book.all, :title, '\\').to_a
+    assert_empty apply(Book.all, :title, '\\%').to_a   # backslash does not escape the %
+  end
+
+  test 'a joined match returns each row once (distinct)' do
+    le = Author.create!(name: 'Leann')
+    li = Author.create!(name: 'Liam')
+    book = Book.create!(title: 'Two Ls', slug: 'two-ls', authors: [le, li])
+    found = apply(Book.all, { authors: :name }, 'l').to_a   # matches both authors
+    assert_equal 1, found.count { |b| b == book }, 'row not duplicated by the join'
+  end
+
+  test 'an own-column spec adds no DISTINCT (no join to dedupe)' do
+    refute_match(/DISTINCT/i, apply(Book.all, :title, 'x').to_sql)
+    assert_match(/DISTINCT/i, apply(Book.all, { publisher: :name }, 'x').to_sql)
+  end
 end

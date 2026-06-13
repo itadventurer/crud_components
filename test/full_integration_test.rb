@@ -50,15 +50,19 @@ class FullIntegrationTest < ActionDispatch::IntegrationTest
     assert_select "a[href='#{book_path(@hobbit)}']", text: 'The Hobbit'
   end
 
-  test 'custom renderer partial from the host app wins' do
+  test 'custom renderer partial from the host app wins and reflects the value' do
+    @review.update!(rating: 4)
+    Review.create!(book: @hobbit, rating: 2, reviewer_name: 'Bo', body: 'meh')
     get reviews_path
-    assert_match '★★★★', response.body
+    assert_select 'span[title="4/5"]'   # the host-app _stars partial, tied to value
+    assert_select 'span[title="2/5"]'
   end
 
-  test 'has_many renders a truncated list with +n more' do
+  test 'has_many renders a truncated list with a +n more link' do
     5.times { |i| @hobbit.reviews.create!(rating: 3, reviewer_name: "R#{i}", body: 'ok') }
     get books_path(view: 'catalog')
-    assert_match 'more', response.body
+    # the gem shows the first 3 then a real "+n more" link (here → /reviews?book=hobbit)
+    assert_select "a[href*='/reviews?book=hobbit']", text: /\+\d+ more/
   end
 
   # ── filtering, sorting (no JS: plain GET) ─────────────────────────────────

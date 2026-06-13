@@ -10,9 +10,9 @@ module CrudComponents
       def form_control = :number
 
       def apply_derived_filter(scope, exact: nil, geq: nil, leq: nil)
-        scope = scope.where(name => cast(exact)) if cast(exact)
-        scope = scope.where(arel_column.gteq(cast(geq))) if cast(geq)
-        scope = scope.where(arel_column.lteq(cast(leq))) if cast(leq)
+        if (v = cast(exact)) then scope = scope.where(name => v) end
+        if (v = cast(geq)) then scope = scope.where(arel_column.gteq(v)) end
+        if (v = cast(leq)) then scope = scope.where(arel_column.lteq(v)) end
         scope
       end
 
@@ -21,7 +21,8 @@ module CrudComponents
       def cast(value)
         return nil if value.nil?
 
-        BigDecimal(value)
+        decimal = BigDecimal(value)
+        decimal.finite? ? decimal : nil # reject NaN / Infinity — they aren't filters
       rescue ArgumentError, TypeError
         nil
       end

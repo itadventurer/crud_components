@@ -42,6 +42,20 @@ ActiveRecord::Schema[8.1].define(version: 1) do
     t.timestamps
   end
 
+  # Polymorphic + STI — exercised only by the test suite (no playground UI).
+  create_table :comments, force: :cascade do |t|
+    t.text :body
+    t.references :commentable, polymorphic: true
+    t.timestamps
+  end
+
+  create_table :documents, force: :cascade do |t|
+    t.string :type
+    t.string :title
+    t.text :body
+    t.timestamps
+  end
+
   # Active Storage (for the :image renderer)
   create_table :active_storage_blobs, force: :cascade do |t|
     t.string :key, null: false

@@ -113,7 +113,6 @@ class StructureTest < ActiveSupport::TestCase
   end
 
   test 'a public model method is a usable field without any declaration' do
-    model = define_model # books table; Book#shop_margin is not on the anon class
     klass = Class.new(ApplicationRecord) do
       self.table_name = 'books'
       define_singleton_method(:name) { 'MethodFieldBook' }
@@ -122,7 +121,8 @@ class StructureTest < ActiveSupport::TestCase
     field = structure_of(klass).field(:display_size)
     assert_instance_of CrudComponents::Fields::ComputedField, field
     refute field.filterable?
-    assert model # silence unused warning
+    refute field.sortable?
+    assert_equal '310 pages', field.value(klass.new(pages: 310))
   end
 
   # ── identity ───────────────────────────────────────────────────────────────
@@ -177,5 +177,64 @@ class StructureTest < ActiveSupport::TestCase
     field = structure_of(Book).field(:purchase_price)
     assert field.permitted?(CrudTestHelpers::AllowAll.new)
     refute field.permitted?(CrudComponents::PermissionContext.new(nil))
+  end
+
+  # ── if:/editable: callable arities (the documented contract) ───────────────
+  test 'permission callables: symbol, zero-arity lambda, record lambda, it-proc' do
+    allow = CrudTestHelpers::AllowAll.new
+    deny  = CrudTestHelpers::DenyAll.new
+    P = CrudComponents::Permission
+
+    # symbol sugar → can?(symbol, model)
+    assert P.permitted?(:manage, Book, allow)
+    refute P.permitted?(:manage, Book, deny)
+
+    # zero-arity lambda → run in the can? context, no record needed
+    gate = -> { can?(:manage, Book) }
+    assert P.permitted?(gate, Book, allow)
+    refute P.permitted?(gate, Book, deny)
+
+    # one-arity lambda and an `it` proc → receive the record
+    assert P.permitted?(->(rec) { rec.active }, Book, allow, Book.new(active: true))
+    refute P.permitted?(->(rec) { rec.active }, Book, allow, Book.new(active: false))
+    assert P.permitted?(proc { it.active }, Book, allow, Book.new(active: true))
+  end
+
+  test 'editable_permitted? gates writability independently of visibility' do
+    field = structure_of(Book).field(:active) # editable: :manage, visible to all
+    assert field.permitted?(CrudComponents::PermissionContext.new(nil))      # visible
+    refute field.editable_permitted?(CrudComponents::PermissionContext.new(nil)) # not editable
+    assert field.editable_permitted?(CrudTestHelpers::AllowAll.new)
+  end
+
+  # ── belongs_to select/text threshold (config.select_limit) ─────────────────
+  test 'belongs_to filter control flips to text above select_limit' do
+    Publisher.create!(name: 'A', slug: 'a')
+    Publisher.create!(name: 'B', slug: 'b')
+    original = CrudComponents.config.select_limit
+    CrudComponents.config.select_limit = 5
+    assert_equal :select, CrudComponents::Fields::BelongsToField.new(:publisher, Book).filter_control
+    CrudComponents.config.select_limit = 1
+    assert_equal :text, CrudComponents::Fields::BelongsToField.new(:publisher, Book).filter_control
+  ensure
+    CrudComponents.config.select_limit = original
+  end
+
+  # ── reflection categories ──────────────────────────────────────────────────
+  test 'polymorphic belongs_to: type column hidden, association non-filterable' do
+    structure = structure_of(Comment)
+    names = structure.default_field_names
+    assert_includes names, :commentable
+    refute_includes names, :commentable_id
+    refute_includes names, :commentable_type
+    field = structure.field(:commentable)
+    assert_instance_of CrudComponents::Fields::BelongsToField, field
+    refute field.filterable?
+    refute field.editable?
+  end
+
+  test 'STI subclass inherits the base crud_structure' do
+    assert_equal :title, structure_of(Manual).label_source
+    assert_equal %i[title body], structure_of(Manual).fieldset(:index).field_names
   end
 end

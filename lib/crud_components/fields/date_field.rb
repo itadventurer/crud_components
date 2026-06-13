@@ -15,9 +15,9 @@ module CrudComponents
       def form_control = datetime? ? :datetime : :date
 
       def apply_derived_filter(scope, exact: nil, geq: nil, leq: nil)
-        scope = apply_day(scope, cast(exact)) if cast(exact)
-        scope = scope.where(arel_column.gteq(lower_bound(cast(geq)))) if cast(geq)
-        scope = scope.where(arel_column.lteq(upper_bound(cast(leq)))) if cast(leq)
+        if (d = cast(exact)) then scope = apply_day(scope, d) end
+        if (d = cast(geq)) then scope = scope.where(arel_column.gteq(lower_bound(d))) end
+        if (d = cast(leq)) then scope = scope.where(arel_column.lteq(upper_bound(d))) end
         scope
       end
 

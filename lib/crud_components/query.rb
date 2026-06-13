@@ -85,7 +85,7 @@ module CrudComponents
       q = param('q')
       return scope unless q && structure.searchable?
 
-      structure.apply_search(scope, q)
+      structure.apply_search(scope, q, permission: @permission)
     end
 
     def current_sort_field

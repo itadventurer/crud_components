@@ -25,8 +25,11 @@ module CrudComponents
 
       def derived_sortable? = false
 
+      # COUNT once per field instance — it decides select-vs-text and used to
+      # run on every filter-row render.
       def derived_filter_control
-        target.count <= CrudComponents.config.select_limit ? :select : :text
+        @derived_filter_control ||=
+          target.count <= CrudComponents.config.select_limit ? :select : :text
       end
 
       def filter_choices(_query = nil)

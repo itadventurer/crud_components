@@ -113,6 +113,37 @@ class QuerySecurityTest < ActiveSupport::TestCase
     assert_empty apply({ 'title' => '___________' }).to_a
   end
 
+  test 'a backslash in the value is escaped, not treated as a LIKE escape char' do
+    winpath = Book.create!(title: 'C:\\Windows guide', slug: 'winpath', genre: :nonfiction)
+    assert_equal [winpath], apply({ 'title' => '\\' }).to_a          # literal backslash only
+    assert_equal [winpath], apply({ 'title' => 'C:\\Win' }).to_a     # backslash mid-pattern
+    assert_empty apply({ 'title' => '\\%' }).to_a                    # not a wildcard escape
+  end
+
+  test 'non-finite numeric values are ignored, never reaching SQL' do
+    %w[Infinity -Infinity NaN].each do |bad|
+      assert_equal 3, apply({ 'price_geq' => bad }).count, bad
+      assert_equal 3, apply({ 'price' => bad }).count, bad
+    end
+  end
+
+  test 'numeric exact accepts scientific and negative notation' do
+    @ruby.update!(price: 100)
+    assert_includes apply({ 'price' => '1e2' }).to_a, @ruby
+    Book.create!(title: 'Owed', slug: 'owed', price: -5, genre: :fiction)
+    assert_equal 1, apply({ 'price_leq' => '-1' }).count
+  end
+
+  test 'boolean filters accept the documented short forms and reject the rest' do
+    { 't' => 2, '1' => 2, 'on' => 2, 'yes' => 2,
+      'f' => 1, '0' => 1, 'off' => 1, 'no' => 1 }.each do |value, count|
+      assert_equal count, apply({ 'active' => value }).count, value
+    end
+    ['2', ' true', 'yes please', '1.0', ''].each do |bad|
+      assert_equal 3, apply({ 'active' => bad }).count, bad.inspect
+    end
+  end
+
   test 'enum values are validated; invalid ones leave the scope unchanged' do
     assert_equal [@dispossessed], apply({ 'genre' => 'scifi' }).to_a
     assert_equal 3, apply({ 'genre' => 'evil-value' }).count
@@ -147,6 +178,20 @@ class QuerySecurityTest < ActiveSupport::TestCase
     assert_equal [@hobbit], apply({ 'published_on' => '1937-09-21' }).to_a
   end
 
+  test 'datetime range bounds are whole-day-inclusive at the exact edge' do
+    day = Date.new(2026, 2, 10)
+    edge = Book.create!(title: 'Edge', slug: 'edge', genre: :fiction, created_at: day.end_of_day)
+    over = Book.create!(title: 'Over', slug: 'over', genre: :fiction, created_at: (day + 1).beginning_of_day)
+
+    leq = apply({ 'created_at_leq' => '2026-02-10' }).to_a
+    assert_includes leq, edge           # 23:59:59 of the day is in
+    refute_includes leq, over           # 00:00:00 next day is out
+
+    geq = apply({ 'created_at_geq' => '2026-02-11' }).to_a
+    assert_includes geq, over
+    refute_includes geq, edge
+  end
+
   # ── 5. identify_by resolution only ────────────────────────────────────────
   test 'belongs_to filters resolve via the declared identify_by column' do
     assert_equal [@hobbit], apply({ 'publisher' => 'tor-books' }).to_a
@@ -174,6 +219,31 @@ class QuerySecurityTest < ActiveSupport::TestCase
   test 'with a param_prefix only prefixed params are read' do
     assert_equal [@hobbit], apply({ 'books_title' => 'hobbit' }, param_prefix: :books).to_a
     assert_equal 3, apply({ 'title' => 'hobbit' }, param_prefix: :books).count
+  end
+
+  test 'param_prefix applies to sort and search too: prefixed wins, bare is ignored' do
+    sql = apply({ 'books_sort' => 'title', 'sort' => 'genre' }, param_prefix: :books).to_sql
+    assert_match(/ORDER BY.*title/i, sql)
+    refute_match(/ORDER BY.*genre/i, sql)
+    assert_equal [@hobbit], apply({ 'books_q' => 'tor books' }, param_prefix: :books).to_a
+    assert_equal 3, apply({ 'q' => 'tor books' }, param_prefix: :books).count   # bare q ignored
+  end
+
+  # ── search vs. permissions ────────────────────────────────────────────────
+  test 'q does not search a declared, permission-gated column' do
+    model = define_model(name: 'GatedSearchBook') do
+      search_in :title, :blurb
+      attribute :blurb, if: :manage          # gated string column
+    end
+    only_in_blurb = model.create!(title: 'nothing here', slug: 'g1', blurb: 'zztreasure')
+
+    deny = CrudComponents::Query.new(model, { 'q' => 'zztreasure' },
+                                     ability: CrudTestHelpers::DenyAll.new)
+    assert_empty deny.apply(model.where(id: only_in_blurb.id)).to_a, 'gated column unsearchable'
+
+    allow = CrudComponents::Query.new(model, { 'q' => 'zztreasure' },
+                                      ability: CrudTestHelpers::AllowAll.new)
+    assert_equal [only_in_blurb], allow.apply(model.where(id: only_in_blurb.id)).to_a
   end
 
   # ── plumbing ──────────────────────────────────────────────────────────────

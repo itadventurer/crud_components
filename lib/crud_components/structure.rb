@@ -164,13 +164,23 @@ module CrudComponents
       @search_decl.is_a?(Proc) || search_in_spec.any?
     end
 
-    def apply_search(scope, query_string)
+    def apply_search(scope, query_string, permission: nil)
       if @search_decl.is_a?(Proc)
         @search_decl.call(scope.extending(WhereLike), query_string)
-      elsif search_in_spec.any?
-        LikeSpec.apply(scope, search_in_spec, query_string)
       else
-        scope
+        spec = permission ? permitted_search_spec(permission) : search_in_spec
+        spec.any? ? LikeSpec.apply(scope, spec, query_string) : scope
+      end
+    end
+
+    # A declared, permission-gated column (`attribute :x, if: :manage`) is
+    # hidden everywhere including ?q= — so drop it from the search spec for a
+    # user who may not see it. Undeclared columns in the default spec are
+    # model-global search by design and stay.
+    def permitted_search_spec(permission)
+      search_in_spec.reject do |entry|
+        entry.is_a?(Symbol) && model.columns_hash.key?(entry.to_s) &&
+          @declarations.key?(entry) && !field(entry).permitted?(permission)
       end
     end
 
