@@ -258,7 +258,7 @@ class FullIntegrationTest < ActionDispatch::IntegrationTest
     assert_select "input[name='book[title]']"
     assert_select "textarea[name='book[blurb]']"
     assert_select "select[name='book[publisher_id]']"
-    assert_select "input[type=checkbox][name='book[author_ids][]']"   # checkbox baseline
+    assert_select "select[name='book[author_ids][]'][multiple][data-controller='crud-tokens']"  # habtm baseline + chip hook
     assert_select "input[name='book[cover]'][type=file]"
   end
 

@@ -137,25 +137,29 @@ same markup in place via Stimulus controllers attached with `data-controller`. T
 lives in the [class map](#styling), not in template variants. A controller that isn't
 loaded simply leaves the baseline as-is.
 
-The gem ships **one** optional controller, copied in by the install generator:
+The gem ships **two** optional controllers, copied in by the install generator (you
+register them with Stimulus; the gem depends on neither):
 
 ```sh
-bin/rails generate crud_components:install   # initializer + the crud-filter controller
+bin/rails generate crud_components:install   # initializer + crud-filter + crud-tokens
 ```
 
-`crud-filter` strips empty params on submit (clean URLs) and auto-submits selects in the
-inline filter row only (the standalone filter form never auto-submits — users compose
-several filters there).
+- **`crud-filter`** strips empty params on submit (clean URLs) and auto-submits selects in
+  the inline filter row only (the standalone filter form never auto-submits — users
+  compose several filters there).
+- **`crud-tokens`** turns a habtm `<select multiple>` into a chips-list (each removable)
+  + an "add" dropdown. The select stays the hidden source of truth, so the form submits
+  identically with or without JS. Good up to a few hundred options; for thousands, render
+  an autocomplete against your own endpoint instead (see [forms.md](forms.md)).
 
-Richer widgets follow the same pattern — to enhance any baseline markup (a multiselect
-into a token/chip picker, a belongs_to text input into an autocomplete, …):
+Both follow the same recipe, which is the whole pattern for any enhancement (a belongs_to
+text input into an autocomplete, a date field into a range picker, …):
 
-1. The gem's partial renders the accessible baseline (and, where useful, carries a
-   `data-controller` hook).
+1. The gem's partial renders the accessible baseline and, where useful, carries a
+   `data-controller` hook.
 2. Your Stimulus controller reads that markup and enhances it in place, manipulating the
    underlying inputs so form submission is unchanged with or without JS.
 3. Ship the controller however you ship Stimulus (importmap pin, `app/javascript`, …).
-   The gem never depends on it.
 
 ## Styling
 

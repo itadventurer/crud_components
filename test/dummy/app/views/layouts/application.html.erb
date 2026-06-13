@@ -37,8 +37,42 @@
       get form() { return this.hasFormTarget ? this.formTarget : this.element }
     }
 
+    // habtm picker: replace a <select multiple> with chips + an "add" dropdown.
+    // The select stays the hidden source of truth (no-JS fallback works).
+    class CrudTokensController extends Controller {
+      connect() {
+        this.select = this.element.matches("select[multiple]") ? this.element : this.element.querySelector("select[multiple]")
+        if (!this.select) return
+        this.select.style.display = "none"
+        this.chips = document.createElement("div"); this.chips.className = "d-flex flex-wrap gap-1 mb-1"
+        this.adder = document.createElement("select"); this.adder.className = "form-select"
+        this.adder.addEventListener("change", () => this.toggle(this.adder.value, true))
+        this.select.insertAdjacentElement("beforebegin", this.chips)
+        this.select.insertAdjacentElement("beforebegin", this.adder)
+        this.render()
+      }
+      get options() { return Array.from(this.select.options) }
+      render() {
+        this.chips.replaceChildren(...this.options.filter((o) => o.selected).map((o) => this.chip(o)))
+        this.adder.replaceChildren(this.option("", "+ add…"))
+        this.options.filter((o) => !o.selected).forEach((o) => this.adder.appendChild(this.option(o.value, o.text)))
+      }
+      chip(o) {
+        const chip = document.createElement("span")
+        chip.className = "badge text-bg-primary d-inline-flex align-items-center gap-1"
+        chip.textContent = o.text
+        const x = document.createElement("button")
+        x.type = "button"; x.className = "btn-close btn-close-white"; x.style.fontSize = ".6rem"
+        x.addEventListener("click", () => this.toggle(o.value, false))
+        chip.appendChild(x); return chip
+      }
+      option(value, text) { const o = document.createElement("option"); o.value = value; o.text = text; return o }
+      toggle(value, selected) { const o = this.options.find((o) => o.value === value); if (o) { o.selected = selected; this.render() } }
+    }
+
     const application = Application.start()
     application.register("crud-filter", CrudFilterController)
+    application.register("crud-tokens", CrudTokensController)
   </script>
 </head>
 <body class="bg-light">

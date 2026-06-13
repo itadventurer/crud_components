@@ -280,7 +280,8 @@ the inline filter row binds to an external form via the HTML `form` attribute; f
 plain (simple_form) markup. Niceties layer on as **one mechanism, not a fork**: the
 markup is always the plain baseline, and Stimulus controllers enhance it *in place* via
 `data-controller` (no parallel template trees; framework choice lives in the class map).
-The gem ships one optional controller (`crud-filter`) and depends on no JS. →
+The gem ships two optional controllers — `crud-filter` and `crud-tokens` (a habtm
+`<select multiple>` → chips-list + "add" picker) — and depends on no JS. →
 [Extending → progressive enhancement](docs/extending.md#progressive-enhancement)
 
 ## Turbo Streams

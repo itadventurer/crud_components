@@ -40,10 +40,19 @@ module CrudComponents
         when :boolean    then f.input field.name, as: :boolean
         when :enum       then f.input field.name, collection: field.form_choices
         when :belongs_to then f.association field.reflection.name, collection: field.form_choices
-        when :habtm      then f.association field.reflection.name, as: :check_boxes, collection: field.form_choices
+        when :habtm      then habtm_input(f, field)
         when :file       then f.input field.name, as: :file
         else                  f.input field.name
         end
+      end
+
+      # A multiselect baseline (works no-JS, scales to large sets) carrying a
+      # data-controller hook. The optional `crud-tokens` Stimulus controller
+      # (shipped by the install generator) upgrades it in place into a
+      # chips-list + "add" dropdown; without JS the multiselect stands.
+      def habtm_input(f, field)
+        f.association field.reflection.name, as: :select, collection: field.form_choices,
+                                             input_html: { multiple: true, data: { controller: 'crud-tokens' } }
       end
 
       def any_errors?

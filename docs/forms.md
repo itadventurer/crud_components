@@ -96,7 +96,7 @@ The flavor → simple_form mapping (`Presenters::Form#simple_input`):
 | boolean | `f.input :name, as: :boolean` |
 | enum | `f.input :name, collection: …` (your i18n'd keys) |
 | `belongs_to` | `f.association :publisher, collection: …` — submits the real **id** (forms are POST bodies, not shareable URLs, unlike filters which use `identify_by`) |
-| habtm | `f.association :authors, as: :check_boxes, collection: …` |
+| habtm | `f.association :authors, as: :select, multiple` + a chip-picker hook (see below) |
 | single attachment | `f.input :cover, as: :file` |
 | read-only (not editable) | rendered by the gem as a compact `label: value`, not submitted |
 
@@ -111,7 +111,17 @@ which the gem inherits.
 ## Associations and attachments
 
 - **belongs_to** → a select valued by record id; permit `:publisher_id`.
-- **habtm** → simple_form check_boxes; permit `{ author_ids: [] }`.
+- **habtm** → a `<select multiple>` baseline (works no-JS, scales) that carries
+  `data-controller="crud-tokens"`; permit `{ author_ids: [] }`. The optional `crud-tokens`
+  Stimulus controller (shipped by `crud_components:install`) replaces the select in place
+  with a **chips-list + "add" dropdown** — the select stays the hidden source of truth, so
+  the form submits identically with or without JS. This handles up to a few hundred options
+  client-side.
+  - **Thousands of options?** That needs an autocomplete querying *your* endpoint (the gem
+    owns no controllers). Override the habtm input — replace `_form.html.erb`, or set a
+    different `as:`/`input_html` for that field — and point your library (tom-select,
+    select2, a Stimulus+fetch) at your route. The param shape (`author_ids[]`) stays the
+    same, so any library drops in.
 - **single attachment** → a file field; permit `:cover`.
 - **has_many_attached** → a file field with `multiple`; add/remove of *existing* items is
   a later version.
