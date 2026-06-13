@@ -1,0 +1,30 @@
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h1 class="mb-0">Live reviews</h1>
+  <%= button_to 'Add a review (simulate external change)', live_poke_path,
+                class: 'btn btn-success', form: { data: { turbo: true } } %>
+</div>
+<p class="text-muted">
+  This page re-renders itself every 2&nbsp;seconds via a Turbo <strong>morph</strong> refresh.
+  Because the gem gives every row a <code>dom_id</code>, only changed rows morph — the rest
+  stay put (no flicker, scroll preserved). Click the button (or open this page in a second tab
+  and add a review there) and watch a new row appear in place.
+</p>
+<p class="text-muted small">
+  In production you'd drop the poll and add one line to the model
+  (<code>broadcasts_refreshes</code>) plus <code>turbo_stream_from :reviews</code> here — the
+  markup requirement is identical; the gem already satisfies it.
+</p>
+
+<div class="card"><div class="card-body">
+  <%= crud_collection @reviews, query: false %>
+</div></div>
+
+<script type="module">
+  // Poll-based stand-in for ActionCable broadcasting. Same-URL replace visits
+  // are treated as refreshes, which morph when turbo-refresh-method=morph.
+  setInterval(() => {
+    if (!document.hidden && window.Turbo) {
+      window.Turbo.visit(window.location.href, { action: "replace" })
+    }
+  }, 2000)
+</script>
