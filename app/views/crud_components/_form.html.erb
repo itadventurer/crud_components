@@ -10,13 +10,21 @@
   <% end %>
 
   <% form.fields.each do |field| %>
-    <div class="mb-3 crud-form-field">
-      <%= f.label field.name, field.human_name, class: form.css.form_label %>
-      <%= render "crud_components/forms/#{form.control(field)}", f: f, field: field, form: form %>
-      <% form.errors_for(field).each do |message| %>
-        <div class="text-danger small"><%= message %></div>
-      <% end %>
-    </div>
+    <% if form.control(field) == :readonly %>
+      <%# Read-only fields are reference, not input — keep them compact. %>
+      <div class="mb-2 small d-flex gap-2 crud-form-readonly">
+        <span class="<%= form.css.muted %>"><%= field.human_name %>:</span>
+        <span><%= form.display(field) %></span>
+      </div>
+    <% else %>
+      <div class="mb-3 crud-form-field">
+        <%= f.label field.name, field.human_name, class: form.css.form_label %>
+        <%= render "crud_components/forms/#{form.control(field)}", f: f, field: field, form: form %>
+        <% form.errors_for(field).each do |message| %>
+          <div class="text-danger small"><%= message %></div>
+        <% end %>
+      </div>
+    <% end %>
   <% end %>
 
   <div class="d-flex gap-2">

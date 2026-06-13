@@ -1,4 +1,20 @@
+require 'zlib'
+require 'stringio'
+
 srand(42)
+
+# A minimal solid-colour PNG encoder — avoids any image gem and any Active
+# Storage inline/binary config (image/png serves inline by default, unlike SVG).
+def solid_png(width, height, rgb)
+  sig = [137, 80, 78, 71, 13, 10, 26, 10].pack('C*')
+  chunk = lambda do |type, data|
+    [data.bytesize].pack('N') + type + data + [Zlib.crc32(type + data)].pack('N')
+  end
+  ihdr = [width, height].pack('N2') + [8, 2, 0, 0, 0].pack('C*') # 8-bit RGB
+  row = [0].pack('C') + (rgb.pack('C*') * width)                  # filter byte + pixels
+  idat = Zlib::Deflate.deflate(row * height)
+  sig + chunk.call('IHDR', ihdr) + chunk.call('IDAT', idat) + chunk.call('IEND', '')
+end
 
 puts 'Seeding the bookstore…'
 
@@ -43,14 +59,10 @@ cover_colors = %w[#264653 #2a9d8f #e9c46a #f4a261 #e76f51 #6d597a #355070 #b5657
     authors: authors.sample(rand(1..3))
   )
 
-  color = cover_colors.sample
-  svg = <<~SVG
-    <svg xmlns="http://www.w3.org/2000/svg" width="120" height="180">
-      <rect width="120" height="180" fill="#{color}"/>
-      <text x="60" y="95" font-family="Georgia" font-size="48" fill="white" text-anchor="middle">#{title[4]}</text>
-    </svg>
-  SVG
-  book.cover.attach(io: StringIO.new(svg), filename: "cover-#{i}.svg", content_type: 'image/svg+xml')
+  hex = cover_colors.sample.delete('#')
+  rgb = [hex[0, 2], hex[2, 2], hex[4, 2]].map { |h| h.to_i(16) }
+  book.cover.attach(io: StringIO.new(solid_png(120, 180, rgb)),
+                    filename: "cover-#{i}.png", content_type: 'image/png')
 end
 
 reviewers = %w[Ada Linus Grace Alan Edsger Barbara Donald Radia]

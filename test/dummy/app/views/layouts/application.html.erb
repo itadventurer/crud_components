@@ -32,8 +32,53 @@
       get form() { return this.hasFormTarget ? this.formTarget : this.element }
     }
 
+    // Optional progressive enhancement (NOT part of the gem): turn the habtm
+    // checkbox baseline into a token/chip widget — chips with × to remove, a
+    // dropdown to add. The checkboxes remain the source of truth (hidden), so
+    // the form submits identically with or without this controller.
+    class CrudTokensController extends Controller {
+      connect() {
+        this.boxes = Array.from(this.element.querySelectorAll('input[type=checkbox]'))
+        if (!this.boxes.length) return
+        this.element.querySelectorAll('.form-check').forEach((el) => (el.style.display = 'none'))
+        this.element.style.maxHeight = 'none'
+
+        this.chips = document.createElement('div')
+        this.chips.className = 'd-flex flex-wrap gap-1 mb-2'
+        this.adder = document.createElement('select')
+        this.adder.className = 'form-select form-select-sm'
+        this.element.prepend(this.adder)
+        this.element.prepend(this.chips)
+        this.adder.addEventListener('change', () => this.add())
+        this.render()
+      }
+      label(box) { return this.element.querySelector(`label[for="${box.id}"]`).textContent.trim() }
+      render() {
+        this.chips.innerHTML = ''
+        this.boxes.filter((b) => b.checked).forEach((box) => {
+          const chip = document.createElement('span')
+          chip.className = 'badge text-bg-primary d-inline-flex align-items-center gap-1'
+          chip.textContent = this.label(box)
+          const x = document.createElement('button')
+          x.type = 'button'; x.className = 'btn-close btn-close-white'; x.style.fontSize = '.6rem'
+          x.addEventListener('click', () => { box.checked = false; this.render() })
+          chip.append(x); this.chips.append(chip)
+        })
+        this.adder.innerHTML = '<option value="">+ add…</option>'
+        this.boxes.filter((b) => !b.checked).forEach((box) => {
+          const opt = document.createElement('option'); opt.value = box.id; opt.textContent = this.label(box)
+          this.adder.append(opt)
+        })
+      }
+      add() {
+        const box = this.boxes.find((b) => b.id === this.adder.value)
+        if (box) { box.checked = true; this.render() }
+      }
+    }
+
     const application = Application.start()
     application.register("crud-filter", CrudFilterController)
+    application.register("crud-tokens", CrudTokensController)
   </script>
 </head>
 <body class="bg-light">

@@ -34,6 +34,13 @@ module CrudComponents
 
       def any? = items.any?
 
+      # Bootstrap btn-group only renders cleanly when every child is a direct
+      # `.btn`. A non-GET action is a button_to *form*, which breaks the
+      # group's edge radii — so we only join when all actions are GET links.
+      def joinable?
+        items.all? { |item| item.action.http_method == :get }
+      end
+
       private
 
       def list

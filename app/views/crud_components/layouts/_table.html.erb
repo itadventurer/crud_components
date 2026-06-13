@@ -33,6 +33,10 @@
             <button type="submit" class="<%= css.button %>">
               <%= t('crud_components.filter.search', default: 'Search') %>
             </button>
+            <% if collection.filtered? %>
+              <%= link_to t('crud_components.filter.reset', default: 'Reset'),
+                          collection.reset_url, class: css.button, data: { turbo_action: 'advance' } %>
+            <% end %>
           </form>
         <% end %>
       </div>

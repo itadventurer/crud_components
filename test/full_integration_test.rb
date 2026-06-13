@@ -235,13 +235,13 @@ class FullIntegrationTest < ActionDispatch::IntegrationTest
     assert_select "input[name='book[title]']"
     assert_select "textarea[name='book[blurb]']"
     assert_select "select[name='book[publisher_id]']"
-    assert_select "select[name='book[author_ids][]'][multiple]"
+    assert_select "input[type=checkbox][name='book[author_ids][]']"   # checkbox baseline
     assert_select "input[name='book[cover]'][type=file]"
   end
 
   test 'editable: false renders read-only; editable: permission gates the input' do
     get edit_book_path(@hobbit)
-    assert_select '.form-control-plaintext'                 # slug (and active, for non-admin)
+    assert_select '.crud-form-readonly'                     # slug (and active, for non-admin)
     assert_select "input[name='book[active]']", count: 0    # not editable for non-admin
     assert_select "input[name='book[purchase_price]']", count: 0  # not even visible
     assert_select "label", { text: /Purchase price/, count: 0 }

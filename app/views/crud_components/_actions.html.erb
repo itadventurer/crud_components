@@ -1,7 +1,9 @@
 <%# A group of action buttons. Local: `actions`
-    (CrudComponents::Presenters::Actions). %>
+    (CrudComponents::Presenters::Actions). Joined (btn-group) only when every
+    action is a GET link; a destroy form would break the group's edges, so
+    those render as evenly-spaced buttons instead. %>
 <% if actions.any? %>
-  <div class="<%= actions.css.button_group %>" role="group">
+  <div class="<%= actions.joinable? ? actions.css.button_group : 'd-inline-flex gap-1' %>" role="group">
     <% actions.items.each do |item| %>
       <% action = item.action %>
       <% content = action.icon ? tag.i('', class: "bi bi-#{action.icon}", aria: { hidden: true }) : action.title %>

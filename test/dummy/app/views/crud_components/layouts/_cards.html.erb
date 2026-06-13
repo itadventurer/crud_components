@@ -1,8 +1,16 @@
 <%# A custom layout, living entirely in the host app — the worked example for
     "add a layout". Same `collection` presenter the table layout gets, so it
     inherits filtering, the query, actions and cells for free; it only decides
-    the arrangement. Selected with `crud_collection @books, as: :cards`. %>
+    the arrangement. Selected with `crud_collection @books, as: :cards`.
+
+    This one is a touch fancier than the gem's table: it pulls an image field
+    out as the card image and renders the rest as a compact list — showing
+    that a layout can treat fields specially. %>
 <% css = collection.css %>
+<% image_field = collection.fields.find { |f| f.is_a?(CrudComponents::Fields::AttachmentField) } %>
+<% body_fields = collection.fields - [image_field].compact %>
+<% title_field = body_fields.first %>
+<% detail_fields = body_fields.drop(1) %>
 <div class="crud-collection">
   <% if collection.searchable? || collection.collection_actions&.any? %>
     <div class="d-flex justify-content-between align-items-center mb-3">
@@ -14,6 +22,9 @@
           <%= tag.input type: 'search', name: collection.search_param_name,
                         value: collection.search_value, class: css.input_sm, placeholder: 'Search' %>
           <button class="<%= css.button %>">Search</button>
+          <% if collection.filtered? %>
+            <%= link_to 'Reset', collection.reset_url, class: css.button %>
+          <% end %>
         </form>
       <% end %>
       <% if collection.collection_actions&.any? %>
@@ -26,13 +37,17 @@
     <% collection.records.each do |record| %>
       <div class="col">
         <div class="card h-100" id="<%= dom_id(record) %>">
+          <% if image_field && (att = record.public_send(image_field.name)).attached? %>
+            <%= image_tag att, class: 'card-img-top', style: 'height: 10rem; object-fit: cover' %>
+          <% end %>
           <div class="card-body">
-            <% collection.fields.each do |field| %>
-              <div class="mb-2">
-                <div class="small text-uppercase text-muted"><%= field.human_name %></div>
-                <div><%= collection.cell(field, record) %></div>
-              </div>
-            <% end %>
+            <% if title_field %><h5 class="card-title"><%= collection.cell(title_field, record) %></h5><% end %>
+            <dl class="row mb-0 small">
+              <% detail_fields.each do |field| %>
+                <dt class="col-5 text-muted fw-normal"><%= field.human_name %></dt>
+                <dd class="col-7"><%= collection.cell(field, record) %></dd>
+              <% end %>
+            </dl>
           </div>
           <% if collection.actions_column? %>
             <div class="card-footer text-end">
