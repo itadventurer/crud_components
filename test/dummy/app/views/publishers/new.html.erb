@@ -1,4 +1,11 @@
 <h1>New publisher</h1>
+<%= docs_panel(
+      intro: "The same <code>crud_form</code> as edit; new vs. edit is inferred from <code>persisted?</code>.",
+      docs: { 'Forms' => 'docs/forms.md' }) do %>
+<%= code_file('app/views/publishers/new.html.erb', :erb) do %>
+&lt;%= crud_form @publisher %&gt;
+<% end %>
+<% end %>
 <div class="card"><div class="card-body">
   <%= crud_form @publisher %>
 </div></div>

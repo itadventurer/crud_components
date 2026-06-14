@@ -1,4 +1,12 @@
 <h1><%= crud_label(@book) %></h1>
+<%= docs_panel(
+      intro: "<code>crud_record</code> renders the record as a definition list with the same type-aware cells as the table. Below it, an embedded reviews collection is <strong>static</strong> (<code>query: false</code>) &mdash; no filter row or sort links. The URL is the book's slug (<code>identify_by :slug</code>).",
+      docs: { 'Record view' => 'docs/views.md', 'Cells' => 'docs/fields.md#renderers' }) do %>
+<%= code_file('app/views/books/show.html.erb', :erb) do %>
+&lt;%= crud_record @book %&gt;                            &lt;%# definition list, same cell renderers %&gt;
+&lt;%= crud_collection @book.reviews, query: false %&gt;  &lt;%# embedded, static (no filter/sort) %&gt;
+<% end %>
+<% end %>
 <div class="card mb-4"><div class="card-body">
   <%= crud_record @book %>
 </div></div>

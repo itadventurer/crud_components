@@ -1,4 +1,21 @@
 <h1>Edit review</h1>
+<%= docs_panel(
+      intro: "A derived form including the <code>belongs_to :book</code> select. <code>fieldset :form</code> orders the fields; the permit list is the gem's, in lockstep with the form.",
+      docs: { 'Forms' => 'docs/forms.md', 'Associations' => 'docs/forms.md#associations-and-attachments' }) do %>
+<%= code_file('app/models/review.rb') do %>
+crud_structure do
+  fieldset :form, %i[book rating body reviewer_name]
+end
+<% end %>
+<%= code_file('app/controllers/reviews_controller.rb') do %>
+def review_params
+  params.require(:review).permit(*Review.crud_attribute_names(:update, ability: current_ability))
+end
+<% end %>
+<%= code_file('app/views/reviews/edit.html.erb', :erb) do %>
+&lt;%= crud_form @review %&gt;
+<% end %>
+<% end %>
 <div class="card"><div class="card-body">
   <%= crud_form @review %>
 </div></div>

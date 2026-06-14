@@ -1,4 +1,12 @@
 <h1>Preview: <%= crud_label(@book) %></h1>
-<p class="text-muted">A custom member action (<code>action :preview, icon: 'eye'</code>) —
-its path was derived from the conventional <code>preview_book_path</code> route.</p>
+<%= docs_panel(
+      intro: "A custom <strong>member action</strong>. Its path is derived from the conventional <code>preview_book_path</code> route, and it self-disables if that route or permission is missing. The page renders whatever you like &mdash; here a compact record view with actions off.",
+      docs: { 'Actions' => 'docs/views.md#actions' }) do %>
+<%= code_file('app/models/book.rb') do %>
+action :preview, icon: 'eye'   # member action → preview_book_path
+<% end %>
+<%= code_file('app/views/books/preview.html.erb', :erb) do %>
+&lt;%= crud_record @book, fieldset: :compact, actions: false %&gt;
+<% end %>
+<% end %>
 <%= crud_record @book, fieldset: :compact, actions: false %>

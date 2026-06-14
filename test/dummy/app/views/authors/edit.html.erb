@@ -1,4 +1,20 @@
 <h1>Edit author</h1>
+<%= docs_panel(
+      intro: "A fully derived form on a <strong>zero-config</strong> model (validations still apply). The permit list comes from <code>CrudComponents.permitted_attributes</code> &mdash; no model changes needed, and it can't drift from the form.",
+      docs: { 'Forms' => 'docs/forms.md', 'The permit list' => 'docs/forms.md#the-permit-list--why-fields-cant-silently-fail-to-save' }) do %>
+<%= code_file('app/controllers/authors_controller.rb') do %>
+def update
+  @author.update(author_params) ? redirect_to(@author) : render(:edit, status: :unprocessable_entity)
+end
+
+def author_params
+  params.require(:author).permit(*CrudComponents.permitted_attributes(Author, action: :update, ability: current_ability))
+end
+<% end %>
+<%= code_file('app/views/authors/edit.html.erb', :erb) do %>
+&lt;%= crud_form @author %&gt;
+<% end %>
+<% end %>
 <div class="card"><div class="card-body">
   <%= crud_form @author %>
 </div></div>

@@ -1,7 +1,7 @@
 # Author is a zero-config model (no include, no crud_structure) — yet it gets
 # a working table, record view AND form, all derived.
 class AuthorsController < ApplicationController
-  def index; end
+  def index = @authors = Author.all
 
   def show
     @author = Author.find(params[:id])

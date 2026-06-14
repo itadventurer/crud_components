@@ -1,18 +1,24 @@
 <h1>Dashboard</h1>
-<p class="text-muted">Two auto collections on one page, isolated via
-<code>param_prefix:</code> — filtering or sorting one leaves the other alone.</p>
+<%= docs_panel(
+      intro: "Two independent collections on one page. <code>param_prefix:</code> namespaces each one's <code>?q=</code>/sort/filter params so sorting or filtering one leaves the other alone. Your controller assigns <code>@books</code> and <code>@reviews</code>.",
+      docs: { 'Several collections' => 'docs/views.md#several-collections-on-one-page' }) do %>
+<%= code_file('app/views/dashboard/show.html.erb', :erb) do %>
+&lt;%= crud_collection @books,   fieldset: :index, param_prefix: :books %&gt;
+&lt;%= crud_collection @reviews, param_prefix: :reviews %&gt;
+<% end %>
+<% end %>
 
 <div class="row">
   <div class="col-lg-6">
     <h2 class="h4">Books</h2>
     <div class="card"><div class="card-body">
-      <%= crud_collection Book, fieldset: :index, param_prefix: :books %>
+      <%= crud_collection @books, fieldset: :index, param_prefix: :books %>
     </div></div>
   </div>
   <div class="col-lg-6">
     <h2 class="h4">Reviews</h2>
     <div class="card"><div class="card-body">
-      <%= crud_collection Review, param_prefix: :reviews %>
+      <%= crud_collection @reviews, param_prefix: :reviews %>
     </div></div>
   </div>
 </div>

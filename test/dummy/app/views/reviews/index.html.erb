@@ -1,8 +1,18 @@
 <h1>Reviews</h1>
-<p class="text-muted">The rating column uses a custom renderer — a single partial in
-this app at <code>app/views/crud_components/fields/_stars.html.erb</code> plus
-<code>attribute :rating, as: :stars</code>. Searching delegates through
-<code>:book</code> into Book's <code>search_in</code> (try a publisher name).</p>
+<%= docs_panel(
+      intro: "The <code>rating</code> column uses a <strong>custom renderer</strong> &mdash; one partial in your app (<code>_stars.html.erb</code>) named by <code>as: :stars</code>. Search delegates through <code>:book</code> into Book's own <code>search_in</code> (try a publisher name). Your controller assigns <code>@reviews</code>.",
+      docs: { 'Renderers' => 'docs/fields.md#renderers', 'The like-spec' => 'docs/fields.md#the-like-spec' }) do %>
+<%= code_file('app/models/review.rb') do %>
+crud_structure do
+  search_in :reviewer_name, :body, :book   # :book delegates into Book's search_in
+  attribute :rating, as: :stars            # → app/views/crud_components/fields/_stars.html.erb
+  fieldset :index, %i[book reviewer_name rating body created_at]
+end
+<% end %>
+<%= code_file('app/views/reviews/index.html.erb', :erb) do %>
+&lt;%= crud_collection @reviews %&gt;
+<% end %>
+<% end %>
 <div class="card"><div class="card-body">
-  <%= crud_collection Review %>
+  <%= crud_collection @reviews %>
 </div></div>

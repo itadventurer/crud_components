@@ -1,5 +1,11 @@
 <h1>New author</h1>
-<p class="text-muted">A derived form on a zero-config model.</p>
+<%= docs_panel(
+      intro: "A derived form on a zero-config model &mdash; the same <code>crud_form</code> helper as edit; new vs. edit is inferred from <code>persisted?</code>.",
+      docs: { 'Forms' => 'docs/forms.md' }) do %>
+<%= code_file('app/views/authors/new.html.erb', :erb) do %>
+&lt;%= crud_form @author %&gt;
+<% end %>
+<% end %>
 <div class="card"><div class="card-body">
   <%= crud_form @author %>
 </div></div>

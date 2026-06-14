@@ -1,8 +1,16 @@
 <h1>Authors</h1>
-<p class="text-muted">This model has <strong>zero configuration</strong> — not even
-<code>include CrudComponents::Model</code>. The table, the record view, the form, the
-derived actions, and the <code>Books</code> column (an auto-derived habtm) are all
-inferred from the schema.</p>
+<%= docs_panel(
+      intro: "A <strong>zero-config</strong> model &mdash; Author doesn't even <code>include CrudComponents::Model</code>. The table, search, filters, the derived actions and the auto-derived <code>Books</code> (habtm) column are all inferred from the schema. Your controller just assigns the scope <code>@authors</code> (where you'd authorize).",
+      docs: { 'Fields' => 'docs/fields.md', 'Views' => 'docs/views.md' }) do %>
+<%= code_file('app/models/author.rb') do %>
+class Author &lt; ApplicationRecord
+  has_and_belongs_to_many :books
+end   # no CrudComponents config at all
+<% end %>
+<%= code_file('app/views/authors/index.html.erb', :erb) do %>
+&lt;%= crud_collection @authors %&gt;
+<% end %>
+<% end %>
 <div class="card"><div class="card-body">
-  <%= crud_collection Author %>
+  <%= crud_collection @authors %>
 </div></div>

@@ -1,9 +1,10 @@
 class BooksController < ApplicationController
-  # The auto-params mode needs zero controller code: the helper reads the
-  # request params, builds the query and applies it.
+  # You hand crud_collection a scope — so authorization/scoping happens here,
+  # in your controller (e.g. Book.accessible_by(current_ability)), not in the gem.
   def index
     @publisher = Publisher.find_by(slug: params[:publisher_id]) if params[:publisher_id]
     @author = Author.find(params[:author_id]) if params[:author_id]
+    @books = @publisher&.books || @author&.books || Book.all
   end
 
   def show

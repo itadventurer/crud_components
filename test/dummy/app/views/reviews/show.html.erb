@@ -1,2 +1,9 @@
 <h1><%= crud_label(@review) %></h1>
+<%= docs_panel(
+      intro: "A derived record view; <code>rating</code> uses the same <code>:stars</code> renderer as the table.",
+      docs: { 'Record view' => 'docs/views.md' }) do %>
+<%= code_file('app/views/reviews/show.html.erb', :erb) do %>
+&lt;%= crud_record @review %&gt;
+<% end %>
+<% end %>
 <%= crud_record @review %>

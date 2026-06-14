@@ -31,8 +31,12 @@
           <% collection.fields.each do |field| %>
             <th scope="col">
               <% if collection.sortable_field?(field) %>
-                <%= link_to collection.sort_url(field), class: css.sort_link, data: { turbo_action: 'advance' } do %>
-                  <%= field.human_name %><%= collection.sort_indicator(field) %>
+                <%= link_to collection.sort_url(field),
+                            class: "#{css.sort_link} d-inline-flex align-items-center gap-1",
+                            title: t('crud_components.sort', default: 'Sort'),
+                            data: { turbo_action: 'advance' } do %>
+                  <%= field.human_name %>
+                  <i class="bi <%= collection.sort_icon(field) %> <%= 'text-muted opacity-25' unless collection.sort_active?(field) %>"></i>
                 <% end %>
               <% else %>
                 <%= field.human_name %>

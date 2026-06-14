@@ -1,4 +1,17 @@
 <h1>Publishers</h1>
+<%= docs_panel(
+      intro: "A curated table. <code>fieldset :index</code> chooses the columns; <code>label :name</code> defines how a publisher renders wherever it's linked from other models. Your controller assigns the scope <code>@publishers</code>.",
+      docs: { 'Views & fieldsets' => 'docs/views.md', 'Identity' => 'docs/fields.md#identity-label-identify_by-search_in' }) do %>
+<%= code_file('app/models/publisher.rb') do %>
+crud_structure do
+  label :name
+  fieldset :index, %i[name founded_on books]
+end
+<% end %>
+<%= code_file('app/views/publishers/index.html.erb', :erb) do %>
+&lt;%= crud_collection @publishers %&gt;
+<% end %>
+<% end %>
 <div class="card"><div class="card-body">
-  <%= crud_collection Publisher %>
+  <%= crud_collection @publishers %>
 </div></div>

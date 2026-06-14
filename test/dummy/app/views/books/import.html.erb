@@ -1,6 +1,9 @@
 <h1>Import books</h1>
-<p class="text-muted">A custom <strong>collection</strong> action
-(<code>action :import, on: :collection, icon: 'upload'</code>) — it appears as a
-button in the table header, and its path derives from the conventional
-<code>import_books_path</code> route.</p>
+<%= docs_panel(
+      intro: "A custom <strong>collection action</strong> &mdash; it appears as a button in the table header, linking to the conventional <code>import_books_path</code>. This page is entirely yours; the gem only renders the button that links here.",
+      docs: { 'Actions' => 'docs/views.md#actions' }) do %>
+<%= code_file('app/models/book.rb') do %>
+action :import, on: :collection, icon: 'upload'   # collection action → import_books_path
+<% end %>
+<% end %>
 <%= link_to '← Back to books', books_path, class: 'btn btn-outline-secondary' %>

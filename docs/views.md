@@ -10,7 +10,7 @@ this doc.
 ![A collection table derived from the schema — cover thumbnails, genre badge, currency, publisher links and a boolean icon, with header search, an inline filter row, sortable columns, row actions and a standalone filter sidebar](screenshots/table.png)
 
 ```ruby
-crud_collection(records_or_model, fieldset: nil, as: :table, query: nil,
+crud_collection(records, fieldset: nil, as: :table, query: nil,
                 param_prefix: nil, actions: true)
 crud_record(record, fieldset: nil, actions: true)
 crud_filter(model, fieldset: nil, query: nil, param_prefix: nil)
@@ -18,8 +18,11 @@ crud_form(record, fieldset: nil, action: nil, url: nil, method: nil)   # see for
 crud_actions(record_or_model, fieldset: nil)
 ```
 
-A bare model class is sugar for its `all` relation: `crud_collection Book` ≡
-`crud_collection Book.all`.
+`crud_collection` takes a **relation, not a model class** — pass `Book.all`, `@books`, or
+an authorized scope such as `Book.accessible_by(current_ability)`. Requiring a scope means
+your authorization and any pre-filtering happen in your controller, before the gem renders;
+there's no class branch to special-case. (`crud_filter` still takes the model class — it's
+a filter form, not a set of records.)
 
 ```erb
 <%= crud_collection @books %>                 <%# table; layout + filters + query derived %>
@@ -34,7 +37,7 @@ A bare model class is sugar for its `all` relation: `crud_collection Book` ≡
 
 | `query:` | Mode | Behavior |
 | --- | --- | --- |
-| *not given* | **auto** | the helper reads the request params (and `current_ability` if defined), builds a `Query`, and applies it to the records. Zero controller code |
+| *not given* | **auto** | the helper reads the request params (and `current_ability` if defined), builds a `Query`, and applies it to the scope you pass. The only controller code is assigning that scope (e.g. `@books = Book.all`) |
 | a `Query` | **manual** | the records are taken as *already filtered*; the query supplies control state (sort links, filter values) and the helper inherits its fieldset. This is how you paginate — see below |
 | `false` | **static** | no filter row, no sort links, params ignored. What an embedded secondary table usually wants |
 

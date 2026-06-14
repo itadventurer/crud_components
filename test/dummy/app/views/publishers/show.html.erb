@@ -1,4 +1,12 @@
 <h1><%= crud_label(@publisher) %></h1>
+<%= docs_panel(
+      intro: "The publisher as a definition list, plus its books as an embedded <strong>static</strong> collection (<code>query: false</code>) using the <code>:compact</code> fieldset.",
+      docs: { 'Record view' => 'docs/views.md', 'Fieldsets' => 'docs/views.md#fieldsets' }) do %>
+<%= code_file('app/views/publishers/show.html.erb', :erb) do %>
+&lt;%= crud_record @publisher %&gt;
+&lt;%= crud_collection @publisher.books, fieldset: :compact, query: false %&gt;
+<% end %>
+<% end %>
 <div class="card mb-4"><div class="card-body">
   <%= crud_record @publisher %>
 </div></div>

@@ -1,8 +1,11 @@
 module CrudComponents
   # The everyday API. Included into ActionView by the engine.
   module Helpers
-    # A set of records. `records` may be a relation or a model class
-    # (sugar for its `all`). See Presenters::Collection for the query modes.
+    # A set of records. `records` is an ActiveRecord relation (e.g. `Book.all`,
+    # `@books`, or an authorized scope like `Book.accessible_by(current_ability)`)
+    # — pass a scope, not a model class, so your authorization and any
+    # pre-scoping apply before the gem renders. See Presenters::Collection for
+    # the query modes.
     def crud_collection(records, fieldset: nil, as: :table, query: nil, param_prefix: nil, actions: true)
       presenter = Presenters::Collection.new(view: self, records: records, fieldset: fieldset,
                                              query: query, layout: as, param_prefix: param_prefix,

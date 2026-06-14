@@ -1,21 +1,15 @@
 <h1>Pagination</h1>
-<p class="text-muted mb-1">
-  The gem doesn't paginate on its own (no surprise row limits). You paginate in
-  the controller with your own gem — here
-  <a href="https://github.com/kaminari/kaminari">kaminari</a> — and because a
-  kaminari-paginated relation carries its page state,
-  <code>crud_collection</code> notices and renders the footer pager
-  automatically. The whole integration is two lines
-  (<a href="https://github.com/itadventurer/crud_components/blob/main/test/dummy/app/controllers/pagination_controller.rb">controller</a>):
-</p>
-<pre class="bg-body-tertiary border rounded p-3 small mb-3"><code>@query = CrudComponents::Query.new(Book, params, fieldset: :index, ability: current_ability)
-@books = @query.apply(Book.all).page(params[:page]).per(8)   # kaminari</code></pre>
-
-<p class="text-muted small">
-  120 seeded books, 8 per page. Filtering, search and sort still work — the
-  pager's <code>?page=</code> is a plain GET param, so it composes with the
-  gem's own filter params. Try sorting a column, then turning the page.
-</p>
+<%= docs_panel(
+      intro: "The gem doesn't paginate on its own (no surprise row limits). You paginate in your controller with your own gem &mdash; here <a href='https://github.com/kaminari/kaminari'>kaminari</a> &mdash; and because a kaminari-paginated relation carries its page state, <code>crud_collection</code> notices and renders the footer pager automatically. Two lines: build the Query, apply it to a scope, paginate. The pager's <code>?page=</code> composes with the gem's own filter/sort params (120 seeded books, 8 per page).",
+      docs: { 'Pagination' => 'docs/views.md#the-manual-query-pagination-and-big-tables' }) do %>
+<%= code_file('app/controllers/books_controller.rb') do %>
+@query = CrudComponents::Query.new(Book, params, fieldset: :index, ability: current_ability)
+@books = @query.apply(Book.all).page(params[:page]).per(8)   # kaminari
+<% end %>
+<%= code_file('app/views/books/index.html.erb', :erb) do %>
+&lt;%= crud_collection @books, query: @query %&gt;   &lt;%# the footer pager renders itself %&gt;
+<% end %>
+<% end %>
 
 <% layout = params[:layout] == 'cards' ? :cards : :table %>
 <div class="btn-group btn-group-sm mb-3">

@@ -3,17 +3,17 @@
   <%= button_to 'Add a review (simulate external change)', live_poke_path,
                 class: 'btn btn-success', form: { data: { turbo: true } } %>
 </div>
-<p class="text-muted">
-  This page re-renders itself every 2&nbsp;seconds via a Turbo <strong>morph</strong> refresh.
-  Because the gem gives every row a <code>dom_id</code>, only changed rows morph — the rest
-  stay put (no flicker, scroll preserved). Click the button (or open this page in a second tab
-  and add a review there) and watch a new row appear in place.
-</p>
-<p class="text-muted small">
-  In production you'd drop the poll and add one line to the model
-  (<code>broadcasts_refreshes</code>) plus <code>turbo_stream_from :reviews</code> here — the
-  markup requirement is identical; the gem already satisfies it.
-</p>
+<%= docs_panel(
+      intro: "The gem gives every row a <code>dom_id</code>, so a Turbo <strong>morph</strong> refresh updates only changed rows (no flicker, scroll preserved). This demo fakes the trigger with a 2-second JS poll; in production you'd drop the poll, add <code>broadcasts_refreshes</code> to the model and <code>turbo_stream_from</code> here &mdash; the markup the gem emits already satisfies it. Click the button (or add a review in a second tab) and watch a row morph in.",
+      docs: { 'Turbo Streams' => 'docs/views.md#turbo-streams' }) do %>
+<%= code_file('app/models/review.rb') do %>
+broadcasts_refreshes   # production: push a refresh when a review changes
+<% end %>
+<%= code_file('app/views/live/index.html.erb', :erb) do %>
+&lt;%= turbo_stream_from :reviews %&gt;            &lt;%# production: subscribe to live updates %&gt;
+&lt;%= crud_collection @reviews, query: false %&gt;
+<% end %>
+<% end %>
 
 <div class="card"><div class="card-body">
   <%= crud_collection @reviews, query: false %>

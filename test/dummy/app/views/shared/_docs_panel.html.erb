@@ -1,0 +1,20 @@
+<%# Locals: intro (html_safe), docs ({label => path}), body (html_safe code sections). %>
+<div class="card border-0 shadow-sm mb-4">
+  <div class="card-header bg-dark text-light d-flex align-items-center gap-2 py-2">
+    <i class="bi bi-code-square"></i>
+    <span class="fw-semibold small">How this page is built</span>
+    <span class="ms-auto small text-secondary">the gem renders it — this is all you write</span>
+  </div>
+  <div class="card-body">
+    <p class="text-secondary small mb-3"><%= intro %></p>
+    <%= body %>
+    <% if docs.any? %>
+      <hr class="my-3">
+      <p class="small mb-0">
+        <i class="bi bi-journal-text text-muted"></i>
+        <span class="text-muted">Read more:</span>
+        <%= safe_join(docs.map { |label, path| doc_link(label, path) }, ' &nbsp;·&nbsp; '.html_safe) %>
+      </p>
+    <% end %>
+  </div>
+</div>

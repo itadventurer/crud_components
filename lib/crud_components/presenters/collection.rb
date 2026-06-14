@@ -11,7 +11,13 @@ module CrudComponents
       def initialize(view:, records:, fieldset: nil, query: nil, layout: :table,
                      param_prefix: nil, actions: true)
         super(view: view)
-        relation = records.is_a?(Class) ? records.all : records
+        unless records.respond_to?(:klass)
+          raise ArgumentError,
+                "crud_collection expects an ActiveRecord relation (e.g. Book.all, @books, or an " \
+                "authorized scope like Book.accessible_by(current_ability)), got #{records.class}. " \
+                'Pass a scope so your authorization and filtering apply before the gem renders.'
+        end
+        relation = records
         @model = relation.klass
         @structure = Structure.for(@model)
         @owner = relation.respond_to?(:proxy_association) ? relation.proxy_association.owner : nil
@@ -165,6 +171,24 @@ module CrudComponents
         dir == 'desc' ? ' ▼' : ' ▲'
       end
 
+      # Is this the column the result is currently sorted by?
+      def sort_active?(field)
+        current, = query&.sort_state
+        current == field.name.to_s
+      end
+
+      # Bootstrap-icon name for a sortable header: a numeric-vs-alpha icon
+      # pointing the way the *next* click would not — i.e. reflecting the
+      # current direction — for the active column; a faint neutral hint for the
+      # rest. (Pair with `sort_active?` to style the active one prominently.)
+      def sort_icon(field)
+        return 'bi-arrow-down-up' unless sort_active?(field)
+
+        family = sort_numeric?(field) ? 'sort-numeric' : 'sort-alpha'
+        _, dir = query.sort_state
+        "bi-#{family}-#{dir == 'desc' ? 'up' : 'down'}"
+      end
+
       # ── pagination ─────────────────────────────────────────────────────────
       # We render a footer pager only when the relation handed to us is already
       # paginated — i.e. the host called `.page` (kaminari / will_paginate, which
@@ -244,6 +268,12 @@ module CrudComponents
 
       def pn(key)
         query ? query.param_name(key) : key
+      end
+
+      # Numbers and dates sort numerically; everything else alphabetically —
+      # picks sort-numeric-* vs sort-alpha-* icons.
+      def sort_numeric?(field)
+        field.is_a?(Fields::NumericField) || field.is_a?(Fields::DateField)
       end
 
       def eager_load(relation)

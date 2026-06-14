@@ -1,5 +1,5 @@
 class PublishersController < ApplicationController
-  def index; end
+  def index = @publishers = Publisher.all
 
   def show
     @publisher = find_publisher

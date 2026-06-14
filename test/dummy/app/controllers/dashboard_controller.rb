@@ -1,3 +1,6 @@
 class DashboardController < ApplicationController
-  def show; end
+  def show
+    @books = Book.all
+    @reviews = Review.all
+  end
 end

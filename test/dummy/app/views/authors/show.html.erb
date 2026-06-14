@@ -1,4 +1,11 @@
 <h1><%= crud_label(@author) %></h1>
+<%= docs_panel(
+      intro: "A derived record view on the <strong>zero-config</strong> Author model &mdash; same cell renderers as the table, no setup.",
+      docs: { 'Record view' => 'docs/views.md' }) do %>
+<%= code_file('app/views/authors/show.html.erb', :erb) do %>
+&lt;%= crud_record @author %&gt;
+<% end %>
+<% end %>
 <div class="card"><div class="card-body">
   <%= crud_record @author %>
 </div></div>

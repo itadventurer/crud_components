@@ -1,4 +1,11 @@
 <h1>New book</h1>
+<%= docs_panel(
+      intro: "The same <code>crud_form</code> as edit &mdash; new vs. edit (POST vs. PATCH) is inferred from <code>persisted?</code>. The model declarations and permit list are shared with edit (see the Edit page).",
+      docs: { 'Forms' => 'docs/forms.md' }) do %>
+<%= code_file('app/views/books/new.html.erb', :erb) do %>
+&lt;%= crud_form @book %&gt;
+<% end %>
+<% end %>
 <div class="card"><div class="card-body">
   <%= crud_form @book %>
 </div></div>

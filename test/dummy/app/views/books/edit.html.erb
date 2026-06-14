@@ -1,11 +1,29 @@
 <h1>Edit: <%= crud_label(@book) %></h1>
-<p class="text-muted">
-  The form is fully derived. <code>slug</code> is read-only
-  (<code>editable: false</code>); <code>active</code> is editable only by managers
-  (<code>editable: :manage</code> — toggle admin to see it become an input);
-  <code>purchase_price</code> is invisible to non-managers entirely
-  (<code>if: :manage</code>).
-</p>
+<%= docs_panel(
+      intro: "The form is fully derived through simple_form. <code>slug</code> is read-only (<code>editable: false</code>); <code>active</code> is an input only for managers (<code>editable: :manage</code> &mdash; toggle admin); <code>purchase_price</code> is hidden from non-managers entirely (<code>if: :manage</code>). One permit list drives both the form and strong-params, so they can't drift.",
+      docs: { 'Forms' => 'docs/forms.md', 'Permissions' => 'docs/forms.md#two-permission-dimensions' }) do %>
+<%= code_file('app/models/book.rb') do %>
+crud_structure do
+  attribute :slug,   editable: false      # read-only in the form
+  attribute :active, editable: :manage    # an input only for managers
+  attribute :purchase_price, if: :manage  # hidden from non-managers everywhere
+  fieldset :form, %i[title subtitle slug blurb price purchase_price pages
+                     published_on genre active publisher authors cover]
+end
+<% end %>
+<%= code_file('app/controllers/books_controller.rb') do %>
+def update
+  @book.update(book_params) ? redirect_to(@book) : render(:edit, status: :unprocessable_entity)
+end
+
+def book_params
+  params.require(:book).permit(*Book.crud_attribute_names(:update, ability: current_ability))
+end
+<% end %>
+<%= code_file('app/views/books/edit.html.erb', :erb) do %>
+&lt;%= crud_form @book %&gt;
+<% end %>
+<% end %>
 <div class="card"><div class="card-body">
   <%= crud_form @book %>
 </div></div>
