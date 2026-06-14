@@ -363,7 +363,8 @@ class FullIntegrationTest < ActionDispatch::IntegrationTest
     20.times { |i| Book.create!(title: format('Filler %02d', i), slug: "filler-#{i}", genre: :fiction) }
     get '/pagination' # controller does Book.all.page(params[:page]).per(15)
     assert_response :success
-    assert_select 'nav.crud-pager'
+    assert_select 'table tfoot td nav.crud-pager' # integrated as the table footer, not floated below
+    assert_select 'table tfoot td[colspan]'
     assert_select '.pagination .page-item.active', text: '1'
     # the page-2 link is present and carries the active sort param along
     get '/pagination', params: { sort: 'title', dir: 'asc' }

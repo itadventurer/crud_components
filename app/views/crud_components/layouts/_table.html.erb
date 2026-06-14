@@ -88,8 +88,15 @@
           </tr>
         <% end %>
       </tbody>
+      <% if collection.show_pager? %>
+        <tfoot>
+          <tr>
+            <td colspan="<%= collection.columns_count %>" class="crud-pager-cell">
+              <%= render 'crud_components/pager', collection: collection %>
+            </td>
+          </tr>
+        </tfoot>
+      <% end %>
     </table>
   </div>
-
-  <%= render 'crud_components/pager', collection: collection %>
 </div>

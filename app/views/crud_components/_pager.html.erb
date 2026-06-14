@@ -1,10 +1,10 @@
-<%# Footer pager. Rendered by a layout when the relation is paginated
-    (collection.paginated?). One local: `collection`. Override this file in your
-    app to restyle. Page links keep all other params, so filters/sort/other
-    collections survive turning the page. %>
-<% if collection.paginated? && collection.total_pages > 1 %>
+<%# Footer pager — lives in the table's <tfoot> (a colspan cell), or any layout
+    that renders it. One local: `collection`. Override this file in your app to
+    restyle. Page links keep all other params, so filters/sort/other collections
+    survive turning the page. %>
+<% if collection.show_pager? %>
   <% css = collection.css %>
-  <nav class="crud-pager d-flex flex-wrap justify-content-between align-items-center gap-2 mt-2"
+  <nav class="crud-pager d-flex flex-wrap justify-content-between align-items-center gap-2"
        aria-label="<%= t('crud_components.pager.label', default: 'Pagination') %>">
     <small class="<%= css.muted %>">
       <%= t('crud_components.pager.summary', default: 'Page %{page} of %{total} · %{count} total',

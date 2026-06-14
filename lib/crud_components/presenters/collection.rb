@@ -170,6 +170,9 @@ module CrudComponents
         @relation.respond_to?(:current_page) && @relation.respond_to?(:total_pages)
       end
 
+      # Whether to draw the footer at all — a single page needs no pager.
+      def show_pager? = paginated? && total_pages > 1
+
       def current_page = @relation.current_page
       def total_pages  = @relation.total_pages
       def total_count  = @relation.total_count
