@@ -35,16 +35,20 @@ module CrudComponents
       render 'crud_components/form', form: presenter
     end
 
-    # The action buttons of a record (row actions) or of a collection — a
-    # relation or model class (collection actions) — for manual placement with
-    # `actions: false`. Pass a relation (`@books`) for collection actions, the
-    # same scope you give `crud_collection`, so the same authorization applies.
+    # The action buttons of a record (row actions) or a model class (collection
+    # actions) — for manual placement with `actions: false`. A relation is not a
+    # subject here: collection actions are model-level (`can?(:new, Book)`), so
+    # pass the class, not a scope.
     def crud_actions(subject, fieldset: nil)
-      collection = subject.is_a?(Class) || subject.is_a?(ActiveRecord::Relation)
-      model = subject.is_a?(Class) ? subject : collection ? subject.klass : subject.class
+      if subject.is_a?(ActiveRecord::Relation)
+        raise ArgumentError,
+              'crud_actions takes a record (row actions) or a model class (collection ' \
+              "actions), not a relation — pass `#{subject.klass}`, not a scope."
+      end
+      model = subject.is_a?(Class) ? subject : subject.class
       structure = Structure.for(model)
-      kind = collection ? :collection : :row
-      resolved_fieldset = structure.fieldset(fieldset || (collection ? :index : :show))
+      kind = subject.is_a?(Class) ? :collection : :row
+      resolved_fieldset = structure.fieldset(fieldset || (kind == :collection ? :index : :show))
       presenter = Presenters::Actions.new(view: self, subject: subject, structure: structure,
                                           actions: structure.fieldset_actions(resolved_fieldset, on: kind))
       render 'crud_components/actions', actions: presenter
