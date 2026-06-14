@@ -1,0 +1,32 @@
+# Default strings for the gem's built-in UI. Every lookup also passes an inline
+# default, so these are overridable in your app and never required — they just
+# spare you from translating the defaults yourself. Override any key by defining
+# it in your own config/locales/*.yml.
+en:
+  crud_components:
+    confirm: "Are you sure?"
+    empty: "No records"
+    more: "+%{count} more"
+    sort: "Sort"
+    filter_by: "Filter by %{name}"
+    actions:
+      new: "New"
+      show: "Show"
+      edit: "Edit"
+      destroy: "Delete"
+    filter:
+      any: "–"
+      not_set: "Not set"
+      "yes": "Yes"
+      "no": "No"
+      search: "Search"
+      apply: "Apply"
+      submit: "Filter"
+      reset: "Reset"
+    pager:
+      label: "Pagination"
+      summary: "Page %{page} of %{total} · %{count} total"
+      previous: "‹"
+      next: "›"
+      previous_label: "Previous"
+      next_label: "Next"

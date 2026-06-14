@@ -1,0 +1,31 @@
+# Deutsche Standardtexte für die eingebaute Oberfläche des Gems. Jede Abfrage
+# übergibt zusätzlich einen Inline-Default, daher sind diese Schlüssel optional
+# und jederzeit in der eigenen config/locales/*.yml überschreibbar.
+de:
+  crud_components:
+    confirm: "Sind Sie sicher?"
+    empty: "Keine Einträge"
+    more: "+%{count} weitere"
+    sort: "Sortieren"
+    filter_by: "Nach %{name} filtern"
+    actions:
+      new: "Neu"
+      show: "Anzeigen"
+      edit: "Bearbeiten"
+      destroy: "Löschen"
+    filter:
+      any: "–"
+      not_set: "Nicht gesetzt"
+      "yes": "Ja"
+      "no": "Nein"
+      search: "Suche"
+      apply: "Anwenden"
+      submit: "Filtern"
+      reset: "Zurücksetzen"
+    pager:
+      label: "Seitennummerierung"
+      summary: "Seite %{page} von %{total} · %{count} gesamt"
+      previous: "‹"
+      next: "›"
+      previous_label: "Zurück"
+      next_label: "Weiter"
