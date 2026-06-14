@@ -36,7 +36,12 @@
                             title: t('crud_components.sort', default: 'Sort'),
                             data: { turbo_action: 'advance' } do %>
                   <%= field.human_name %>
-                  <i class="<%= css.icon_prefix %><%= collection.sort_icon(field) %> <%= 'text-muted opacity-25' unless collection.sort_active?(field) %>"></i>
+                  <% if (dir = collection.sort_direction(field)) %>
+                    <% family = collection.sort_numeric?(field) ? 'sort-numeric' : 'sort-alpha' %>
+                    <i class="<%= css.icon_prefix %><%= family %>-<%= dir == :desc ? 'up' : 'down' %>"></i>
+                  <% else %>
+                    <i class="<%= css.icon_prefix %>arrow-down-up text-muted opacity-25"></i>
+                  <% end %>
                 <% end %>
               <% else %>
                 <%= field.human_name %>

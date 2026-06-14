@@ -164,29 +164,26 @@ module CrudComponents
         "#{view.request.path}?#{params.to_query}"
       end
 
-      def sort_indicator(field)
-        current, dir = query&.sort_state
-        return '' unless current == field.name.to_s
-
-        dir == 'desc' ? ' ▼' : ' ▲'
-      end
-
       # Is this the column the result is currently sorted by?
       def sort_active?(field)
-        current, = query&.sort_state
-        current == field.name.to_s
+        !sort_direction(field).nil?
       end
 
-      # Icon name (no library prefix — pair with css.icon_prefix) for a sortable
-      # header: a numeric-vs-alpha icon reflecting the current direction for the
-      # active column; a faint neutral hint for the rest. Built-in names are
-      # Bootstrap Icons. (Pair with `sort_active?` to style the active one.)
-      def sort_icon(field)
-        return 'arrow-down-up' unless sort_active?(field)
+      # The active sort direction for a column — :asc / :desc, or nil when the
+      # result isn't sorted by it. The presenter holds no icon names: a layout
+      # turns this tri-state into whatever glyph it likes (see _table), pairing
+      # it with `sort_numeric?` to choose a numeric vs alphabetic icon.
+      def sort_direction(field)
+        current, dir = query&.sort_state
+        return nil unless current == field.name.to_s
 
-        family = sort_numeric?(field) ? 'sort-numeric' : 'sort-alpha'
-        _, dir = query.sort_state
-        "#{family}-#{dir == 'desc' ? 'up' : 'down'}"
+        dir.to_s == 'desc' ? :desc : :asc
+      end
+
+      # Whether this column sorts numerically (vs alphabetically) — numbers and
+      # dates do — so a layout can pick a sort-numeric vs sort-alpha glyph.
+      def sort_numeric?(field)
+        field.is_a?(Fields::NumericField) || field.is_a?(Fields::DateField)
       end
 
       # ── pagination ─────────────────────────────────────────────────────────
@@ -268,12 +265,6 @@ module CrudComponents
 
       def pn(key)
         query ? query.param_name(key) : key
-      end
-
-      # Numbers and dates sort numerically; everything else alphabetically —
-      # picks sort-numeric-* vs sort-alpha-* icons.
-      def sort_numeric?(field)
-        field.is_a?(Fields::NumericField) || field.is_a?(Fields::DateField)
       end
 
       def eager_load(relation)
