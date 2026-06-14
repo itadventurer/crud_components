@@ -4,6 +4,7 @@
      [t('crud_components.filter.yes', default: 'Yes'), 'true'],
      [t('crud_components.filter.no', default: 'No'), 'false']
    ] %>
+<% choices << [t('crud_components.filter.not_set', default: 'Not set'), CrudComponents::NULL_FILTER_VALUE] if field.filter_includes_null? %>
 <%= select_tag param_name,
                options_for_select(choices, query.value(field.name.to_s)),
                class: compact ? css.select_input_sm : css.select_input, form: form_id, id: nil,

@@ -21,6 +21,23 @@ module CrudComponents
         model.human_attribute_name(name)
       end
 
+      # The DB column backing this field, if any (nil for associations and
+      # computed fields).
+      def column
+        model.columns_hash[name.to_s]
+      end
+
+      # Whether the backing column permits NULL — gates the "not set" filter
+      # choice and the 3-state form control for nullable boolean/enum fields.
+      def nullable?
+        !!column&.null
+      end
+
+      # Whether this field's filter offers a "not set" (IS NULL) choice.
+      def filter_includes_null?
+        false
+      end
+
       def value(record)
         record.public_send(name)
       end

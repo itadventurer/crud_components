@@ -79,6 +79,26 @@ class FullIntegrationTest < ActionDispatch::IntegrationTest
     assert_select 'td', { text: /The Hobbit/, count: 0 }
   end
 
+  test 'nullable boolean/enum filters offer a "not set" choice that matches NULL' do
+    nullish = Book.create!(title: 'Untitled', slug: 'untitled', genre: nil, active: nil)
+    null_value = CrudComponents::NULL_FILTER_VALUE
+
+    # the inline filter row offers the option for nullable columns
+    get books_path
+    assert_select "select[name=genre] option[value='#{null_value}']", text: /Not set/
+
+    # …and it resolves to IS NULL
+    get books_path(genre: null_value)
+    assert_select 'td', text: /Untitled/
+    assert_select 'td', { text: /The Hobbit/, count: 0 }
+
+    get books_path(active: null_value)
+    assert_select 'td', text: /Untitled/
+    assert_select 'td', { text: /The Dispossessed/, count: 0 }
+  ensure
+    nullish&.destroy
+  end
+
   test 'sort headers are plain links that toggle direction and keep filters' do
     get books_path(genre: 'fiction')
     assert_select "th a[href*='sort=title']"

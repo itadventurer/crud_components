@@ -26,7 +26,11 @@ module CrudComponents
         model.human_attribute_name("#{name}.#{key}", default: key.to_s.humanize)
       end
 
+      # A nullable column offers a "not set" (IS NULL) choice in the filter.
+      def filter_includes_null? = nullable?
+
       def apply_derived_filter(scope, exact: nil, **)
+        return scope.where(name => nil) if exact == CrudComponents::NULL_FILTER_VALUE && nullable?
         return scope unless exact && enum_keys.include?(exact)
 
         scope.where(name => exact)

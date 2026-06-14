@@ -9,6 +9,11 @@ require 'active_support/core_ext/integer/time'
 
 module CrudComponents
   RESERVED_PARAMS = %w[q sort dir page per].freeze
+
+  # Sentinel filter value meaning "the column is NULL" (boolean/enum filters on
+  # nullable columns offer it as a "not set" choice). Improbable as a real
+  # value, so it never collides with a genuine enum key or boolean string.
+  NULL_FILTER_VALUE = '__null__'.freeze
 end
 
 require_relative 'crud_components/version'
