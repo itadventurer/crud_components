@@ -177,16 +177,16 @@ module CrudComponents
         current == field.name.to_s
       end
 
-      # Bootstrap-icon name for a sortable header: a numeric-vs-alpha icon
-      # pointing the way the *next* click would not — i.e. reflecting the
-      # current direction — for the active column; a faint neutral hint for the
-      # rest. (Pair with `sort_active?` to style the active one prominently.)
+      # Icon name (no library prefix — pair with css.icon_prefix) for a sortable
+      # header: a numeric-vs-alpha icon reflecting the current direction for the
+      # active column; a faint neutral hint for the rest. Built-in names are
+      # Bootstrap Icons. (Pair with `sort_active?` to style the active one.)
       def sort_icon(field)
-        return 'bi-arrow-down-up' unless sort_active?(field)
+        return 'arrow-down-up' unless sort_active?(field)
 
         family = sort_numeric?(field) ? 'sort-numeric' : 'sort-alpha'
         _, dir = query.sort_state
-        "bi-#{family}-#{dir == 'desc' ? 'up' : 'down'}"
+        "#{family}-#{dir == 'desc' ? 'up' : 'down'}"
       end
 
       # ── pagination ─────────────────────────────────────────────────────────

@@ -29,6 +29,8 @@ CrudComponents.configure do |config|
   # config.css.boolean_true = 'text-success'
   # config.css.boolean_false = 'text-danger'
   # config.css.muted = 'text-muted'
+  # icon font base + name prefix; 'fa fa-' for Font Awesome (icon names differ)
+  # config.css.icon_prefix = 'bi bi-'
   # config.css.dl = 'row'
   # config.css.dt = 'col-sm-3'
   # config.css.dd = 'col-sm-9'

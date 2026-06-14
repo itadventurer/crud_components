@@ -32,6 +32,9 @@ module CrudComponents
       boolean_true: 'text-success',
       boolean_false: 'text-danger',
       muted: 'text-muted',
+      # icon font base + name prefix; built-in icon names are Bootstrap Icons.
+      # Swap the whole library here, e.g. 'fa fa-' for Font Awesome.
+      icon_prefix: 'bi bi-',
       dl: 'row',
       dt: 'col-sm-3',
       dd: 'col-sm-9'

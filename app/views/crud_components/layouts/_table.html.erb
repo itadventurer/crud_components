@@ -36,7 +36,7 @@
                             title: t('crud_components.sort', default: 'Sort'),
                             data: { turbo_action: 'advance' } do %>
                   <%= field.human_name %>
-                  <i class="bi <%= collection.sort_icon(field) %> <%= 'text-muted opacity-25' unless collection.sort_active?(field) %>"></i>
+                  <i class="<%= css.icon_prefix %><%= collection.sort_icon(field) %> <%= 'text-muted opacity-25' unless collection.sort_active?(field) %>"></i>
                 <% end %>
               <% else %>
                 <%= field.human_name %>

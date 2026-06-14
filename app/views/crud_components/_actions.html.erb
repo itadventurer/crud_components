@@ -6,7 +6,7 @@
   <div class="<%= actions.joinable? ? actions.css.button_group : 'd-inline-flex gap-1' %>" role="group">
     <% actions.items.each do |item| %>
       <% action = item.action %>
-      <% content = action.icon ? tag.i('', class: "bi bi-#{action.icon}", aria: { hidden: true }) : action.title %>
+      <% content = action.icon ? tag.i('', class: "#{actions.css.icon_prefix}#{action.icon}", aria: { hidden: true }) : action.title %>
       <% if action.http_method == :get %>
         <%= link_to content, item.path, class: action.css_class, title: action.title,
                     data: { turbo_action: 'advance' } %>
