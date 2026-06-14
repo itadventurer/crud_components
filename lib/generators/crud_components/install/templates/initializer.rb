@@ -15,6 +15,7 @@ CrudComponents.configure do |config|
   # config.css.button = 'btn btn-sm btn-outline-secondary'
   # config.css.button_primary = 'btn btn-sm btn-primary'
   # config.css.button_danger = 'btn btn-sm btn-outline-danger'
+  # config.css.pagination = 'pagination pagination-sm'  # footer pager (paginated relations)
   # config.css.badge = 'badge text-bg-secondary'
   # config.css.badge_muted = 'badge text-bg-light'
   # config.css.input = 'form-control'

@@ -187,16 +187,27 @@ the query into your own hands — the explicit form of what the helper does auto
 ```
 
 ```erb
-<%= crud_collection @books, query: @query %>   <%# records already filtered %>
-<%= paginate @books %>
+<%= crud_collection @books, query: @query %>   <%# records already filtered; footer pager renders itself %>
 ```
 
 Everything stays an ActiveRecord relation, so any paginator and any pre-existing scope
 compose. The manual query is also how you get the filtered relation for counts, CSV
 exports, or charts.
 
-`page`/`per` are reserved params (with `q`/`sort`/`dir`); a built-in opt-in pager for
-auto mode is a later version — reserving the names now keeps URL semantics stable.
+**The footer pager renders itself** when the relation you pass is already paginated —
+i.e. you called `.page` and it decorates the relation (kaminari, will_paginate). The gem
+never paginates on its own (no surprise row limits); it only *notices* that you did and
+draws a Bootstrap pager whose links preserve the active filters, search, sort and any
+other collection's params (so it respects `param_prefix:`). Restyle it by overriding
+`crud_components/_pager.html.erb` or the `css.pagination` class.
+
+> **pagy** keeps its state in a separate `@pagy` object rather than on the relation, so
+> there's nothing for the gem to detect — render `<%= pagy_nav(@pagy) %>` yourself after
+> `crud_collection`.
+
+`page`/`per` are reserved params (with `q`/`sort`/`dir`), so the pager's `?page=` never
+collides with a filter. With `param_prefix: :books`, the page param is `books_page` —
+read it in the controller (`.page(params[:books_page])`).
 
 ### Several collections on one page
 

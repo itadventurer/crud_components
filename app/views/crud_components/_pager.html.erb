@@ -1,0 +1,41 @@
+<%# Footer pager. Rendered by a layout when the relation is paginated
+    (collection.paginated?). One local: `collection`. Override this file in your
+    app to restyle. Page links keep all other params, so filters/sort/other
+    collections survive turning the page. %>
+<% if collection.paginated? && collection.total_pages > 1 %>
+  <% css = collection.css %>
+  <nav class="crud-pager d-flex flex-wrap justify-content-between align-items-center gap-2 mt-2"
+       aria-label="<%= t('crud_components.pager.label', default: 'Pagination') %>">
+    <small class="<%= css.muted %>">
+      <%= t('crud_components.pager.summary', default: 'Page %{page} of %{total} · %{count} total',
+            page: collection.current_page, total: collection.total_pages, count: collection.total_count) %>
+    </small>
+    <ul class="<%= css.pagination %> mb-0">
+      <% prev_off = collection.current_page <= 1 %>
+      <li class="page-item <%= 'disabled' if prev_off %>">
+        <%= link_to t('crud_components.pager.previous', default: '‹'),
+                    (prev_off ? '#' : collection.page_url(collection.current_page - 1)),
+                    class: 'page-link', data: { turbo_action: 'advance' },
+                    aria: { label: t('crud_components.pager.previous_label', default: 'Previous') },
+                    tabindex: ('-1' if prev_off) %>
+      </li>
+      <% collection.pager_pages.each do |p| %>
+        <% if p == :gap %>
+          <li class="page-item disabled"><span class="page-link">…</span></li>
+        <% else %>
+          <li class="page-item <%= 'active' if p == collection.current_page %>">
+            <%= link_to p, collection.page_url(p), class: 'page-link', data: { turbo_action: 'advance' } %>
+          </li>
+        <% end %>
+      <% end %>
+      <% next_off = collection.current_page >= collection.total_pages %>
+      <li class="page-item <%= 'disabled' if next_off %>">
+        <%= link_to t('crud_components.pager.next', default: '›'),
+                    (next_off ? '#' : collection.page_url(collection.current_page + 1)),
+                    class: 'page-link', data: { turbo_action: 'advance' },
+                    aria: { label: t('crud_components.pager.next_label', default: 'Next') },
+                    tabindex: ('-1' if next_off) %>
+      </li>
+    </ul>
+  </nav>
+<% end %>

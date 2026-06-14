@@ -36,6 +36,7 @@ bin/rails generate crud_components:views   # copy the gem's partials into your a
 crud_components/
   layouts/_table.html.erb          # collection layouts (as: :table, …)
   _toolbar.html.erb                # search box + reset + collection actions (reused by layouts)
+  _pager.html.erb                  # footer pager (shown when the relation is paginated)
   _actions.html.erb                # a group of action buttons
   fields/_string.html.erb …        # value renderers (as: :string, …)
   filters/_text.html.erb …         # filter controls

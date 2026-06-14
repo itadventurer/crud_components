@@ -159,6 +159,42 @@ module CrudComponents
         dir == 'desc' ? ' ▼' : ' ▲'
       end
 
+      # ── pagination ─────────────────────────────────────────────────────────
+      # We render a footer pager only when the relation handed to us is already
+      # paginated — i.e. the host called `.page` (kaminari / will_paginate, which
+      # decorate the relation). The gem never paginates on its own: no records
+      # arrive limited unless you asked for it. pagy keeps its state in a
+      # separate object, not on the relation, so it can't be detected here —
+      # render `pagy_nav` yourself.
+      def paginated?
+        @relation.respond_to?(:current_page) && @relation.respond_to?(:total_pages)
+      end
+
+      def current_page = @relation.current_page
+      def total_pages  = @relation.total_pages
+      def total_count  = @relation.total_count
+
+      # A URL for page n that keeps this collection's filters/search/sort and
+      # every other collection's params (only our own `page` changes) — so the
+      # pager composes with everything and respects `param_prefix:`.
+      def page_url(n)
+        params = view.request.query_parameters.merge(pn('page') => n)
+        "#{view.request.path}?#{params.to_query}"
+      end
+
+      # Page numbers to show, with :gap markers for elided ranges:
+      # [1, :gap, 4, 5, 6, :gap, 10]. Always includes first/last and a window
+      # around the current page.
+      def pager_pages(window: 2)
+        return [] if total_pages <= 1
+
+        shown = ([1, total_pages] + ((current_page - window)..(current_page + window)).to_a)
+                .select { |p| p >= 1 && p <= total_pages }.uniq.sort
+        shown.each_with_index.flat_map do |p, i|
+          (i.positive? && p - shown[i - 1] > 1) ? [:gap, p] : [p]
+        end
+      end
+
       # ── actions ──────────────────────────────────────────────────────────
       def actions_column?
         @actions_enabled && (custom_actions_partial.present? || row_action_definitions.any?)

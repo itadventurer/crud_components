@@ -17,6 +17,7 @@ module CrudComponents
       button: 'btn btn-sm btn-outline-secondary',
       button_primary: 'btn btn-sm btn-primary',
       button_danger: 'btn btn-sm btn-outline-danger',
+      pagination: 'pagination pagination-sm',
       badge: 'badge text-bg-secondary',
       badge_muted: 'badge text-bg-light',
       input: 'form-control',

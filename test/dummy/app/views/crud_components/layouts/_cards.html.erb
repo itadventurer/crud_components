@@ -44,4 +44,7 @@
   <% if collection.records.empty? %>
     <p class="<%= css.muted %>"><%= t('crud_components.empty', default: 'No records') %></p>
   <% end %>
+
+  <%# Reuse the gem's pager — a custom layout gets pagination for free too. %>
+  <%= render 'crud_components/pager', collection: collection %>
 </div>

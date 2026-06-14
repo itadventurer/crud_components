@@ -357,4 +357,33 @@ class FullIntegrationTest < ActionDispatch::IntegrationTest
     assert_equal 2, @review.rating
     assert_equal 'Renamed', @review.reviewer_name
   end
+
+  # ── pagination footer (auto-rendered when the relation is paginated) ────────
+  test 'a paginated relation renders a footer pager whose links preserve sort' do
+    20.times { |i| Book.create!(title: format('Filler %02d', i), slug: "filler-#{i}", genre: :fiction) }
+    get '/pagination' # controller does Book.all.page(params[:page]).per(15)
+    assert_response :success
+    assert_select 'nav.crud-pager'
+    assert_select '.pagination .page-item.active', text: '1'
+    # the page-2 link is present and carries the active sort param along
+    get '/pagination', params: { sort: 'title', dir: 'asc' }
+    assert_select ".pagination a.page-link[href*='page=2']" do |links|
+      assert links.any? { |a| a['href'].include?('sort=title') }, 'page link should preserve sort'
+    end
+  end
+
+  test 'turning the page shows different records' do
+    20.times { |i| Book.create!(title: format('Filler %02d', i), slug: "filler-#{i}", genre: :fiction) }
+    get '/pagination', params: { sort: 'title', dir: 'asc' }
+    page1 = css_select('tbody tr').map(&:to_s)
+    get '/pagination', params: { sort: 'title', dir: 'asc', page: 2 }
+    page2 = css_select('tbody tr').map(&:to_s)
+    assert (page1 & page2).empty?, 'pages 1 and 2 should not overlap'
+  end
+
+  test 'an unpaginated collection renders no pager' do
+    get authors_path
+    assert_response :success
+    assert_select 'nav.crud-pager', count: 0
+  end
 end
