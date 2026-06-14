@@ -47,12 +47,12 @@ module CrudComponents
       end
 
       # A multiselect baseline (works no-JS, scales to large sets) carrying a
-      # data-controller hook. The optional `crud-tokens` Stimulus controller
+      # data-controller hook. The optional `crud-multiselect` Stimulus controller
       # (shipped by the install generator) upgrades it in place into a
       # chips-list + "add" dropdown; without JS the multiselect stands.
       def habtm_input(f, field)
         f.association field.reflection.name, as: :select, collection: field.form_choices,
-                                             input_html: { multiple: true, data: { controller: 'crud-tokens' } }
+                                             input_html: { multiple: true, data: { controller: 'crud-multiselect' } }
       end
 
       def any_errors?

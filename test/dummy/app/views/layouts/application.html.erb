@@ -51,7 +51,7 @@
 
     // habtm picker: replace a <select multiple> with chips + an "add" dropdown.
     // The select stays the hidden source of truth (no-JS fallback works).
-    class CrudTokensController extends Controller {
+    class CrudMultiselectController extends Controller {
       connect() {
         this.select = this.element.matches("select[multiple]") ? this.element : this.element.querySelector("select[multiple]")
         if (!this.select) return
@@ -84,7 +84,7 @@
 
     const application = Application.start()
     application.register("crud-filter", CrudFilterController)
-    application.register("crud-tokens", CrudTokensController)
+    application.register("crud-multiselect", CrudMultiselectController)
   </script>
 </head>
 <body class="bg-light">

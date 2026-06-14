@@ -12,17 +12,17 @@ module CrudComponents
 
       def copy_stimulus_controllers
         copy_file 'crud_filter_controller.js', 'app/javascript/controllers/crud_filter_controller.js'
-        copy_file 'crud_tokens_controller.js', 'app/javascript/controllers/crud_tokens_controller.js'
+        copy_file 'crud_multiselect_controller.js', 'app/javascript/controllers/crud_multiselect_controller.js'
         say <<~NOTE
 
           The Stimulus controllers are optional — everything works without them.
           - crud-filter: strip empty params on submit + auto-submit inline selects.
-          - crud-tokens: turn a habtm `<select multiple>` into a chips + add picker.
+          - crud-multiselect: turn a habtm `<select multiple>` into a chips + add picker.
           Register them (stimulus-rails with importmap does this automatically via
           controllers/index.js; otherwise):
 
             application.register("crud-filter", CrudFilterController)
-            application.register("crud-tokens", CrudTokensController)
+            application.register("crud-multiselect", CrudMultiselectController)
 
         NOTE
       end
