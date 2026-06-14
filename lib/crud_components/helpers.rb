@@ -59,6 +59,23 @@ module CrudComponents
       Structure.for(record.class).label_for(record, self)
     end
 
+    # A Bootstrap-icon name (no library prefix — pair with css.icon_prefix) for
+    # a filename, by extension: a filetype glyph for common types, a generic
+    # file icon otherwise. Used by the attachment renderer's icon fallback;
+    # override that partial to customize.
+    FILE_ICONS = {
+      pdf: 'filetype-pdf', doc: 'filetype-doc', docx: 'filetype-docx',
+      xls: 'filetype-xls', xlsx: 'filetype-xlsx', csv: 'filetype-csv',
+      ppt: 'filetype-ppt', pptx: 'filetype-pptx', txt: 'filetype-txt',
+      json: 'filetype-json', xml: 'filetype-xml', yml: 'filetype-yml', yaml: 'filetype-yml',
+      md: 'filetype-md', html: 'filetype-html', zip: 'file-earmark-zip'
+    }.freeze
+
+    def crud_file_icon(filename)
+      ext = File.extname(filename.to_s).delete('.').downcase.to_sym
+      FILE_ICONS.fetch(ext, 'file-earmark-text')
+    end
+
     def crud_record_path(record, owner: nil)
       found = RouteResolver.record_path(self, record, owner: owner)
       found&.first

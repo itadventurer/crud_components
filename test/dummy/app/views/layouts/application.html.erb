@@ -82,16 +82,9 @@
       toggle(value, selected) { const o = this.options.find((o) => o.value === value); if (o) { o.selected = selected; this.render() } }
     }
 
-    // has_one attachment: picking a replacement file unchecks "keep current".
-    class CrudAttachmentController extends Controller {
-      static targets = ["keep"]
-      replace() { this.keepTargets.forEach((k) => (k.checked = false)) }
-    }
-
     const application = Application.start()
     application.register("crud-filter", CrudFilterController)
     application.register("crud-multiselect", CrudMultiselectController)
-    application.register("crud-attachment", CrudAttachmentController)
   </script>
 </head>
 <body class="bg-light">

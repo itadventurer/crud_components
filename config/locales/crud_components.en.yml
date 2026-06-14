@@ -11,7 +11,7 @@ en:
     filter_by: "Filter by %{name}"
     attachment:
       keep: "Keep"
-      keep_one: "Keep current (uncheck to remove; uncheck + choose a file to replace)"
+      remove: "Remove"
     actions:
       new: "New"
       show: "Show"

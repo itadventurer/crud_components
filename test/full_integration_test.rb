@@ -299,45 +299,49 @@ class FullIntegrationTest < ActionDispatch::IntegrationTest
     assert_select 'a', text: /tor\.adoc/   # not an <img>: icon + filename, linking to the blob
   end
 
-  test 'has_one attachment form shows the current file + a keep checkbox holding its signed_id' do
+  test 'has_one attachment form shows the current file + a Remove checkbox + a file input' do
     @hobbit.manual.attach(io: StringIO.new('%PDF-1.4'), filename: 'hobbit.pdf', content_type: 'application/pdf')
     get edit_book_path(@hobbit)
     assert_select "input[type=file][name='book[manual]']"
-    assert_select "input[type=checkbox][name='book[manual]'][checked][value=?]", @hobbit.manual.signed_id
+    # an empty file field keeps the current file, so the control is a Remove (value "" purges), unchecked
+    assert_select "input[type=checkbox][name='book[manual]'][value='']"
+    assert_select "input[type=checkbox][name='book[manual]'][checked]", count: 0
   end
 
   test 'has_many attachment form shows a keep checkbox per existing file + a multiple add input' do
     2.times { |i| @tolkien.images.attach(io: StringIO.new('img'), filename: "p#{i}.png", content_type: 'image/png') }
     get edit_author_path(@tolkien)
     assert_select "input[type=file][name='author[images][]'][multiple]"
+    assert_select "input[type=hidden][name='author[images][]'][value='']"  # keeps the array present (untick all → clear)
     assert_select "input[type=checkbox][name='author[images][]'][checked]", count: 2
     @tolkien.images.each do |image|
       assert_select "input[type=checkbox][name='author[images][]'][value=?]", image.signed_id
     end
   end
 
-  test 'has_one attachment: signed_id keeps, blank removes, a new file replaces' do
+  test 'has_one attachment: an empty submit keeps, Remove ("") purges, a new file replaces' do
     @hobbit.manual.attach(io: StringIO.new('%PDF-1.4'), filename: 'a.pdf', content_type: 'application/pdf')
-    patch book_path(@hobbit), params: { book: { manual: @hobbit.manual.signed_id } }
-    assert @hobbit.reload.manual.attached?, 'submitting the signed_id keeps it (no replace on empty)'
+    # an empty file field submits nothing, so a plain save leaves the manual untouched
+    patch book_path(@hobbit), params: { book: { title: @hobbit.title } }
+    assert @hobbit.reload.manual.attached?, 'an empty file field keeps the current file'
 
-    patch book_path(@hobbit), params: { book: { manual: '' } }
-    refute @hobbit.reload.manual.attached?, 'a blank value removes it'
+    patch book_path(@hobbit), params: { book: { manual: '' } } # Remove ticked
+    refute @hobbit.reload.manual.attached?, 'a blank value (Remove) purges'
 
     @hobbit.manual.attach(io: StringIO.new('%PDF-1.4'), filename: 'a.pdf', content_type: 'application/pdf')
     patch book_path(@hobbit), params: { book: { manual: upload('b.pdf', 'application/pdf') } }
     assert_equal 'b.pdf', @hobbit.reload.manual.filename.to_s, 'a new file replaces'
   end
 
-  test 'has_one .adoc attachment (Publisher#brochure): keep / remove / replace round-trip' do
+  test 'has_one .adoc attachment (Publisher#brochure): empty keeps, Remove purges' do
     @tor.brochure.attach(io: StringIO.new('= kit'), filename: 'tor.adoc', content_type: 'text/asciidoc')
     base = { name: @tor.name, slug: @tor.slug, founded_on: @tor.founded_on }
 
-    patch publisher_path(@tor), params: { publisher: base.merge(brochure: @tor.brochure.signed_id) }
-    assert @tor.reload.brochure.attached?, 'keep via signed_id'
+    patch publisher_path(@tor), params: { publisher: base } # no brochure param (empty file field)
+    assert @tor.reload.brochure.attached?, 'an empty file field keeps it'
 
-    patch publisher_path(@tor), params: { publisher: base.merge(brochure: '') }
-    refute @tor.reload.brochure.attached?, 'blank (unchecked keep + empty file) removes'
+    patch publisher_path(@tor), params: { publisher: base.merge(brochure: '') } # Remove ticked
+    refute @tor.reload.brochure.attached?, 'blank purges'
   end
 
   test 'has_many attachment: kept signed_ids stay, omitted are purged, new files add' do

@@ -1,26 +1,25 @@
 <%# Form input for an Active Storage attachment. Locals: f, field, form.
-    Uses Active Storage signed_ids so keep / add / remove all flow through the
-    standard permit list (`:cover` / `{ images: [] }`) with no controller code:
-      - each existing attachment carries a "keep" checkbox holding its signed_id
-        (checked = keep; uncheck = remove on save);
-      - the file input adds (has_many) or replaces (has_one) on upload.
-    For has_one the keep checkbox is rendered AFTER the file input, so leaving
-    the file empty keeps the current attachment (the kept signed_id wins over the
-    empty upload); uncheck it to remove, or uncheck + choose a file to replace.
-    The optional `crud-attachment` Stimulus controller unchecks "keep" when you
-    pick a replacement file, so a plain upload replaces; no-JS, uncheck it. %>
+    Keep / add / remove all flow through the standard permit list (`:cover` /
+    `{ images: [] }`) with no controller code, relying on one fact: an empty
+    file input submits nothing, so leaving it empty keeps the current file(s).
+
+    has_one : choose a file to replace; tick "Remove" to delete (submits "").
+    has_many: each existing file has a "Keep" checkbox carrying its signed_id
+              (untick to remove); the file input adds. A hidden blank keeps the
+              array present so unticking everything actually clears it. %>
 <% name = field.name %>
 <% many = field.respond_to?(:many?) && field.many? %>
 <% value = field.value(form.record) %>
 <% attachments = value.respond_to?(:attached?) && value.attached? ? Array(many ? value.to_a : value) : [] %>
-<div class="mb-3 crud-attachment-field" data-controller="crud-attachment">
+<div class="mb-3 crud-attachment-field">
   <%= f.label name, class: form.css.form_label %>
 
   <% if many %>
+    <%= hidden_field_tag "#{f.object_name}[#{name}][]", '', id: nil %>
     <% if attachments.any? %>
       <div class="d-flex flex-wrap gap-2 mb-2">
         <% attachments.each do |attachment| %>
-          <label class="d-flex flex-column align-items-center gap-1 border rounded p-1 crud-attachment-keep">
+          <label class="d-flex flex-column align-items-center gap-1 border rounded p-1">
             <%= render 'crud_components/fields/attachment_thumb', attachment: attachment, surface: :collection %>
             <span class="form-check small mb-0">
               <%= check_box_tag "#{f.object_name}[#{name}][]", attachment.signed_id, true, id: nil, class: 'form-check-input' %>
@@ -35,15 +34,12 @@
     <% attachment = attachments.first %>
     <% if attachment %>
       <div class="mb-2"><%= render 'crud_components/fields/attachment_thumb', attachment: attachment, surface: :record %></div>
-    <% end %>
-    <%= file_field_tag "#{f.object_name}[#{name}]", class: form.css.input,
-                       data: { action: 'change->crud-attachment#replace' } %>
-    <% if attachment %>
-      <span class="form-check small mt-1">
-        <%= check_box_tag "#{f.object_name}[#{name}]", attachment.signed_id, true,
-                          id: nil, class: 'form-check-input', data: { crud_attachment_target: 'keep' } %>
-        <%= t('crud_components.attachment.keep_one', default: 'Keep current (uncheck to remove; uncheck + choose a file to replace)') %>
+      <span class="form-check small mb-1">
+        <%# value "" purges on submit; rendered before the file input so an upload still wins %>
+        <%= check_box_tag "#{f.object_name}[#{name}]", '', false, id: nil, class: 'form-check-input' %>
+        <%= t('crud_components.attachment.remove', default: 'Remove') %>
       </span>
     <% end %>
+    <%= file_field_tag "#{f.object_name}[#{name}]", class: form.css.input %>
   <% end %>
 </div>

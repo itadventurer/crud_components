@@ -10,7 +10,7 @@ de:
     filter_by: "Nach %{name} filtern"
     attachment:
       keep: "Behalten"
-      keep_one: "Aktuelle behalten (abwählen zum Entfernen; abwählen + Datei wählen zum Ersetzen)"
+      remove: "Entfernen"
     actions:
       new: "Neu"
       show: "Anzeigen"

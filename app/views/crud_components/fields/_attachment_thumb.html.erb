@@ -12,6 +12,6 @@
 <%- else -%>
   <%= link_to rails_blob_path(attachment, disposition: 'attachment'),
               class: 'd-inline-flex align-items-center gap-1 text-decoration-none' do %>
-    <i class="<%= css.icon_prefix %>file-earmark-text"></i><span><%= attachment.filename %></span>
+    <i class="<%= css.icon_prefix %><%= crud_file_icon(attachment.filename) %>"></i><span><%= attachment.filename %></span>
   <% end %>
 <%- end -%>
