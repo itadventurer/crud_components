@@ -299,6 +299,11 @@ class FullIntegrationTest < ActionDispatch::IntegrationTest
     assert_select 'a', text: /tor\.adoc/   # not an <img>: icon + filename, linking to the blob
   end
 
+  test 'a form with an attachment field is multipart (so uploads actually send)' do
+    get edit_book_path(@hobbit)   # Book has cover + manual file fields
+    assert_select "form.edit_book[enctype='multipart/form-data']"
+  end
+
   test 'has_one attachment form shows the current file + a Remove checkbox + a file input' do
     @hobbit.manual.attach(io: StringIO.new('%PDF-1.4'), filename: 'hobbit.pdf', content_type: 'application/pdf')
     get edit_book_path(@hobbit)
@@ -347,7 +352,8 @@ class FullIntegrationTest < ActionDispatch::IntegrationTest
   test 'has_many attachment: kept signed_ids stay, omitted are purged, new files add' do
     @tolkien.images.attach(io: StringIO.new('1'), filename: '1.png', content_type: 'image/png')
     keep = @tolkien.images.first.signed_id
-    patch author_path(@tolkien), params: { author: { name: @tolkien.name, images: [keep, upload('2.png', 'image/png')] } }
+    # exactly what the form submits: the hidden blank, then the kept ids, then the new files
+    patch author_path(@tolkien), params: { author: { name: @tolkien.name, images: ['', keep, upload('2.png', 'image/png')] } }
     assert_equal 2, @tolkien.reload.images.count, 'kept one + added one'
 
     patch author_path(@tolkien), params: { author: { name: @tolkien.name, images: [''] } }

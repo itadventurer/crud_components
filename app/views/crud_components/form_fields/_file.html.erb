@@ -29,7 +29,8 @@
         <% end %>
       </div>
     <% end %>
-    <%= file_field_tag "#{f.object_name}[#{name}][]", multiple: true, class: form.css.input %>
+    <%# f.file_field (not file_field_tag) so simple_form marks the form multipart %>
+    <%= f.file_field name, multiple: true, class: form.css.input %>
   <% else %>
     <% attachment = attachments.first %>
     <% if attachment %>
@@ -40,6 +41,7 @@
         <%= t('crud_components.attachment.remove', default: 'Remove') %>
       </span>
     <% end %>
-    <%= file_field_tag "#{f.object_name}[#{name}]", class: form.css.input %>
+    <%# f.file_field (not file_field_tag) so simple_form marks the form multipart %>
+    <%= f.file_field name, class: form.css.input %>
   <% end %>
 </div>
