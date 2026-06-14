@@ -1,2 +1,12 @@
-<%# Form input for a boolean column. Locals: f, field, form. %>
-<%= f.input field.name, as: :boolean %>
+<%# Form input for a boolean column. Locals: f, field, form.
+    A non-null column is a plain checkbox. A nullable column becomes a 3-state
+    select (Yes / No / not set), so the absence of a value is expressible — the
+    blank option submits "" and persists NULL. %>
+<% if field.nullable? %>
+  <%= f.input field.name, as: :select,
+              collection: [[t('crud_components.filter.yes', default: 'Yes'), true],
+                           [t('crud_components.filter.no', default: 'No'), false]],
+              include_blank: t('crud_components.filter.not_set', default: 'Not set') %>
+<% else %>
+  <%= f.input field.name, as: :boolean %>
+<% end %>

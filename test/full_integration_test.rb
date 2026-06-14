@@ -292,8 +292,23 @@ class FullIntegrationTest < ActionDispatch::IntegrationTest
 
     post toggle_admin_path
     get edit_book_path(@hobbit)
-    assert_select "input[name='book[active]']"              # editable for admin
+    # active is a nullable boolean → a 3-state select (Yes / No / not set), not a checkbox
+    assert_select "select[name='book[active]'] option", text: /Not set/
     assert_select "input[name='book[purchase_price]']"      # visible & editable for admin
+  end
+
+  test 'a nullable enum form input offers a blank "not set" option' do
+    post toggle_admin_path
+    get edit_book_path(@hobbit)
+    assert_select "select[name='book[genre]'] option[value='']", text: /Not set/
+  end
+
+  test 'submitting blank for a nullable boolean/enum persists NULL' do
+    post toggle_admin_path
+    patch book_path(@hobbit), params: { book: { genre: '', active: '' } }
+    @hobbit.reload
+    assert_nil @hobbit.genre
+    assert_nil @hobbit.active
   end
 
   test 'create through the derived form + permit list' do
