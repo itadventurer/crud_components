@@ -5,6 +5,7 @@ class Book < ApplicationRecord
   has_many :reviews, dependent: :destroy
   has_and_belongs_to_many :authors
   has_one_attached :cover
+  has_one_attached :manual   # a PDF — exercises the previewable / icon-fallback display
 
   enum :genre, { fiction: 0, scifi: 1, nonfiction: 2 }
 
@@ -28,7 +29,6 @@ class Book < ApplicationRecord
     attributes :purchase_price, :shop_margin, if: :manage   # visible only to managers
     attribute :slug, editable: false                        # shown in forms, but read-only
     attribute :active, editable: :manage                    # everyone sees it; only managers edit it
-    attribute :cover, as: :image
 
     attribute :author_names do
       render { |book| book.authors.map(&:name).to_sentence }
@@ -42,10 +42,10 @@ class Book < ApplicationRecord
     fieldset :index, %i[cover title author_names genre price publisher active],
              actions: %i[preview edit destroy]
     fieldset :catalog, %i[cover title subtitle author_names genre price purchase_price
-                          shop_margin pages published_on publisher reviews active created_at],
+                          shop_margin pages published_on publisher reviews active manual created_at],
              filters: %i[blurb]
     fieldset :compact, %i[title price]
     fieldset :form, %i[title subtitle slug blurb price purchase_price pages
-                       published_on genre active publisher authors cover]
+                       published_on genre active publisher authors cover manual]
   end
 end

@@ -1,0 +1,16 @@
+<%# Default renderer for Active Storage attachments. Locals: value (one or
+    many attachments), record, field, surface, cell_context. Each attachment is
+    drawn by content type via _attachment_thumb (image / preview / icon). %>
+<%- if value.respond_to?(:attached?) && value.attached? -%>
+  <%- if field.respond_to?(:many?) && field.many? -%>
+    <span class="d-inline-flex flex-wrap gap-1">
+      <%- value.each do |attachment| -%>
+        <%= render 'crud_components/fields/attachment_thumb', attachment: attachment, surface: surface %>
+      <%- end -%>
+    </span>
+  <%- else -%>
+    <%= render 'crud_components/fields/attachment_thumb', attachment: value, surface: surface %>
+  <%- end -%>
+<%- else -%>
+  <span class="<%= CrudComponents.config.css.muted %>">—</span>
+<%- end -%>

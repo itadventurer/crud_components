@@ -16,6 +16,17 @@ def solid_png(width, height, rgb)
   sig + chunk.call('IHDR', ihdr) + chunk.call('IDAT', idat) + chunk.call('IEND', '')
 end
 
+# A minimal valid one-page PDF (no gem) — to demo a previewable/non-image
+# attachment. Without a previewer backend (poppler) it shows as an icon + name.
+TINY_PDF = <<~PDF.freeze
+  %PDF-1.4
+  1 0 obj<</Type/Catalog/Pages 2 0 R>>endobj
+  2 0 obj<</Type/Pages/Kids[3 0 R]/Count 1>>endobj
+  3 0 obj<</Type/Page/Parent 2 0 R/MediaBox[0 0 200 200]>>endobj
+  trailer<</Root 1 0 R>>
+  %%EOF
+PDF
+
 puts 'Seeding the bookstore…'
 
 [Review, Book, Author, Publisher].each(&:delete_all)
@@ -26,6 +37,15 @@ publishers = [
   ['DAW', 1971], ['Baen', 1983], ['Del Rey', 1977], ['Vintage', 1954]
 ].map do |name, year|
   Publisher.create!(name: name, slug: name.parameterize, founded_on: Date.new(year, 1, 1))
+end
+
+# A non-image, non-previewable attachment (.adoc) on some publishers — shows as
+# an icon + filename in the table, record view and form.
+publishers.each_with_index do |publisher, i|
+  next if i.odd?
+  adoc = "= #{publisher.name} press kit\n\nFounded #{publisher.founded_on&.year}.\n\nContact: press@example.com\n"
+  publisher.brochure.attach(io: StringIO.new(adoc), filename: "#{publisher.slug}-brochure.adoc",
+                            content_type: 'text/asciidoc')
 end
 
 first_names = %w[Ursula Joe Ann Frank Iain Octavia Stanisław Margaret Kim Ted Liu Becky Martha Adrian Mary]
@@ -76,6 +96,12 @@ cover_colors = %w[#264653 #2a9d8f #e9c46a #f4a261 #e76f51 #6d597a #355070 #b5657
   rgb = [hex[0, 2], hex[2, 2], hex[4, 2]].map { |h| h.to_i(16) }
   book.cover.attach(io: StringIO.new(solid_png(120, 180, rgb)),
                     filename: "cover-#{i}.png", content_type: 'image/png')
+
+  # a PDF manual on some books — the previewable / icon-fallback attachment demo
+  if (i % 4).zero?
+    book.manual.attach(io: StringIO.new(TINY_PDF), filename: "#{book.slug}-manual.pdf",
+                       content_type: 'application/pdf')
+  end
 end
 
 reviewers = %w[Ada Linus Grace Alan Edsger Barbara Donald Radia]

@@ -288,6 +288,57 @@ class FullIntegrationTest < ActionDispatch::IntegrationTest
     assert_select "input[name='author[images][]'][type=file][multiple]"
   end
 
+  # ── attachments: display + form (keep / add / remove via signed_ids) ────────
+  def upload(filename, type)
+    Rack::Test::UploadedFile.new(StringIO.new('payload' * 8), type, original_filename: filename)
+  end
+
+  test 'a non-image attachment renders as an icon + filename download link' do
+    @tor.brochure.attach(io: StringIO.new('= Press kit'), filename: 'tor.adoc', content_type: 'text/asciidoc')
+    get publishers_path
+    assert_select 'a', text: /tor\.adoc/   # not an <img>: icon + filename, linking to the blob
+  end
+
+  test 'has_one attachment form shows the current file + a keep checkbox holding its signed_id' do
+    @hobbit.manual.attach(io: StringIO.new('%PDF-1.4'), filename: 'hobbit.pdf', content_type: 'application/pdf')
+    get edit_book_path(@hobbit)
+    assert_select "input[type=file][name='book[manual]']"
+    assert_select "input[type=checkbox][name='book[manual]'][checked][value=?]", @hobbit.manual.signed_id
+  end
+
+  test 'has_many attachment form shows a keep checkbox per existing file + a multiple add input' do
+    2.times { |i| @tolkien.images.attach(io: StringIO.new('img'), filename: "p#{i}.png", content_type: 'image/png') }
+    get edit_author_path(@tolkien)
+    assert_select "input[type=file][name='author[images][]'][multiple]"
+    assert_select "input[type=checkbox][name='author[images][]'][checked]", count: 2
+    @tolkien.images.each do |image|
+      assert_select "input[type=checkbox][name='author[images][]'][value=?]", image.signed_id
+    end
+  end
+
+  test 'has_one attachment: signed_id keeps, blank removes, a new file replaces' do
+    @hobbit.manual.attach(io: StringIO.new('%PDF-1.4'), filename: 'a.pdf', content_type: 'application/pdf')
+    patch book_path(@hobbit), params: { book: { manual: @hobbit.manual.signed_id } }
+    assert @hobbit.reload.manual.attached?, 'submitting the signed_id keeps it (no replace on empty)'
+
+    patch book_path(@hobbit), params: { book: { manual: '' } }
+    refute @hobbit.reload.manual.attached?, 'a blank value removes it'
+
+    @hobbit.manual.attach(io: StringIO.new('%PDF-1.4'), filename: 'a.pdf', content_type: 'application/pdf')
+    patch book_path(@hobbit), params: { book: { manual: upload('b.pdf', 'application/pdf') } }
+    assert_equal 'b.pdf', @hobbit.reload.manual.filename.to_s, 'a new file replaces'
+  end
+
+  test 'has_many attachment: kept signed_ids stay, omitted are purged, new files add' do
+    @tolkien.images.attach(io: StringIO.new('1'), filename: '1.png', content_type: 'image/png')
+    keep = @tolkien.images.first.signed_id
+    patch author_path(@tolkien), params: { author: { name: @tolkien.name, images: [keep, upload('2.png', 'image/png')] } }
+    assert_equal 2, @tolkien.reload.images.count, 'kept one + added one'
+
+    patch author_path(@tolkien), params: { author: { name: @tolkien.name, images: [''] } }
+    assert_equal 0, @tolkien.reload.images.count, 'no signed_ids kept → all purged'
+  end
+
   test 'editable: false renders read-only; editable: permission gates the input' do
     get edit_book_path(@hobbit)
     assert_select '.crud-form-readonly'                     # slug (and active, for non-admin)

@@ -1,8 +1,9 @@
 module CrudComponents
   module Fields
-    # Active Storage attachment: image thumb in collections, larger on records.
+    # Active Storage attachment: rendered by content type — image inline,
+    # previewable (e.g. PDF) as a preview, otherwise an icon + filename link.
     class AttachmentField < Base
-      def default_renderer = :image
+      def default_renderer = :attachment
 
       def many?
         @many ||= model.reflect_on_attachment(name).macro == :has_many_attached
