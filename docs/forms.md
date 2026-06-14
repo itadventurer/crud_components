@@ -8,6 +8,8 @@ and no gem-owned routes. The two are kept from drifting by a shared permit list.
 <%= crud_form @book %>          <%# edit if persisted, new if not %>
 ```
 
+![A derived edit form rendered through simple_form: required marks and valid-state inputs, read-only fields shown as compact labels, and the habtm association as a removable-chip picker with an "add" dropdown](screenshots/form.png)
+
 ## The permit list — why fields can't silently fail to save
 
 The form and your strong-params both derive from the same metadata, so a field can't be

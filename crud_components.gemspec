@@ -19,7 +19,7 @@ Gem::Specification.new do |spec|
   spec.metadata['source_code_uri'] = spec.homepage
 
   spec.files = `git ls-files -z`.split("\x0").reject do |f|
-    f.start_with?('test/', 'script/', '.github/') || f == 'AGENTS.md'
+    f.start_with?('test/', 'script/', '.github/', 'docs/screenshots/') || f == 'AGENTS.md'
   end
   spec.require_paths = ['lib']
 

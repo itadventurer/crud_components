@@ -7,6 +7,8 @@ this doc.
 
 ## The helpers
 
+![A collection table derived from the schema — cover thumbnails, genre badge, currency, publisher links and a boolean icon, with header search, an inline filter row, sortable columns, row actions and a standalone filter sidebar](screenshots/table.png)
+
 ```ruby
 crud_collection(records_or_model, fieldset: nil, as: :table, query: nil,
                 param_prefix: nil, actions: true)
@@ -177,6 +179,8 @@ fieldset :index, %i[cover title price], actions: 'books/actions'
 
 ## The manual query, pagination, and big tables
 
+![A paginated table: a footer pager seated in the table's tfoot — "Page 3 of 15 · 120 total" on the left and a windowed page control on the right](screenshots/pagination.png)
+
 By default `crud_collection` renders **everything that matches**. For large tables, take
 the query into your own hands — the explicit form of what the helper does automatically:
 
@@ -210,6 +214,8 @@ collides with a filter. With `param_prefix: :books`, the page param is `books_pa
 read it in the controller (`.page(params[:books_page])`).
 
 ### Several collections on one page
+
+![Two independent collections (Books and Reviews) side by side on one page, each with its own search, filters and sort, isolated by param_prefix](screenshots/dashboard.png)
 
 - **`query: false`** — a static collection (no filter row, no sort links, params ignored).
   Usually right for a secondary table ("books by this publisher", embedded on the

@@ -9,6 +9,8 @@ Running example: the bookstore from the [README](../README.md#the-running-exampl
 
 ## You rarely declare fields
 
+![A zero-config model (not even `include CrudComponents::Model`): the table, columns, search, filters and the auto-derived habtm "Books" column are all inferred from the schema](screenshots/zero-config-table.png)
+
 All columns, enums and associations are already fields — derived from what Rails knows.
 Declare an `attribute` only to *improve* one:
 
@@ -29,6 +31,8 @@ fields. `attribute` never adds or removes a column from a table — that is excl
 the job of [fieldsets](views.md#fieldsets).
 
 ## Renderers
+
+![A record view (crud_record) as a definition list: each value rendered type-aware — currency, a boolean check, a genre badge, pretty-printed JSON, and association links](screenshots/record.png)
 
 Every field has a derived renderer. Name one explicitly with `as:` to override it, and
 pass renderer options inline:

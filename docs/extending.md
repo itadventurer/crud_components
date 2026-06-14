@@ -125,6 +125,8 @@ URLs — a custom layout never reimplements filtering or whitelisting:
 <%= crud_collection @books, as: :cards %>
 ```
 
+![A custom cards layout: the same collection presenter rendered as a responsive card grid (cover image pulled out, fields below), reusing the gem's search, filter sidebar and row actions](screenshots/cards.png)
+
 The presenter's interface (the methods a layout calls — `fields`, `records`,
 `cell(field, record)`, `sortable_field?`, `sort_url`, `filterable?`,
 `render_filter_control`, `row_actions`, `collection_actions`, `searchable?`,

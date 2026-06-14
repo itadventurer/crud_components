@@ -12,7 +12,7 @@ class PaginationController < ApplicationController
   # exactly as you paginated them. The pager links are plain GET params, so they
   # compose with the gem's own filter/search/sort params automatically.
   def index
-    @query = CrudComponents::Query.new(Book, params, ability: self)
-    @books = @query.apply(Book.all).page(params[:page]).per(15)
+    @query = CrudComponents::Query.new(Book, params, fieldset: :index, ability: self)
+    @books = @query.apply(Book.all).page(params[:page]).per(8)
   end
 end
