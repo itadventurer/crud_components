@@ -56,7 +56,7 @@ ActiveRecord::Schema[8.1].define(version: 1) do
     t.timestamps
   end
 
-  # Active Storage (for the :image renderer)
+  # Active Storage (for attachment fields)
   create_table :active_storage_blobs, force: :cascade do |t|
     t.string :key, null: false
     t.string :filename, null: false

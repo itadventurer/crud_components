@@ -40,10 +40,9 @@
 <%= code_file('app/models/book.rb') do %>
 crud_structure do
   attribute :price, as: :number, unit: '€', digits: 2
-  attribute :cover, as: :image
   fieldset :index,   %i[cover title author_names genre price publisher active]
   fieldset :catalog, %i[cover title subtitle author_names genre price purchase_price
-                        shop_margin pages published_on publisher reviews active created_at]
+                        shop_margin pages published_on publisher reviews active manual created_at]
 end
 <% end %>
 <%= code_file('app/views/books/index.html.erb', :erb) do %>
