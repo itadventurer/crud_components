@@ -180,7 +180,8 @@ class FullIntegrationTest < ActionDispatch::IntegrationTest
 
   test 'the header has a global search box and books are searchable by author' do
     get books_path
-    assert_select 'input[type=search][name=q]'
+    assert_select 'table thead input[type=search][name=q]' # search seated in the table head, not floating above
+    assert_select 'table thead th.crud-toolbar-cell[colspan]'
     get books_path(q: 'tolkien')        # delegates through :authors
     assert_select 'td', text: /The Hobbit/
     assert_select 'td', { text: /The Dispossessed/, count: 0 }
@@ -386,5 +387,14 @@ class FullIntegrationTest < ActionDispatch::IntegrationTest
     get authors_path
     assert_response :success
     assert_select 'nav.crud-pager', count: 0
+  end
+
+  test 'a custom layout (cards) can drive its own pager via page_scope' do
+    20.times { |i| Book.create!(title: format('Filler %02d', i), slug: "filler-#{i}", genre: :fiction) }
+    get '/pagination', params: { layout: 'cards' }
+    assert_response :success
+    assert_select '.card'                 # the custom cards layout rendered
+    assert_select 'nav.pagination'        # kaminari's own pager markup
+    assert_select 'nav.crud-pager', count: 0 # not the gem's footer pager
   end
 end

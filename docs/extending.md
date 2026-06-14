@@ -82,7 +82,10 @@ The reusable building blocks the `collection` presenter exposes: `fields`, `reco
 `cell(field, record)`, `sortable_field?` / `sort_url` / `sort_indicator`,
 `filterable_field?` / `render_filter_control(field, query, …)`, `row_actions(record)`,
 `collection_actions`, `searchable?` / `search_param_name`, `filtered?` / `reset_url`,
-`filter_form_id` / `preserved_params`. Sub-partials you can drop in: `_toolbar`,
+`filter_form_id` / `preserved_params`. For pagination: `paginated?` and either render
+the gem's `_pager` sub-partial, or feed `page_scope` (the underlying relation) to your
+own pager — e.g. `<%= paginate collection.page_scope %>` for kaminari (you style its
+markup, as always with kaminari). Sub-partials you can drop in: `_toolbar`, `_pager`,
 `_actions`. Filtering and the whitelist are never reimplemented in a layout — the
 presenter has already done that.
 

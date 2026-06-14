@@ -45,6 +45,13 @@
     <p class="<%= css.muted %>"><%= t('crud_components.empty', default: 'No records') %></p>
   <% end %>
 
-  <%# Reuse the gem's pager — a custom layout gets pagination for free too. %>
-  <%= render 'crud_components/pager', collection: collection %>
+  <%# Pagination in a custom layout is just as easy: either reuse the gem's
+      footer (`render 'crud_components/pager', collection:`) or — as here — feed
+      the underlying relation (`collection.page_scope`) to your pager's own
+      helper. This uses kaminari's default `paginate`, which emits kaminari's
+      own markup; styling it (e.g. `rails g kaminari:views bootstrap5`) is your
+      responsibility, as always with kaminari. %>
+  <% if collection.paginated? %>
+    <%= paginate collection.page_scope %>
+  <% end %>
 </div>

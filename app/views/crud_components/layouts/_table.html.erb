@@ -15,11 +15,18 @@
     </form>
   <% end %>
 
-  <%= render 'crud_components/toolbar', collection: collection %>
-
   <div class="table-responsive">
     <table class="<%= css.table %>">
       <thead class="<%= css.thead %>">
+        <% if collection.show_toolbar? %>
+          <%# Search + collection actions, seated in the table head (a full-width
+              cell) so they read as part of the table rather than floating above. %>
+          <tr>
+            <th colspan="<%= collection.columns_count %>" class="crud-toolbar-cell">
+              <%= render 'crud_components/toolbar', collection: collection %>
+            </th>
+          </tr>
+        <% end %>
         <tr>
           <% collection.fields.each do |field| %>
             <th scope="col">

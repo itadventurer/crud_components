@@ -17,4 +17,20 @@
   gem's own filter params. Try sorting a column, then turning the page.
 </p>
 
-<%= crud_collection @books, query: @query %>   <%# the footer pager renders itself %>
+<% layout = params[:layout] == 'cards' ? :cards : :table %>
+<div class="btn-group btn-group-sm mb-3">
+  <%= link_to 'Table (gem footer pager)', url_for(layout: nil),
+              class: "btn #{layout == :table ? 'btn-dark' : 'btn-outline-dark'}" %>
+  <%= link_to 'Cards (kaminari default pager)', url_for(layout: 'cards'),
+              class: "btn #{layout == :cards ? 'btn-dark' : 'btn-outline-dark'}" %>
+</div>
+<% if layout == :cards %>
+  <p class="text-muted small">
+    A custom layout can use the gem's footer pager, or its own — this cards view
+    feeds <code>collection.page_scope</code> to kaminari's <code>paginate</code>,
+    so the pager below is kaminari's default markup. Styling it is your job, as
+    always with kaminari.
+  </p>
+<% end %>
+
+<%= crud_collection @books, query: @query, as: layout %>

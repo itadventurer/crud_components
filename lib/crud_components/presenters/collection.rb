@@ -117,6 +117,12 @@ module CrudComponents
         !static? && query&.active?
       end
 
+      # Whether the toolbar (search + collection actions) has anything to show —
+      # lets a layout skip an empty header row.
+      def show_toolbar?
+        searchable? || collection_actions&.any?
+      end
+
       # Reset clears *this* collection's filter/search/sort/page params and
       # keeps everyone else's (other prefixes, the page's own params).
       def reset_url
@@ -176,6 +182,11 @@ module CrudComponents
       def current_page = @relation.current_page
       def total_pages  = @relation.total_pages
       def total_count  = @relation.total_count
+
+      # The underlying (possibly paginated) relation, for custom layouts that
+      # would rather drive their own pager — e.g. hand it to kaminari's
+      # `paginate` helper instead of rendering the gem's _pager.
+      def page_scope = @relation
 
       # A URL for page n that keeps this collection's filters/search/sort and
       # every other collection's params (only our own `page` changes) — so the
