@@ -32,7 +32,7 @@ class Book < ApplicationRecord
 
     attribute :author_names do
       render { |book| book.authors.map(&:name).to_sentence }
-      filter like: { authors: :name }
+      filter authors: :name
       sort { |scope, dir| scope.left_joins(:authors).order(Author.arel_table[:name].public_send(dir)) }
     end
 

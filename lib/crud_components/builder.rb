@@ -80,6 +80,8 @@ module CrudComponents
     end
 
     class FacetCollector
+      NONE = Object.new
+
       def initialize(model, name)
         @model = model
         @name = name
@@ -101,22 +103,28 @@ module CrudComponents
         @facets[:render] = block
       end
 
-      NONE = Object.new
-
-      def filter(arg = NONE, like: NONE, &block)
+      # A like-spec passed positionally (same mini-language as `search_in`):
+      #   filter :title                       own column
+      #   filter :title, :subtitle            several columns, OR-combined
+      #   filter authors: %i[name email]      join, explicit columns
+      #   filter :publisher                   join, delegate to the target's search_in
+      #   filter :title, { authors: :name }   mixed
+      # plus `filter false` (off) and `filter { |scope, value| ... }` (block).
+      def filter(*spec, **assoc, &block)
         once!(:filter)
-        given = [arg.equal?(NONE) ? nil : arg, like.equal?(NONE) ? nil : like, block].compact
+        if assoc.key?(:like)
+          raise DefinitionError, "#{where}: the `like:` keyword was removed — pass the spec directly, " \
+                                 "e.g. `filter #{Array(assoc[:like]).map(&:inspect).join(', ')}`"
+        end
+        spec << assoc unless assoc.empty?
+
         case
-        when arg == false && like.equal?(NONE) && !block
-          @facets[:filter] = false
-        when given.size != 1
-          raise DefinitionError, "#{where}: filter takes exactly one of `false`, `like:` or a block"
-        when !like.equal?(NONE)
-          @facets[:filter] = like
-        when block
-          @facets[:filter] = block
+        when spec == [false] && !block then @facets[:filter] = false
+        when block && spec.empty? then @facets[:filter] = block
+        when !spec.empty? && !block then @facets[:filter] = spec.size == 1 ? spec.first : spec
         else
-          raise DefinitionError, "#{where}: filter takes `false`, `like:` or a block, got #{arg.inspect}"
+          raise DefinitionError, "#{where}: filter takes `false`, a column/association spec " \
+                                 '(e.g. `filter :title` or `filter authors: %i[name email]`), or a block'
         end
       end
 

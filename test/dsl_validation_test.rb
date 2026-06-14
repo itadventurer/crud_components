@@ -53,15 +53,23 @@ class DslValidationTest < ActiveSupport::TestCase
     assert_match(/not both/, error.message)
   end
 
-  test 'filter facet takes exactly one of false, like: or a block' do
+  test 'the removed `like:` keyword raises a migration hint' do
+    error = assert_raises(CrudComponents::DefinitionError) do
+      structure_of(define_model { attribute(:title) { filter like: :title } })
+    end
+    assert_match(/`like:` keyword was removed/, error.message)
+    assert_match(/filter :title/, error.message)
+  end
+
+  test 'filter facet takes a spec, `false`, or a block — not a spec and a block' do
     error = assert_raises(CrudComponents::DefinitionError) do
       structure_of(define_model do
         attribute :title do
-          filter(like: :title) { |scope, value| scope }
+          filter(:title) { |scope, value| scope }
         end
       end)
     end
-    assert_match(/exactly one/, error.message)
+    assert_match(/filter takes/, error.message)
 
     assert_raises(CrudComponents::DefinitionError) do
       structure_of(define_model { attribute(:title) { filter } })
@@ -176,7 +184,7 @@ class DslValidationTest < ActiveSupport::TestCase
   end
 
   test 'like-spec referencing nonsense raises' do
-    model = define_model { attribute(:title) { filter like: :no_such_thing } }
+    model = define_model { attribute(:title) { filter :no_such_thing } }
     error = assert_raises(CrudComponents::DefinitionError) do
       structure_of(model).field(:title).apply_filter(model.all, exact: 'x')
     end
