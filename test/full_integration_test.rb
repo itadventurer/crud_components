@@ -329,6 +329,17 @@ class FullIntegrationTest < ActionDispatch::IntegrationTest
     assert_equal 'b.pdf', @hobbit.reload.manual.filename.to_s, 'a new file replaces'
   end
 
+  test 'has_one .adoc attachment (Publisher#brochure): keep / remove / replace round-trip' do
+    @tor.brochure.attach(io: StringIO.new('= kit'), filename: 'tor.adoc', content_type: 'text/asciidoc')
+    base = { name: @tor.name, slug: @tor.slug, founded_on: @tor.founded_on }
+
+    patch publisher_path(@tor), params: { publisher: base.merge(brochure: @tor.brochure.signed_id) }
+    assert @tor.reload.brochure.attached?, 'keep via signed_id'
+
+    patch publisher_path(@tor), params: { publisher: base.merge(brochure: '') }
+    refute @tor.reload.brochure.attached?, 'blank (unchecked keep + empty file) removes'
+  end
+
   test 'has_many attachment: kept signed_ids stay, omitted are purged, new files add' do
     @tolkien.images.attach(io: StringIO.new('1'), filename: '1.png', content_type: 'image/png')
     keep = @tolkien.images.first.signed_id

@@ -55,6 +55,25 @@ module CrudComponents
       Structure.for(model)
     end
 
+    # Whether non-image attachment previews (e.g. a PDF's first page) can
+    # actually be generated here. Beyond a previewer binary (poppler/ffmpeg,
+    # which `previewable?` already checks), processing needs `image_processing`
+    # plus the configured variant backend's gem (ruby-vips or mini_magick).
+    # When any is missing, the renderer shows an icon + filename rather than a
+    # preview that would 500 at processing time.
+    def previews_available?
+      return @previews_available if defined?(@previews_available)
+
+      @previews_available = begin
+        require 'image_processing'
+        processor = defined?(ActiveStorage) ? ActiveStorage.variant_processor : :vips
+        require(processor.to_s == 'mini_magick' ? 'mini_magick' : 'vips')
+        true
+      rescue LoadError
+        false
+      end
+    end
+
     # The strong-params permit list for a model's derived form — the same
     # field metadata the form renders from, so the two can't drift. Use in a
     # controller:

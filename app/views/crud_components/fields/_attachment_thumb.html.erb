@@ -7,7 +7,7 @@
 <% style = surface == :record ? 'max-height: 16rem' : 'max-height: 2.5rem' %>
 <%- if attachment.image? -%>
   <%= image_tag attachment, class: 'rounded crud-image', style: style %>
-<%- elsif attachment.previewable? -%>
+<%- elsif attachment.previewable? && CrudComponents.previews_available? -%>
   <%= image_tag attachment.preview(resize_to_limit: [600, 600]), class: 'rounded crud-image', style: style %>
 <%- else -%>
   <%= link_to rails_blob_path(attachment, disposition: 'attachment'),

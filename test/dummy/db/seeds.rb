@@ -3,6 +3,11 @@ require 'stringio'
 
 srand(42)
 
+# Run Active Storage's analyze/preview jobs inline while seeding — the default
+# :async adapter opens a second SQLite connection mid-attach and deadlocks the
+# single-writer DB once image analysis is available (image_processing present).
+ActiveJob::Base.queue_adapter = :inline
+
 # A minimal solid-colour PNG encoder — avoids any image gem and any Active
 # Storage inline/binary config (image/png serves inline by default, unlike SVG).
 def solid_png(width, height, rgb)
@@ -16,13 +21,19 @@ def solid_png(width, height, rgb)
   sig + chunk.call('IHDR', ihdr) + chunk.call('IDAT', idat) + chunk.call('IEND', '')
 end
 
-# A minimal valid one-page PDF (no gem) — to demo a previewable/non-image
-# attachment. Without a previewer backend (poppler) it shows as an icon + name.
+# A minimal one-page PDF with a text content stream (no gem) — to demo a
+# previewable, non-image attachment. poppler reconstructs the xref, so the
+# missing table is fine; it renders a page reading "CrudComponents manual".
+# Without a previewer stack it falls back to an icon + filename.
 TINY_PDF = <<~PDF.freeze
   %PDF-1.4
   1 0 obj<</Type/Catalog/Pages 2 0 R>>endobj
   2 0 obj<</Type/Pages/Kids[3 0 R]/Count 1>>endobj
-  3 0 obj<</Type/Page/Parent 2 0 R/MediaBox[0 0 200 200]>>endobj
+  3 0 obj<</Type/Page/Parent 2 0 R/MediaBox[0 0 300 200]/Resources<</Font<</F1 5 0 R>>>>/Contents 4 0 R>>endobj
+  4 0 obj<</Length 58>>stream
+  BT /F1 20 Tf 30 110 Td (CrudComponents manual) Tj ET
+  endstream endobj
+  5 0 obj<</Type/Font/Subtype/Type1/BaseFont/Helvetica>>endobj
   trailer<</Root 1 0 R>>
   %%EOF
 PDF
