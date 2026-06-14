@@ -1,0 +1,5 @@
+<%# Form input for a habtm / has_many(:through) association. Locals: f, field,
+    form. A no-JS multiselect baseline carrying the optional `crud-multiselect`
+    Stimulus hook (chips + add picker); without JS the multiselect stands. %>
+<%= f.association field.reflection.name, as: :select, collection: field.form_choices,
+                 input_html: { multiple: true, data: { controller: 'crud-multiselect' } } %>

@@ -60,6 +60,18 @@ class FormTest < ActiveSupport::TestCase
     assert_equal :file, structure.field(:cover).form_control
   end
 
+  test 'form_partial defaults to the form_control type and is overridden by form_as:' do
+    structure = structure_of(Book)
+    assert_equal :text, structure.field(:blurb).form_partial          # text column
+    assert_equal :belongs_to, structure.field(:publisher).form_partial
+    assert_equal :habtm, structure.field(:authors).form_partial
+
+    overridden = define_model { attribute :blurb, form_as: :rich_text }
+    assert_equal :rich_text, structure_of(overridden).field(:blurb).form_partial
+    # form_as: must not leak into renderer options (it is not an HTML attribute)
+    refute_includes structure_of(overridden).field(:blurb).renderer_options.keys, :form_as
+  end
+
   test 'form_fieldset falls back action → :form → :default' do
     structure = structure_of(Book)
     # Book declares :form but not :edit, so :update resolves to :form

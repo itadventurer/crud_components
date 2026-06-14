@@ -1,0 +1,3 @@
+<%# Form input for a belongs_to. Locals: f, field, form.
+    Submits the real foreign-key id (a POST body, not a shareable URL). %>
+<%= f.association field.reflection.name, collection: field.form_choices %>

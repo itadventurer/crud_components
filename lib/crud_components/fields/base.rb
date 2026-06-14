@@ -56,7 +56,7 @@ module CrudComponents
       end
 
       def renderer_options
-        options.except(:as, :if)
+        options.except(:as, :if, :form_as)
       end
 
       # ── permissions ──────────────────────────────────────────────────────
@@ -175,10 +175,17 @@ module CrudComponents
         Permission.permitted?(condition, model, context, record)
       end
 
-      # The form-input flavor (mapped to a simple_form call in
-      # Presenters::Form#simple_input); nil = no form representation.
+      # The form-input flavor; nil = no form representation (json, computed).
       def form_control
         nil
+      end
+
+      # The form-input partial to render: crud_components/form_fields/_<name>.
+      # Defaults to the field's form_control type; override per field with
+      # `form_as:` (mirrors `as:` for the read-only/display renderer). The
+      # partial receives the simple_form builder `f`, the `field`, and `form`.
+      def form_partial
+        options[:form_as] || form_control
       end
 
       # What this field contributes to a strong-params permit list — a symbol

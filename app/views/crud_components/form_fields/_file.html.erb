@@ -1,0 +1,3 @@
+<%# Form input for an Active Storage attachment. Locals: f, field, form.
+    has_many_attached renders a multiple file field. %>
+<%= f.input field.name, as: :file, input_html: { multiple: field.many? } %>

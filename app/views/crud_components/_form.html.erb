@@ -1,8 +1,11 @@
 <%# Derived create/edit form. Local: `form` (Presenters::Form).
     Rendered with simple_form, so it inherits your app's wrappers (Bootstrap by
     default; the community ships Tailwind/Bulma/Foundation configs). The gem
-    still decides *which* fields, their types and the permit list; simple_form
-    does the markup. Override this file to take over form rendering entirely. %>
+    decides *which* fields, their types and the permit list, and renders each
+    input through a per-type partial (crud_components/form_fields/_<type>);
+    simple_form does the markup. Override one of those partials to restyle a
+    whole type, set `form_as:` on an attribute to point one field at a different
+    partial, or override this file to take over form rendering entirely. %>
 <%= simple_form_for(form.record, **form.form_options) do |f| %>
   <% if form.summary_errors.any? %>
     <%# base / non-field errors — per-field errors are simple_form's job %>
@@ -13,7 +16,7 @@
 
   <% form.fields.each do |field| %>
     <% if form.editable?(field) %>
-      <%= form.simple_input(f, field) %>
+      <%= render "crud_components/form_fields/#{field.form_partial}", f: f, field: field, form: form %>
     <% else %>
       <%# visible but not editable: shown read-only for context, not submitted %>
       <div class="mb-2 small d-flex gap-2 crud-form-readonly">

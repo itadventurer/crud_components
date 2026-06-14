@@ -31,30 +31,6 @@ module CrudComponents
         field.editable? && field.editable_permitted?(permission_context, record)
       end
 
-      # Renders one editable field through the simple_form builder `f`, mapping
-      # the field flavor to the right simple_form input. simple_form supplies
-      # the label, wrapper, per-field error and your design-system styling.
-      def simple_input(f, field)
-        case field.form_control
-        when :text       then f.input field.name, as: :text
-        when :boolean    then f.input field.name, as: :boolean
-        when :enum       then f.input field.name, collection: field.form_choices
-        when :belongs_to then f.association field.reflection.name, collection: field.form_choices
-        when :habtm      then habtm_input(f, field)
-        when :file       then f.input field.name, as: :file
-        else                  f.input field.name
-        end
-      end
-
-      # A multiselect baseline (works no-JS, scales to large sets) carrying a
-      # data-controller hook. The optional `crud-multiselect` Stimulus controller
-      # (shipped by the install generator) upgrades it in place into a
-      # chips-list + "add" dropdown; without JS the multiselect stands.
-      def habtm_input(f, field)
-        f.association field.reflection.name, as: :select, collection: field.form_choices,
-                                             input_html: { multiple: true, data: { controller: 'crud-multiselect' } }
-      end
-
       def any_errors?
         record.errors.any?
       end
