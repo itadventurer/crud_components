@@ -9,19 +9,23 @@ module CrudComponents
       def initialize(view:, subject:, structure: nil, actions: nil, owner: nil, suppress_show: false)
         super(view: view)
         @subject = subject
-        @model = subject.is_a?(Class) ? subject : subject.class
+        @model = collection? ? class_of(subject) : subject.class
         @structure = structure || Structure.for(@model)
         @list = actions
         @owner = owner
         @suppress_show = suppress_show
       end
 
-      def kind = @subject.is_a?(Class) ? :collection : :row
+      # A collection subject is a model class or a relation (`@books`); a record
+      # is anything else.
+      def collection? = @subject.is_a?(Class) || @subject.is_a?(ActiveRecord::Relation)
+
+      def kind = collection? ? :collection : :row
 
       def items
         @items ||= list.filter_map do |action|
           next if action.name == :show && action.derived? && @suppress_show
-          next unless action.permitted?(permission_context, @subject)
+          next unless action.permitted?(permission_context, kind == :row ? @subject : @model)
 
           path = RouteResolver.action_path(view, action,
                                            record: kind == :row ? @subject : nil,
@@ -42,6 +46,8 @@ module CrudComponents
       end
 
       private
+
+      def class_of(subject) = subject.is_a?(Class) ? subject : subject.klass
 
       def list
         @list || @structure.fieldset_actions(@structure.default_fieldset, on: kind)
