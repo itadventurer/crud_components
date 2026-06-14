@@ -46,6 +46,7 @@ class FormTest < ActiveSupport::TestCase
     assert_includes list, :name
     assert_includes list, :email
     assert_includes list, ({ book_ids: [] })   # habtm, derived from the schema
+    assert_includes list, ({ images: [] })      # has_many_attached, derived from the schema
     refute_includes list, :id
     refute_includes list, :created_at
   end

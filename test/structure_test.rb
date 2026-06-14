@@ -4,8 +4,14 @@ class StructureTest < ActiveSupport::TestCase
   # ── rule zero: a model with no configuration at all ───────────────────────
   test 'zero-config model resolves all columns and associations with derived flavors' do
     structure = structure_of(Author) # Author has no include, no declarations
-    # columns first, then non-belongs_to associations (the habtm :books)
-    assert_equal %i[id name email created_at updated_at books], structure.default_field_names
+    # columns first, then attachments (has_many_attached :images), then
+    # non-belongs_to associations (the habtm :books)
+    assert_equal %i[id name email created_at updated_at images books], structure.default_field_names
+    assert_instance_of CrudComponents::Fields::AttachmentField, structure.field(:images)
+    assert structure.field(:images).many?
+    # Active Storage's own join associations are not surfaced as fields
+    refute_includes structure.default_field_names, :images_attachments
+    refute_includes structure.default_field_names, :images_blobs
     assert_instance_of CrudComponents::Fields::StringField, structure.field(:name)
     assert_instance_of CrudComponents::Fields::NumericField, structure.field(:id)
     assert_instance_of CrudComponents::Fields::DateField, structure.field(:created_at)

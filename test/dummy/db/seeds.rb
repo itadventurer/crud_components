@@ -35,6 +35,19 @@ authors = first_names.zip(last_names).map do |first, last|
   Author.create!(name: "#{first} #{last}", email: "#{first.parameterize}@example.com")
 end
 
+# A couple of portrait "photos" per author — exercises has_many_attached
+# end to end (derived image-list cell + multiple file field, zero gem config).
+# Some authors are left without, so the empty "—" case shows too.
+portrait_colors = %w[8d99ae cdb4db ffafcc a2d2ff bde0fe ffc8dd]
+authors.each_with_index do |author, i|
+  next if i.even?
+  rand(1..2).times do |n|
+    rgb = portrait_colors.sample.scan(/../).map { |h| h.to_i(16) }
+    author.images.attach(io: StringIO.new(solid_png(160, 200, rgb)),
+                         filename: "#{author.name.parameterize}-#{n}.png", content_type: 'image/png')
+  end
+end
+
 nouns = %w[Dune Forest Empire Station Engine Garden Mirror Tower City Ocean Signal Archive Winter Machine Door]
 adjectives = %w[Dispossessed Silent Endless Burning Hidden Ancient Quiet Broken Distant Luminous]
 genres = Book.genres.keys

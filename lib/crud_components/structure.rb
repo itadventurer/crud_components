@@ -59,20 +59,40 @@ module CrudComponents
     end
 
     # The :all set: every column (foreign keys swapped for their belongs_to),
-    # then non-belongs_to associations (has_many / habtm / has_one), then any
-    # declared computed fields — all derived, in a stable order.
+    # then Active Storage attachments, then non-belongs_to associations
+    # (has_many / habtm / has_one), then any declared computed fields — all
+    # derived, in a stable order.
     def default_field_names
       @default_field_names ||= begin
-        base = column_field_names + association_field_names
+        base = column_field_names + attachment_field_names + association_field_names
         base + (@declarations.keys - base)
       end
     end
 
+    # Active Storage attachments (has_one_attached / has_many_attached),
+    # surfaced as image fields — derived, no declaration needed.
+    def attachment_field_names
+      @attachment_field_names ||=
+        model.respond_to?(:reflect_on_all_attachments) ? model.reflect_on_all_attachments.map(&:name) : []
+    end
+
     # has_many / habtm / has_one — belongs_to already arrive via the FK swap.
+    # Active Storage's generated join associations (images_attachments/_blobs)
+    # and ActionText's rich-text associations are not user-facing columns.
     def association_field_names
       @association_field_names ||=
         model.reflect_on_all_associations.reject(&:belongs_to?).map(&:name)
               .reject { |n| n.to_s.start_with?('rich_text_', 'with_attached_') }
+              .reject { |n| attachment_support_names.include?(n) }
+    end
+
+    # The join associations behind each attachment — excluded from the field
+    # universe, since the attachment itself is the field.
+    def attachment_support_names
+      @attachment_support_names ||=
+        attachment_field_names.flat_map do |att|
+          %W[#{att}_attachment #{att}_attachments #{att}_blob #{att}_blobs].map(&:to_sym)
+        end
     end
 
     # ── fieldsets ────────────────────────────────────────────────────────────

@@ -1,7 +1,17 @@
-<%# Locals: value (Active Storage attachment), record, field, surface %>
-<%- if value.respond_to?(:attached?) && value.attached? -%>
-  <%= image_tag value, class: 'rounded crud-image',
-                style: surface == :collection ? 'max-height: 2.5rem' : 'max-height: 16rem' %>
+<%# Locals: value (Active Storage attachment, one or many), record, field, surface %>
+<% style = surface == :collection ? 'max-height: 2.5rem' : 'max-height: 16rem' %>
+<%- if field.respond_to?(:many?) && field.many? -%>
+  <%- if value.attached? -%>
+    <span class="d-inline-flex flex-wrap gap-1">
+      <%- value.each do |image| -%>
+        <%= image_tag image, class: 'rounded crud-image', style: style %>
+      <%- end -%>
+    </span>
+  <%- else -%>
+    <span class="<%= CrudComponents.config.css.muted %>">—</span>
+  <%- end -%>
+<%- elsif value.respond_to?(:attached?) && value.attached? -%>
+  <%= image_tag value, class: 'rounded crud-image', style: style %>
 <%- else -%>
   <span class="<%= CrudComponents.config.css.muted %>">—</span>
 <%- end -%>

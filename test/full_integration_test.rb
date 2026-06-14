@@ -283,6 +283,11 @@ class FullIntegrationTest < ActionDispatch::IntegrationTest
     assert_select "input[name='book[cover]'][type=file]"
   end
 
+  test 'has_many_attached is derived: a multiple file field on a zero-config model' do
+    get edit_author_path(@tolkien)
+    assert_select "input[name='author[images][]'][type=file][multiple]"
+  end
+
   test 'editable: false renders read-only; editable: permission gates the input' do
     get edit_book_path(@hobbit)
     assert_select '.crud-form-readonly'                     # slug (and active, for non-admin)
