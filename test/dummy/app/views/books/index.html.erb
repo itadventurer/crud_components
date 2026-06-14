@@ -20,7 +20,7 @@
 
 <% if layout == :cards %>
 <%= docs_panel(
-      intro: "&ldquo;Cards&rdquo; is a <strong>custom layout you add</strong> &mdash; the gem ships only the built-in <code>:table</code>. Drop one partial that receives the same <code>collection</code> presenter and arrange the markup however you like; the gem still derives the fields, cells, filtering, sorting and actions for you.",
+      intro: "&ldquo;Cards&rdquo; is a <strong>custom layout you add</strong> &mdash; the gem ships only the built-in <code>:table</code>. Drop one partial that receives the same <code>collection</code> presenter (still driven by the <code>:#{fieldset}</code> fieldset) and arrange the markup however you like; the gem still derives the fields, cells, filtering, sorting and actions for you.",
       docs: { 'Add a layout' => 'docs/extending.md#add-a-layout', 'Views' => 'docs/views.md' }) do %>
 <%= code_file('app/views/crud_components/layouts/_cards.html.erb', :erb) do %>
 &lt;% collection.records.each do |record| %&gt;
@@ -30,23 +30,25 @@
 &lt;% end %&gt;
 <% end %>
 <%= code_file('app/views/books/index.html.erb', :erb) do %>
-&lt;%= crud_collection @books, as: :cards %&gt;
+&lt;%= crud_collection @books, fieldset: :<%= fieldset %>, as: :cards %&gt;
 <% end %>
 <% end %>
 <% else %>
 <%= docs_panel(
-      intro: "A full table &mdash; search, an inline filter row, sortable columns and row actions &mdash; all derived from the model. <code>fieldset :index</code> chooses the columns; <code>as:</code> options give nicer cells (currency, image). Your controller assigns <code>@books</code> &mdash; scope it for authorization (e.g. <code>Book.accessible_by(current_ability)</code>) and the gem renders that scope.",
+      intro: "A full table &mdash; search, an inline filter row, sortable columns and row actions &mdash; all derived from the model. This page toggles between the curated <code>:index</code> and the fuller <code>:catalog</code> fieldset (currently <code>:#{fieldset}</code>). Your controller assigns <code>@books</code> &mdash; scope it for authorization (e.g. <code>Book.accessible_by(current_ability)</code>) and the gem renders that scope.",
       docs: { 'Fields & cells' => 'docs/fields.md', 'Views & fieldsets' => 'docs/views.md' }) do %>
 <%= code_file('app/models/book.rb') do %>
 crud_structure do
   attribute :price, as: :number, unit: '€', digits: 2
   attribute :cover, as: :image
-  fieldset :index, %i[cover title author_names genre price publisher active]
+  fieldset :index,   %i[cover title author_names genre price publisher active]
+  fieldset :catalog, %i[cover title subtitle author_names genre price purchase_price
+                        shop_margin pages published_on publisher reviews active created_at]
 end
 <% end %>
 <%= code_file('app/views/books/index.html.erb', :erb) do %>
-&lt;%= crud_collection @books, fieldset: :index %&gt;   &lt;%# table: search, filters, sort, actions %&gt;
-&lt;%= crud_filter   Book, fieldset: :index %&gt;      &lt;%# filter sidebar (takes the model, not a scope) %&gt;
+&lt;%= crud_collection @books, fieldset: :<%= fieldset %> %&gt;   &lt;%# search, filters, sort, actions %&gt;
+&lt;%= crud_filter   Book, fieldset: :<%= fieldset %> %&gt;     &lt;%# filter sidebar (takes the model, not a scope) %&gt;
 <% end %>
 <% end %>
 <% end %>

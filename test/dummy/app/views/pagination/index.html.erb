@@ -1,16 +1,4 @@
 <h1>Pagination</h1>
-<%= docs_panel(
-      intro: "The gem doesn't paginate on its own (no surprise row limits). You paginate in your controller with your own gem &mdash; here <a href='https://github.com/kaminari/kaminari'>kaminari</a> &mdash; and because a kaminari-paginated relation carries its page state, <code>crud_collection</code> notices and renders the footer pager automatically. Two lines: build the Query, apply it to a scope, paginate. The pager's <code>?page=</code> composes with the gem's own filter/sort params (120 seeded books, 8 per page).",
-      docs: { 'Pagination' => 'docs/views.md#the-manual-query-pagination-and-big-tables' }) do %>
-<%= code_file('app/controllers/books_controller.rb') do %>
-@query = CrudComponents::Query.new(Book, params, fieldset: :index, ability: current_ability)
-@books = @query.apply(Book.all).page(params[:page]).per(8)   # kaminari
-<% end %>
-<%= code_file('app/views/books/index.html.erb', :erb) do %>
-&lt;%= crud_collection @books, query: @query %&gt;   &lt;%# the footer pager renders itself %&gt;
-<% end %>
-<% end %>
-
 <% layout = params[:layout] == 'cards' ? :cards : :table %>
 <div class="btn-group btn-group-sm mb-3">
   <%= link_to 'Table (gem footer pager)', url_for(layout: nil),
@@ -18,13 +6,34 @@
   <%= link_to 'Cards (kaminari default pager)', url_for(layout: 'cards'),
               class: "btn #{layout == :cards ? 'btn-dark' : 'btn-outline-dark'}" %>
 </div>
+
 <% if layout == :cards %>
-  <p class="text-muted small">
-    A custom layout can use the gem's footer pager, or its own — this cards view
-    feeds <code>collection.page_scope</code> to kaminari's <code>paginate</code>,
-    so the pager below is kaminari's default markup. Styling it is your job, as
-    always with kaminari.
-  </p>
+<%= docs_panel(
+      intro: "Pagination works in a custom layout too. You still paginate in the controller (kaminari); the cards layout feeds <code>collection.page_scope</code> to kaminari's own <code>paginate</code> helper, so the pager below is kaminari's default markup &mdash; styling it is your job, as always with kaminari.",
+      docs: { 'Pagination' => 'docs/views.md#the-manual-query-pagination-and-big-tables', 'Add a layout' => 'docs/extending.md#add-a-layout' }) do %>
+<%= code_file('app/controllers/books_controller.rb') do %>
+@query = CrudComponents::Query.new(Book, params, fieldset: :index, ability: current_ability)
+@books = @query.apply(Book.all).page(params[:page]).per(8)   # kaminari
+<% end %>
+<%= code_file('app/views/crud_components/layouts/_cards.html.erb', :erb) do %>
+&lt;%= paginate collection.page_scope %&gt;   &lt;%# kaminari's own pager, inside your card layout %&gt;
+<% end %>
+<%= code_file('app/views/pagination/index.html.erb', :erb) do %>
+&lt;%= crud_collection @books, query: @query, as: :cards %&gt;
+<% end %>
+<% end %>
+<% else %>
+<%= docs_panel(
+      intro: "The gem doesn't paginate on its own (no surprise row limits). You paginate in your controller with your own gem &mdash; here <a href='https://github.com/kaminari/kaminari'>kaminari</a> &mdash; and because a kaminari-paginated relation carries its page state, <code>crud_collection</code> notices and renders the footer pager automatically. The pager's <code>?page=</code> composes with the gem's own filter/sort params (120 seeded books, 8 per page).",
+      docs: { 'Pagination' => 'docs/views.md#the-manual-query-pagination-and-big-tables' }) do %>
+<%= code_file('app/controllers/books_controller.rb') do %>
+@query = CrudComponents::Query.new(Book, params, fieldset: :index, ability: current_ability)
+@books = @query.apply(Book.all).page(params[:page]).per(8)   # kaminari
+<% end %>
+<%= code_file('app/views/pagination/index.html.erb', :erb) do %>
+&lt;%= crud_collection @books, query: @query %&gt;   &lt;%# the footer pager renders itself %&gt;
+<% end %>
+<% end %>
 <% end %>
 
 <%= crud_collection @books, query: @query, as: layout %>
