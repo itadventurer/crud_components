@@ -1,0 +1,22 @@
+<% by = params[:by] == 'genre' ? :genre : :publisher %>
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h1 class="mb-0">Grouped table</h1>
+  <div class="btn-group btn-group-sm">
+    <%= link_to 'Group by publisher', url_for(by: nil),
+                class: "btn #{by == :publisher ? 'btn-dark' : 'btn-outline-dark'}" %>
+    <%= link_to 'Group by genre', url_for(by: 'genre'),
+                class: "btn #{by == :genre ? 'btn-dark' : 'btn-outline-dark'}" %>
+  </div>
+</div>
+
+<%= docs_panel(
+      intro: "Grouping is a render-time arrangement, like the layout. Add <code>group_by: :#{by}</code> &mdash; the gem orders by the group key, splits the rows into collapsible groups (chevron in the header) and shows a per-group count. With #{Book.count} books, groups start collapsed beyond <code>config.group_collapse_threshold</code> (default 50), opening only the first; the open ones live in <code>?open=</code>, so a half-expanded view is copy-pasteable.",
+      docs: { 'Grouping' => 'docs/views.md#grouping' }) do %>
+<%= code_file('app/views/groups/index.html.erb', :erb) do %>
+&lt;%= crud_collection @books, group_by: :<%= by %> %&gt;   &lt;%# belongs_to, enum or a column %&gt;
+<% end %>
+<% end %>
+
+<div class="card"><div class="card-body">
+  <%= crud_collection @books, fieldset: :index, group_by: by %>
+</div></div>

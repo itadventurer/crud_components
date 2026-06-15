@@ -65,6 +65,32 @@ class FullIntegrationTest < ActionDispatch::IntegrationTest
     assert_select "a[href*='/reviews?book=hobbit']", text: /\+\d+ more/
   end
 
+  # ── grouping (group_by:) ──────────────────────────────────────────────────
+  test 'group_by renders a header row per group, with a count' do
+    get groups_path   # group_by: :publisher
+    assert_select 'tr.crud-group-row', minimum: 2          # Tor Books, Ace, …
+    assert_select 'tr.crud-group-row td', text: /Tor Books/
+  end
+
+  test 'few groups are open by default; ?open= is authoritative' do
+    get groups_path
+    # under the threshold (2 publishers, few books) → all groups open → rows show
+    assert_select 'td', text: /The Hobbit/
+
+    # ?open= with only Ace → the Tor book's row is hidden, but its header remains
+    get groups_path(open: 'ace')
+    assert_select 'tr.crud-group-row td', text: /Tor Books/   # header still there
+    assert_select 'td', { text: /The Hobbit/, count: 0 }      # collapsed away
+    assert_select 'td', text: /The Dispossessed/              # Ace, open
+  end
+
+  test 'group_by rejects a non-groupable field (e.g. has_many)' do
+    error = assert_raises(ArgumentError) do
+      CrudComponents::Presenters::Collection.new(view: nil, records: Book.all, query: false, group_by: :reviews)
+    end
+    assert_match(/must be a column, belongs_to or enum/, error.message)
+  end
+
   # ── filtering, sorting (no JS: plain GET) ─────────────────────────────────
   test 'the inline filter row binds inputs to the external form' do
     get books_path

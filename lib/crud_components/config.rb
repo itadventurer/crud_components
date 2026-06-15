@@ -40,11 +40,14 @@ module CrudComponents
       dd: 'col-sm-9'
     }.freeze
 
-    attr_accessor :select_limit
+    attr_accessor :select_limit, :group_collapse_threshold
     attr_reader :css
 
     def initialize
       @select_limit = 250
+      # Grouped collections open every group when the total row count is below
+      # this, and only the first group above it (the rest collapse).
+      @group_collapse_threshold = 50
       @css = ActiveSupport::OrderedOptions.new.merge!(DEFAULT_CSS)
     end
   end

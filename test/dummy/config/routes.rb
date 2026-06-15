@@ -15,6 +15,7 @@ Rails.application.routes.draw do
 
   get 'dashboard', to: 'dashboard#show'
   get 'pagination', to: 'pagination#index'   # how to paginate a big table (bring your own pager)
+  get 'groups', to: 'groups#index'           # collapsible groups via group_by:
   get 'live', to: 'live#index'
   post 'live/poke', to: 'live#poke'
   post 'toggle_admin', to: 'application#toggle_admin'

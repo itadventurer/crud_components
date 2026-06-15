@@ -6,10 +6,11 @@ module CrudComponents
     # — pass a scope, not a model class, so your authorization and any
     # pre-scoping apply before the gem renders. See Presenters::Collection for
     # the query modes.
-    def crud_collection(records, fieldset: nil, as: :table, query: nil, param_prefix: nil, actions: true)
+    def crud_collection(records, fieldset: nil, as: :table, query: nil, param_prefix: nil,
+                        actions: true, group_by: nil)
       presenter = Presenters::Collection.new(view: self, records: records, fieldset: fieldset,
                                              query: query, layout: as, param_prefix: param_prefix,
-                                             actions: actions)
+                                             actions: actions, group_by: group_by)
       render "crud_components/layouts/#{presenter.layout}", collection: presenter
     end
 

@@ -80,21 +80,28 @@
         <% end %>
       </thead>
       <tbody>
-        <% collection.records.each do |record| %>
-          <tr id="<%= dom_id(record) %>">
-            <% collection.fields.each do |field| %>
-              <td><%= collection.cell(field, record) %></td>
-            <% end %>
-            <% if collection.actions_column? %>
-              <td class="<%= css.actions_cell %>">
-                <% if collection.custom_actions_partial %>
-                  <%= render collection.custom_actions_partial, record: record %>
-                <% else %>
-                  <%= render 'crud_components/actions', actions: collection.row_actions(record) %>
+        <% if collection.grouped? %>
+          <% collection.groups.each do |group| %>
+            <tr class="crud-group-row">
+              <td colspan="<%= collection.columns_count %>">
+                <%= link_to collection.group_toggle_url(group), data: { turbo_action: 'advance' },
+                            class: 'text-reset text-decoration-none d-inline-flex align-items-center gap-2' do %>
+                  <i class="<%= css.icon_prefix %><%= collection.group_open?(group) ? 'chevron-down' : 'chevron-right' %>"></i>
+                  <span class="fw-medium"><%= group.label %></span>
+                  <span class="<%= css.badge_muted %>"><%= group.count %></span>
                 <% end %>
               </td>
+            </tr>
+            <% if collection.group_open?(group) %>
+              <% group.records.each do |record| %>
+                <%= render 'crud_components/row', collection: collection, record: record, css: css %>
+              <% end %>
             <% end %>
-          </tr>
+          <% end %>
+        <% else %>
+          <% collection.records.each do |record| %>
+            <%= render 'crud_components/row', collection: collection, record: record, css: css %>
+          <% end %>
         <% end %>
         <% if collection.records.empty? %>
           <tr>

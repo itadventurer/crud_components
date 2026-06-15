@@ -9,7 +9,7 @@ module CrudComponents
       attr_reader :model, :structure, :fieldset, :query, :layout, :param_prefix, :owner
 
       def initialize(view:, records:, fieldset: nil, query: nil, layout: :table,
-                     param_prefix: nil, actions: true)
+                     param_prefix: nil, actions: true, group_by: nil)
         super(view: view)
         unless records.respond_to?(:klass)
           raise ArgumentError,
@@ -41,6 +41,7 @@ module CrudComponents
         end
 
         @relation = eager_load(relation)
+        setup_grouping(group_by) if group_by
       end
 
       def static? = !!@static
@@ -186,6 +187,42 @@ module CrudComponents
         field.is_a?(Fields::NumericField) || field.is_a?(Fields::DateField)
       end
 
+      # ── grouping ─────────────────────────────────────────────────────────
+      # A run of records sharing one group value. `key` is URL-safe (for ?open=),
+      # `label` is for display.
+      Group = Struct.new(:key, :label, :records, keyword_init: true) do
+        def count = records.size
+      end
+
+      def grouped? = !@group_by.nil?
+
+      # The records split into groups, in group order (the relation is ordered by
+      # the group key first, so consecutive records form each group).
+      def groups
+        @groups ||= records.group_by { |r| group_key_for(r) }.map do |key, recs|
+          Group.new(key: key, label: group_label_for(recs.first), records: recs)
+        end
+      end
+
+      # Default: every group open below the collapse threshold, only the first
+      # above it. Once `?open=` is set it is authoritative (and may open several).
+      def group_open?(group)
+        if open_keys.nil?
+          records.size < config.group_collapse_threshold || group == groups.first
+        else
+          open_keys.include?(group.key)
+        end
+      end
+
+      # Toggle this group in `?open=`, materializing the current open set so the
+      # first click on a default view keeps the others as they are.
+      def group_toggle_url(group)
+        current = groups.select { |g| group_open?(g) }.map(&:key)
+        toggled = current.include?(group.key) ? current - [group.key] : current + [group.key]
+        params = view.request.query_parameters.merge(pn('open') => toggled.join(','))
+        "#{view.request.path}?#{params.to_query}"
+      end
+
       # ── pagination ─────────────────────────────────────────────────────────
       # We render a footer pager only when the relation handed to us is already
       # paginated — i.e. the host called `.page` (kaminari / will_paginate, which
@@ -258,6 +295,59 @@ module CrudComponents
       end
 
       private
+
+      GROUP_NONE = 'none'.freeze
+
+      # Validate the group key and order the relation by it (groups contiguous),
+      # keeping the active sort as the secondary order.
+      def setup_grouping(group_by)
+        @group_by = group_by.to_sym
+        @group_field = structure.field(@group_by)
+        unless @group_field.is_a?(Fields::BelongsToField) || @group_field.column
+          raise ArgumentError,
+                "crud_collection group_by: :#{@group_by} must be a column, belongs_to or enum of " \
+                "#{model} — #{@group_field.class.name.split('::').last} can't be grouped (no SQL column to order by)."
+        end
+        return unless @relation.is_a?(ActiveRecord::Relation)
+
+        order_attr = @group_field.is_a?(Fields::BelongsToField) ? @group_field.reflection.foreign_key : @group_by
+        existing = @relation.order_values
+        @relation = @relation.reorder(model.arel_table[order_attr])
+        @relation = @relation.order(*existing) if existing.any?
+      end
+
+      def group_key_for(record)
+        value = record.public_send(@group_by)
+        return GROUP_NONE if value.nil?
+
+        if @group_field.is_a?(Fields::BelongsToField)
+          value.public_send(Structure.for(value.class).identify_by).to_s
+        else
+          value.to_s
+        end
+      end
+
+      def group_label_for(record)
+        value = record.public_send(@group_by)
+        return view.t('crud_components.group.none', default: '—') if value.nil?
+
+        if @group_field.is_a?(Fields::BelongsToField)
+          view.crud_label(value)
+        elsif @group_field.is_a?(Fields::EnumField)
+          @group_field.human_value(value)
+        else
+          value.to_s
+        end
+      end
+
+      # nil when ?open= is absent (use the default open rule); an array (possibly
+      # empty) when present (authoritative).
+      def open_keys
+        return @open_keys if defined?(@open_keys)
+
+        raw = view.request.query_parameters[pn('open')]
+        @open_keys = raw.nil? ? nil : raw.to_s.split(',')
+      end
 
       def row_action_definitions
         @row_action_definitions ||= structure.fieldset_actions(fieldset, on: :row)
