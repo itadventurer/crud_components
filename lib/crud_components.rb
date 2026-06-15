@@ -83,6 +83,17 @@ module CrudComponents
     def permitted_attributes(model, action: :update, ability: nil)
       Structure.for(model).permitted_params(action, PermissionContext.new(ability))
     end
+
+    # Resolve a bulk-action selection from request params into a relation. The
+    # row checkboxes submit `selected[]=<identify_by>` (a slug array; a comma
+    # string is also accepted), so a selection-action controller is one line:
+    #   CrudComponents.selected(Book, params).destroy_all
+    # Scope it yourself for authorization, e.g.
+    #   CrudComponents.selected(Book, params).merge(Book.accessible_by(current_ability))
+    def selected(model, params, param: :selected)
+      values = Array(params[param]).flat_map { |v| v.to_s.split(',') }.map(&:strip).reject(&:blank?)
+      model.where(Structure.for(model).identify_by => values)
+    end
   end
 end
 

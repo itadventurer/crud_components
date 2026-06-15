@@ -65,6 +65,37 @@ class FullIntegrationTest < ActionDispatch::IntegrationTest
     assert_select "a[href*='/reviews?book=hobbit']", text: /\+\d+ more/
   end
 
+  # ── selection + bulk actions (on: :selection) ─────────────────────────────
+  test 'CrudComponents.selected resolves selected[] slugs (array or comma) to a scope' do
+    by_array = CrudComponents.selected(Book, { selected: [@hobbit.slug, @dispossessed.slug] })
+    assert_equal %w[dispossessed hobbit], by_array.map(&:slug).sort
+    by_comma = CrudComponents.selected(Book, { selected: "#{@hobbit.slug},#{@dispossessed.slug}" })
+    assert_equal 2, by_comma.count
+    assert_empty CrudComponents.selected(Book, {}).to_a
+  end
+
+  test 'a selectable collection renders row checkboxes and bulk-action buttons' do
+    get books_path
+    assert_select "form##{'crud_select_books'}"
+    assert_select "input[type=checkbox][name='selected[]'][value=?]", @hobbit.slug
+    assert_select "button[formaction=?][formmethod=post][value=delete]", delete_selected_books_path
+    assert_select "button[formaction=?][formmethod=get]", export_selected_books_path
+  end
+
+  test 'export_selected lists exactly the selected rows' do
+    get export_selected_books_path(selected: [@hobbit.slug])
+    assert_select 'li', text: /The Hobbit/
+    assert_select 'li', { text: /The Dispossessed/, count: 0 }
+  end
+
+  test 'delete_selected destroys the selected rows (no-JS DELETE)' do
+    assert_difference 'Book.count', -1 do
+      delete delete_selected_books_path, params: { selected: [@dispossessed.slug] }
+    end
+    assert_not Book.exists?(slug: 'dispossessed')
+    assert Book.exists?(slug: 'hobbit')
+  end
+
   # ── grouping (group_by:) ──────────────────────────────────────────────────
   test 'group_by renders a header row per group, with a count' do
     get groups_path   # group_by: :publisher

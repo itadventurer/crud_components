@@ -1,5 +1,14 @@
-<%# One collection table row. Locals: collection, record, css. %>
+<%# One collection table row. Locals: collection, record, css; optional group. %>
+<% group = local_assigns[:group] %>
 <tr id="<%= dom_id(record) %>">
+  <% if collection.selectable? %>
+    <td class="crud-select-cell">
+      <%= check_box_tag collection.select_param_name, collection.select_value(record), false,
+                        id: nil, form: collection.select_form_id, class: 'form-check-input',
+                        aria: { label: 'Select row' },
+                        data: { crud_select_target: 'row', action: 'change->crud-select#update', group: group&.key } %>
+    </td>
+  <% end %>
   <% collection.fields.each do |field| %>
     <td><%= collection.cell(field, record) %></td>
   <% end %>

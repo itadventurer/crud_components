@@ -1,11 +1,11 @@
-<%# Collection toolbar: global ?q= search (+ reset) on the left, collection
-    actions on the right. Layout-agnostic — any layout can render it, so
-    swapping the table shell doesn't mean reimplementing search/actions.
+<%# Collection toolbar: global ?q= search (+ reset) on the left, collection and
+    selection actions on the right. Layout-agnostic — any layout can render it,
+    so swapping the table shell doesn't mean reimplementing search/actions.
     Local: `collection`. %>
 <% css = collection.css %>
-<% if collection.searchable? || collection.collection_actions&.any? %>
+<% if collection.searchable? || collection.collection_actions&.any? || collection.selectable? %>
   <div class="<%= css.toolbar %>">
-    <div>
+    <div class="d-flex align-items-center gap-2">
       <% if collection.searchable? %>
         <%# plain GET form — works without JavaScript %>
         <form method="get" action="<%= request.path %>" class="<%= css.search_form %>"
@@ -27,9 +27,27 @@
           <% end %>
         </form>
       <% end %>
+      <% if collection.selectable? %>
+        <%# JS fills the count; hidden until something is ticked %>
+        <span class="<%= css.muted %> small" data-crud-select-target="count" hidden></span>
+      <% end %>
     </div>
-    <% if collection.collection_actions&.any? %>
-      <%= render 'crud_components/actions', actions: collection.collection_actions %>
-    <% end %>
+    <div class="d-flex align-items-center gap-2">
+      <% if collection.selectable? %>
+        <% collection.selection_actions.items.each do |item| %>
+          <% get = item.action.http_method == :get %>
+          <%= button_tag type: 'submit', form: collection.select_form_id,
+                         formaction: item.path, formmethod: get ? 'get' : 'post',
+                         name: get ? nil : '_method', value: get ? nil : item.action.http_method,
+                         class: item.action.css_class, title: item.action.title,
+                         data: { turbo_confirm: item.action.confirm_message }.compact do %>
+            <% if item.action.icon %><i class="<%= css.icon_prefix %><%= item.action.icon %>" aria-hidden="true"></i><% else %><%= item.action.title %><% end %>
+          <% end %>
+        <% end %>
+      <% end %>
+      <% if collection.collection_actions&.any? %>
+        <%= render 'crud_components/actions', actions: collection.collection_actions %>
+      <% end %>
+    </div>
   </div>
 <% end %>

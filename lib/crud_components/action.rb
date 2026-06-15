@@ -38,7 +38,8 @@ module CrudComponents
     def derived? = @derived
     def danger? = @danger
     def collection? = @on == :collection
-    def row? = !collection?
+    def selection? = @on == :selection
+    def row? = @on == :row
 
     def confirm_message
       return nil unless @confirm

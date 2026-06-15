@@ -2,7 +2,11 @@ Rails.application.routes.draw do
   root 'books#index'
 
   resources :books do
-    collection { get :import }
+    collection do
+      get :import
+      delete :delete_selected
+      get :export_selected
+    end
     member { get :preview }
   end
   resources :publishers do

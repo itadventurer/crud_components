@@ -82,9 +82,26 @@
       toggle(value, selected) { const o = this.options.find((o) => o.value === value); if (o) { o.selected = selected; this.render() } }
     }
 
+    // bulk-action selection: select-all (visible) / per-group + a live count.
+    class CrudSelectController extends Controller {
+      static targets = ["row", "all", "group", "count"]
+      connect() { this.update() }
+      toggleAll() { this.rowTargets.forEach((r) => (r.checked = this.allTarget.checked)); this.update() }
+      toggleGroup(e) {
+        this.rowTargets.forEach((r) => { if (r.dataset.group === e.target.dataset.group) r.checked = e.target.checked })
+        this.update()
+      }
+      update() {
+        const n = this.rowTargets.filter((r) => r.checked).length
+        if (this.hasAllTarget) { this.allTarget.checked = n > 0 && n === this.rowTargets.length; this.allTarget.indeterminate = n > 0 && n < this.rowTargets.length }
+        if (this.hasCountTarget) { this.countTarget.hidden = n === 0; this.countTarget.textContent = `${n} selected` }
+      }
+    }
+
     const application = Application.start()
     application.register("crud-filter", CrudFilterController)
     application.register("crud-multiselect", CrudMultiselectController)
+    application.register("crud-select", CrudSelectController)
   </script>
 </head>
 <body class="bg-light">

@@ -1,7 +1,7 @@
 <%# The default collection layout. Receives one local: `collection`
     (CrudComponents::Presenters::Collection). %>
 <% css = collection.css %>
-<div class="crud-collection" data-controller="crud-filter">
+<div class="crud-collection" data-controller="crud-filter<%= ' crud-select' if collection.selectable? %>">
   <% if collection.filterable? %>
     <%# The inline filter row lives inside <thead>; a form cannot wrap table
         cells, so the inputs bind to this external form via the HTML `form`
@@ -12,6 +12,16 @@
       <% collection.preserved_params.each do |name, value| %>
         <%= hidden_field_tag name, value, id: nil %>
       <% end %>
+    </form>
+  <% end %>
+  <% if collection.selectable? %>
+    <%# Selection form: the row checkboxes bind to it via the HTML `form`
+        attribute (same trick as the filter row); the toolbar's bulk-action
+        buttons submit it with per-button formaction/formmethod. A *global* CSRF
+        token (not form_tag's per-form one) so it stays valid for whichever
+        action a button posts to. Plain POST — works without JavaScript. %>
+    <form id="<%= collection.select_form_id %>" method="post" action="<%= request.path %>">
+      <%= hidden_field_tag 'authenticity_token', form_authenticity_token, id: nil %>
     </form>
   <% end %>
 
@@ -28,6 +38,12 @@
           </tr>
         <% end %>
         <tr>
+          <% if collection.selectable? %>
+            <th scope="col" class="crud-select-cell">
+              <input type="checkbox" class="form-check-input" aria-label="Select all"
+                     data-crud-select-target="all" data-action="change->crud-select#toggleAll">
+            </th>
+          <% end %>
           <% collection.fields.each do |field| %>
             <th scope="col">
               <% if collection.sortable_field?(field) %>
@@ -52,6 +68,7 @@
         </tr>
         <% if collection.filterable? %>
           <tr class="<%= css.filter_row %>">
+            <% if collection.selectable? %><td class="crud-select-cell"></td><% end %>
             <% collection.fields.each do |field| %>
               <td>
                 <% if collection.filterable_field?(field) %>
@@ -84,17 +101,24 @@
           <% collection.groups.each do |group| %>
             <tr class="crud-group-row">
               <td colspan="<%= collection.columns_count %>">
-                <%= link_to collection.group_toggle_url(group), data: { turbo_action: 'advance' },
-                            class: 'text-reset text-decoration-none d-inline-flex align-items-center gap-2' do %>
-                  <i class="<%= css.icon_prefix %><%= collection.group_open?(group) ? 'chevron-down' : 'chevron-right' %>"></i>
-                  <span class="fw-medium"><%= group.label %></span>
-                  <span class="<%= css.badge_muted %>"><%= group.count %></span>
-                <% end %>
+                <span class="d-inline-flex align-items-center gap-2">
+                  <% if collection.selectable? && collection.group_open?(group) %>
+                    <input type="checkbox" class="form-check-input" aria-label="Select group"
+                           data-crud-select-target="group" data-group="<%= group.key %>"
+                           data-action="change->crud-select#toggleGroup">
+                  <% end %>
+                  <%= link_to collection.group_toggle_url(group), data: { turbo_action: 'advance' },
+                              class: 'text-reset text-decoration-none d-inline-flex align-items-center gap-2' do %>
+                    <i class="<%= css.icon_prefix %><%= collection.group_open?(group) ? 'chevron-down' : 'chevron-right' %>"></i>
+                    <span class="fw-medium"><%= group.label %></span>
+                    <span class="<%= css.badge_muted %>"><%= group.count %></span>
+                  <% end %>
+                </span>
               </td>
             </tr>
             <% if collection.group_open?(group) %>
               <% group.records.each do |record| %>
-                <%= render 'crud_components/row', collection: collection, record: record, css: css %>
+                <%= render 'crud_components/row', collection: collection, record: record, css: css, group: group %>
               <% end %>
             <% end %>
           <% end %>

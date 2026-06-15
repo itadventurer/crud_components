@@ -38,6 +38,13 @@ class Book < ApplicationRecord
 
     action :preview, icon: 'eye'
     action :import, on: :collection, icon: 'upload'
+    # bulk actions on ticked rows — the checkboxes submit selected[]=<slug>
+    action :delete_selected, on: :selection, icon: 'trash', method: :delete, confirm: true do
+      delete_selected_books_path
+    end
+    action :export_selected, on: :selection, icon: 'download' do
+      export_selected_books_path
+    end
 
     fieldset :index, %i[cover title author_names genre price publisher active],
              actions: %i[preview edit destroy]

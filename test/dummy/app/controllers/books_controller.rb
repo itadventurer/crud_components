@@ -43,6 +43,17 @@ class BooksController < ApplicationController
 
   def import; end
 
+  # Bulk actions on the ticked rows. The gem resolves selected[]=<slug> back to
+  # records via the model's identify_by — one line, your scope, your call.
+  def delete_selected
+    n = CrudComponents.selected(Book, params).destroy_all.size
+    redirect_to books_path, notice: "Deleted #{n} book(s)."
+  end
+
+  def export_selected
+    @books = CrudComponents.selected(Book, params)
+  end
+
   def destroy
     find_book.destroy!
     redirect_to books_path, notice: 'Book deleted.'

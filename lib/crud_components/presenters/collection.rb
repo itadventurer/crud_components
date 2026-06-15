@@ -290,8 +290,36 @@ module CrudComponents
                                             owner: owner)
       end
 
+      # ── selection (bulk actions) ──────────────────────────────────────────
+      # Selection actions (`action :x, on: :selection`) operate on the rows the
+      # user ticks. Rendered as submit buttons that post the checked
+      # `selected[]` slugs to the action path — no-JS works; the optional
+      # crud-select controller adds select-all / select-group / a live count.
+      def selection_actions
+        return nil unless @actions_enabled
+
+        @selection_actions ||= Actions.new(view: view, subject: model, structure: structure,
+                                           actions: structure.fieldset_actions(fieldset, on: :selection),
+                                           owner: owner)
+      end
+
+      def selectable?
+        @actions_enabled && selection_actions.any?
+      end
+
+      def select_form_id
+        suffix = param_prefix ? "_#{param_prefix}" : ''
+        "crud_select_#{model.model_name.plural}#{suffix}"
+      end
+
+      # The checkbox param name (respects param_prefix) — value is each row's
+      # identify_by, resolved back with CrudComponents.selected.
+      def select_param_name = "#{pn('selected')}[]"
+
+      def select_value(record) = record.public_send(structure.identify_by).to_s
+
       def columns_count
-        fields.size + (actions_column? ? 1 : 0)
+        fields.size + (selectable? ? 1 : 0) + (actions_column? ? 1 : 0)
       end
 
       private

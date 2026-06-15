@@ -224,7 +224,7 @@ module CrudComponents
     # actions curates the row buttons without losing the derived :new button
     # (and vice versa). An empty list hides everything.
     def fieldset_actions(fieldset, on:)
-      of_kind = ->(a) { on == :collection ? a.collection? : a.row? }
+      of_kind = ->(a) { a.public_send("#{on}?") }
       names = fieldset.action_names
       return actions.values.select(&of_kind) if names.nil?
       return [] if names.empty?
