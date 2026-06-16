@@ -34,11 +34,11 @@ a filter form, not a set of records.)
 
 `crud_collection`'s `query:` argument controls how a collection gets its records:
 
-| `query:` | Mode | Behavior |
+| `query:`    | Mode       | Behavior                                                                                                                                                                                                    |
 | ----------- | ---------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| *not given* | **auto** | the helper reads the request params (and `current_ability` if defined), builds a `Query`, and applies it to the scope you pass. The only controller code is assigning that scope (e.g. `@books = Book.all`) |
-| a `Query` | **manual** | the records are taken as *already filtered*; the query supplies control state (sort links, filter values) and the helper inherits its fieldset. This is how you paginate — see below |
-| `false` | **static** | no filter row, no sort links, params ignored. What an embedded secondary table usually wants |
+| *not given* | **auto**   | the helper reads the request params (and `current_ability` if defined), builds a `Query`, and applies it to the scope you pass. The only controller code is assigning that scope (e.g. `@books = Book.all`) |
+| a `Query`   | **manual** | the records are taken as *already filtered*; the query supplies control state (sort links, filter values) and the helper inherits its fieldset. This is how you paginate — see below                        |
+| `false`     | **static** | no filter row, no sort links, params ignored. What an embedded secondary table usually wants                                                                                                                |
 
 > **One auto collection per page.** Auto mode reads the shared, flat request params, so
 > two auto collections would both answer to `?sort=…` / `?q=`. Use `param_prefix:` or
@@ -155,15 +155,15 @@ for Font Awesome — the icon *names* differ per library, so adjust those too.
 The block is the path, run in the [view context](fields.md#custom-markup) with the record
 (for row actions). Keywords:
 
-| Keyword | Meaning | Default |
+| Keyword    | Meaning                 | Default                                         |
 | ---------- | ----------------------- | ----------------------------------------------- |
-| `icon:` | icon name | derived for `new/show/edit/destroy` |
-| `title:` | button text | i18n lookup, humanized fallback |
-| `class:` | CSS classes | from the [class map](extending.md#styling) |
-| `confirm:` | `true` or a message | `true` for `:destroy`, else off |
-| `method:` | HTTP method | `:delete` for `:destroy`, else GET |
-| `on:` | `:row` or `:collection` | `:row` (`:new` is `:collection`) |
-| `if:` | permission callable | `can?(name, record)` when an ability is present |
+| `icon:`    | icon name               | derived for `new/show/edit/destroy`             |
+| `title:`   | button text             | i18n lookup, humanized fallback                 |
+| `class:`   | CSS classes             | from the [class map](extending.md#styling)      |
+| `confirm:` | `true` or a message     | `true` for `:destroy`, else off                 |
+| `method:`  | HTTP method             | `:delete` for `:destroy`, else GET              |
+| `on:`      | `:row` or `:collection` | `:row` (`:new` is `:collection`)                |
+| `if:`      | permission callable     | `can?(name, record)` when an ability is present |
 
 A fieldset's `actions:` is authoritative *per kind*: `actions: %i[preview edit destroy]`
 curates the row buttons without losing the derived `:new`; `actions: []` hides
@@ -229,6 +229,26 @@ The table then grows a checkbox column and toolbar buttons. Ticked rows submit t
 filter row), and each button targets its action via `formaction`/`formmethod`. **No
 JavaScript required**; the optional `crud-select` controller adds "select all" (visible
 rows), per-group selection and a live count.
+
+Your controller resolves the selection with one helper — the gem owns no controllers, so
+you choose the scope and the verb:
+
+```ruby
+def delete_selected
+  books = Book.accessible_by(current_ability)         # the same scope you'd render
+  CrudComponents.selected(books, params).destroy_all  # narrows within it
+  redirect_to books_path
+end
+```
+
+`CrudComponents.selected(scope, params)` turns `selected[]` into
+`scope.where(identify_by => …)`. **Pass the authorized scope you render**, not the bare
+model — selection narrows *within* it, so a tampered slug can never reach a row outside it.
+(A model class also works, e.g. `CrudComponents.selected(Book, params)`, when you don't
+scope and mean the whole table.) There is **no "select all" flag** — selection always
+enumerates the chosen rows, so a stray param can never act on the whole table; "select all"
+is purely the JS convenience of ticking the visible boxes.
+
 ## The manual query, pagination, and big tables
 
 ![A paginated table: a footer pager seated in the table's tfoot — "Page 3 of 15 · 120 total" on the left and a windowed page control on the right](screenshots/pagination.png)

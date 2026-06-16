@@ -33,12 +33,14 @@ attribute :slug,           editable: false      # shown read-only in the form, n
 Both `if:` and `editable:` accept the same three forms:
 
 ```ruby
-if: :manage                       # Symbol — sugar for can?(:manage, Model)
+if: :manage                       # Symbol — sugar for can?(:manage, record)
 if: -> { can?(:publish, Book) }   # zero-arity lambda — run where can? is available
 if: ->(record) { record.draft? }  # one-arity lambda — receives the record (nil for column-level checks)
 ```
 
-- **Symbol** → `can?(symbol, model)`.
+- **Symbol** → `can?(symbol, record)` — the record being decided about (so it matches the
+  derived action check, `can?(:edit, @book)`), or the model class for a column-level
+  decision, where there is no record.
 - **Zero-arity lambda** runs in a context where `can?` works (the view when rendering, a
   thin ability wrapper when querying); it receives no record.
 - **One-arity lambda** receives the record — or `nil` for a column-level decision, which by
