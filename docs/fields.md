@@ -20,6 +20,10 @@ attribute :internal_notes, if: :manage                # column-level permission
 attribute :token, filter: false                       # opt a derived field out of filtering
 ```
 
+`if:` gates a column's visibility on a `can?` symbol or a lambda — hidden everywhere
+(table, record, forms, `?q=`) for users who fail the check. See
+[permissions](security.md#permissions).
+
 `attributes` (plural) applies shared options to several fields at once:
 
 ```ruby
@@ -39,7 +43,6 @@ pass renderer options inline:
 
 ```ruby
 attribute :price,  as: :number, unit: '€', digits: 2
-attribute :cover,  as: :image
 attribute :blurb,  as: :markdown
 attribute :rating, as: :stars       # a custom renderer, see Extending
 ```
@@ -47,21 +50,35 @@ attribute :rating, as: :stars       # a custom renderer, see Extending
 `as:` reads the same as on `crud_collection` ("present this as a …") and as simple_form's
 `f.input :price, as: :string`.
 
-Built-in renderers: `:text`, `:number`, `:date`, `:datetime`, `:boolean`, `:enum`,
-`:association`, `:association_list`, `:image`, `:json`, `:markdown`, `:asciidoc`.
+For one-off markup, a block that takes the record renders the cell inline — no named
+renderer needed:
 
-**Renderers are surface-aware.** Each receives `surface:` (`:collection` or `:record`):
+```ruby
+attribute(:badge) { |record| tag.span(record.status, class: 'badge') }
+```
 
-- `:text` truncates inside a collection, preserves line breaks on a record page.
-- `:image` uses a small size in table cells, a larger one on the record view.
-- `:json` pretty-prints into a `<pre>` (syntax-highlighted when `rouge` is present),
-  truncated in collections.
+The block is the inline custom-markup form; the `render` facet (below) is the same thing
+inside a facet block. See [Custom markup](#custom-markup) for how blocks run.
 
-**Soft-dependency renderers** use other gems *when present*, never as dependencies:
-`:markdown` → commonmarker / redcarpet / kramdown (whichever your app has); `:asciidoc`
-→ asciidoctor; `:json` highlighting → rouge. Declaring `as: :markdown` with no markdown
-gem in the bundle raises **at boot** with the list of gems to choose from — never a
-silent blank cell in production.
+Built-in renderers:
+
+* `:text` — truncates in a collection, keeps line breaks on a record page.
+* `:number` — `unit:` (suffix) and `digits:` (decimal places).
+* `:date` — localized.
+* `:datetime` — localized.
+* `:boolean` — ✓/✗ icon; nil shows `—`.
+* `:enum` — i18n'd badge; nil shows `—`.
+* `:association` — nil-safe link via the target's `label`.
+* `:association_list` — "a, b +n more" links.
+* `:attachment` — supports `has_one_attached` / `has_many_attached`: each file is drawn by content type — an image inline, a previewable file (e.g. PDF) as a preview, anything else as an icon + filename download link. Sized by surface; a has_many set renders as a row.
+* `:json` — pretty-printed `<pre>`, syntax-highlighted when [rouge](https://github.com/rouge-ruby/rouge) is present (optional — no rouge, no colors, no error).
+* `:markdown` — needs one of [commonmarker](https://github.com/gjtorikian/commonmarker), [redcarpet](https://github.com/vmg/redcarpet) or [kramdown](https://github.com/gettalong/kramdown) in your bundle; **raises at boot** if none is present.
+* `:asciidoc` — needs [asciidoctor](https://github.com/asciidoctor/asciidoctor); **raises at boot** if absent.
+
+**Renderers are surface-aware.** Each receives `surface:` (`:collection` or `:record`)
+and adapts: `:text` truncates in a collection but keeps line breaks on a record,
+`:attachment` shrinks to a thumbnail in table cells, `:json` truncates its `<pre>` in
+collections.
 
 To add your own renderer, see [Extending](extending.md#add-a-field-renderer).
 
@@ -101,22 +118,21 @@ Customizing how a field renders costs nothing else: a string column with a custo
 
 ## Facets
 
-When a field needs more than rendering, its facets live together in one block — never
-in separate `filter_for` / `path_for` declarations elsewhere:
+When a field needs more than rendering, its facets live together in one block:
 
 ```ruby
 attribute :author_names do
   render { |book| book.authors.map(&:name).to_sentence }
-  filter like: { authors: :name }
+  filter authors: :name
   sort   { |scope, dir| scope.left_joins(:authors).order('authors.name' => dir) }
 end
 ```
 
-| Facet | Takes | Effect |
-| --- | --- | --- |
-| `render { \|record\| … }` | a block (markup) | overrides the rendered cell. Named renderers are `as:`'s job; this facet is block-only |
-| `filter like: spec` / `filter { \|scope, value\| … }` | a like-spec or block | overrides/adds the filter. `filter false` switches a derived filter off |
-| `sort :column` / `sort { \|scope, dir\| … }` | an own-column symbol or block | overrides/adds the sort (`dir` is guaranteed `:asc`/`:desc`). `sort false` switches it off |
+| Facet                                           | Takes                         | Effect                                                                                     |
+| ----------------------------------------------- | ----------------------------- | ------------------------------------------------------------------------------------------ |
+| `render { \|record\| … }`                       | a block (markup)              | overrides the rendered cell. Named renderers are `as:`'s job; this facet is block-only     |
+| `filter spec` / `filter { \|scope, value\| … }` | a positional spec or block    | overrides/adds the filter. `filter false` switches a derived filter off                    |
+| `sort :column` / `sort { \|scope, dir\| … }`    | an own-column symbol or block | overrides/adds the sort (`dir` is guaranteed `:asc`/`:desc`). `sort false` switches it off |
 
 Why filter/sort are opt-in for computed fields: **filtering and sorting run in SQL**, so
 they stay correct on large tables and under pagination. A Ruby-computed value has no SQL
@@ -126,18 +142,18 @@ meaning until a facet tells the gem how to express it.
 > (or `(scope, dir)` for sort) and return a relation. There is no view context at query
 > time; the scope arrives extended with `where_like` (below).
 
-## The like-spec
+## The search spec
 
 One declarative mini-language for "case-insensitive contains across these columns,
-joining as needed" — shared by `filter like:` and `search_in`:
+joining as needed" — shared by `filter` (passed positionally) and `search_in`:
 
 ```ruby
-filter like: :title                              # own column
-filter like: %i[title subtitle]                  # several own columns, OR-combined
-filter like: { authors: %i[name email] }         # join, explicit columns
-filter like: { user: { address: %i[street town] } }  # nested joins, explicit columns
-filter like: :publisher                          # join, DELEGATE to Publisher's search_in
-filter like: [:title, { authors: :name }]        # mixed
+filter :title                                  # own column
+filter :title, :subtitle                       # several own columns, OR-combined
+filter authors: %i[name email]                 # join, explicit columns
+filter user: { address: %i[street town] }      # nested joins, explicit columns
+filter :publisher                              # join, DELEGATE to Publisher's search_in
+filter :title, { authors: :name }              # mixed
 ```
 
 The **delegation form** — an association name *without* columns — means "search it the
@@ -168,20 +184,19 @@ Raw SQL in a block is possible — and then explicitly your responsibility.
 ## Identity: `label`, `identify_by`, `search_in`
 
 ```ruby
-label :title              # method or block; default: name → title → first string column
+label :title              # method or block; default: name → title → first string column → "Book #42"
 identify_by :slug         # default: :id
 search_in :title, :subtitle, :publisher   # default: own string/text columns
 ```
 
 - **`label`** — the record's display name: links, select options, record headings.
-  Block form: `label { |p| "#{p.user.name} @ #{p.training.title}" }`. With no string
-  column at all it falls back to `"Book #42"`.
+  Block form: `label { |book| "#{book.title} (#{book.published_on&.year})" }`. With no
+  string column at all it falls back to `"Book #42"` (`model_name.human` + ` #` + id).
 - **`identify_by`** — the column URL params use to identify a record of this model. With
   `identify_by :slug`, a filter URL reads `?publisher=tor-books` and resolves via
-  `Publisher.where(slug: …)` — never raw ids (no enumerable numeric ids in shareable
-  URLs). See [security](security.md).
+  `Publisher.where(slug: …)`.
 - **`search_in`** — the model's text identity: what `?q=` searches, what the belongs_to
-  text-filter fallback matches, and what delegated specs (`like: :publisher`) expand to.
+  text-filter fallback matches, and what delegated specs (`filter :publisher`) expand to.
 
 ### Identity composes through associations
 
@@ -201,26 +216,26 @@ end
 
 Every model with a `belongs_to :publisher` now gets, for free: a column rendering the
 publisher's name as a link (or a muted placeholder when nil), a filter valued by slug,
-and — wherever a spec says `like: :publisher` — text search through the publisher's
+and — wherever a spec says `:publisher` — text search through the publisher's
 name. Declared once, where Publisher lives; correct everywhere it appears. This is the
 gem's central idea: per-model declarations composed over the association graph.
 
 ## Field flavors in depth
 
-| Flavor | Renderer | Filter | Sort | Notes |
-| --- | --- | --- | --- | --- |
-| string column | text | `ILIKE %v%` (escaped) | yes | |
-| text column | truncated / line-breaks on record | `ILIKE %v%` | yes | |
-| numeric column | number (`as: :number` for `unit:`/`digits:`) | `_geq`/`_leq` range + `?f=v` exact | yes | non-finite (`NaN`/`Inf`) ignored |
-| date / datetime | localized | from–to range + exact day | yes | datetime ranges whole-day-inclusive |
-| boolean | ✓/✗ icon, click-to-filter | any/yes/no select | yes | accepts `t/f/1/0/yes/no/on/off`; else ignored |
-| enum | i18n'd badge, click-to-filter | select of keys | yes | values validated against the enum |
-| json | `<pre>` (rouge if present) | — | — | not form-editable in v1 |
-| Active Storage attachment | image (sized by surface) | — | — | file field in forms |
-| `belongs_to` | nil-safe link via target `label` | select (≤ `select_limit`) / text over target `search_in` | v2 | resolves by `identify_by` |
-| `has_many` / habtm | "a, b +n more" links | opt-in `filter like:` | no | "+n more" links to nested/filtered index |
-| public method | by value type | — | — | needs a facet to filter/sort |
-| `render` block | block output | — | — | facets add filter/sort |
+| Flavor                    | Renderer                                     | Filter                                                   | Sort | Notes                                                                                |
+| ------------------------- | -------------------------------------------- | -------------------------------------------------------- | ---- | ------------------------------------------------------------------------------------ |
+| string column             | text                                         | `ILIKE %v%` (escaped)                                    | yes  |                                                                                      |
+| text column               | truncated / line-breaks on record            | `ILIKE %v%`                                              | yes  |                                                                                      |
+| numeric column            | number (`as: :number` for `unit:`/`digits:`) | `_geq`/`_leq` range + `?f=v` exact                       | yes  | non-finite (`NaN`/`Inf`) ignored                                                     |
+| date / datetime           | localized                                    | from–to range + exact day                                | yes  | datetime ranges whole-day-inclusive                                                  |
+| boolean                   | ✓/✗ icon (nil `—`), click-to-filter          | any/yes/no select                                        | yes  | accepts `t/f/1/0/yes/no/on/off`; nullable column adds a "not set" (IS NULL) choice   |
+| enum                      | i18n'd badge (nil `—`), click-to-filter      | select of keys                                           | yes  | values validated against the enum; nullable column adds a "not set" (IS NULL) choice |
+| json                      | `<pre>` (rouge if present)                   | —                                                        | —    | not form-editable in v1                                                              |
+| Active Storage attachment | image / preview / icon by content type       | —                                                        | —    | form shows current; keep/add/remove via signed_ids                                   |
+| `belongs_to`              | nil-safe link via target `label`             | select (≤ `select_limit`) / text over target `search_in` | v2   | resolves by `identify_by`                                                            |
+| `has_many` / habtm        | "a, b +n more" links                         | opt-in `filter` facet                                    | no   | "+n more" links to nested/filtered index                                             |
+| public method             | by value type                                | —                                                        | —    | needs a facet to filter/sort                                                         |
+| `render` block            | block output                                 | —                                                        | —    | facets add filter/sort                                                               |
 
 Click-to-filter: in a collection, an enum badge and a boolean icon link to set their own
 column's filter (respecting the fieldset whitelist and `param_prefix`). The inline

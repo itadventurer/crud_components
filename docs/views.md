@@ -15,13 +15,11 @@ crud_collection(records, fieldset: nil, as: :table, query: nil,
 crud_record(record, fieldset: nil, actions: true)
 crud_filter(model, fieldset: nil, query: nil, param_prefix: nil)
 crud_form(record, fieldset: nil, action: nil, url: nil, method: nil)   # see forms.md
-crud_actions(record_or_model, fieldset: nil)
+crud_actions(record_or_model, fieldset: nil)   # a record → row actions; a model class → collection actions
 ```
 
-`crud_collection` takes a **relation, not a model class** — pass `Book.all`, `@books`, or
-an authorized scope such as `Book.accessible_by(current_ability)`. Requiring a scope means
-your authorization and any pre-filtering happen in your controller, before the gem renders;
-there's no class branch to special-case. (`crud_filter` still takes the model class — it's
+`crud_collection` takes a relation — pass `Book.all`, `@books`, or
+an authorized scope such as `Book.accessible_by(current_ability)`. (`crud_filter` takes the model class — it's
 a filter form, not a set of records.)
 
 ```erb
@@ -29,6 +27,7 @@ a filter form, not a set of records.)
 <%= crud_record @book %>                       <%# definition list, same cell renderers %>
 <%= crud_filter Book %>                         <%# standalone labelled filter form %>
 <%= crud_actions @book %>                       <%# just the row actions, for manual placement %>
+<%= crud_actions Book %>                         <%# the collection actions (model class), for manual placement %>
 ```
 
 ## The query tri-state
@@ -36,7 +35,7 @@ a filter form, not a set of records.)
 `crud_collection`'s `query:` argument controls how a collection gets its records:
 
 | `query:` | Mode | Behavior |
-| --- | --- | --- |
+| ----------- | ---------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | *not given* | **auto** | the helper reads the request params (and `current_ability` if defined), builds a `Query`, and applies it to the scope you pass. The only controller code is assigning that scope (e.g. `@books = Book.all`) |
 | a `Query` | **manual** | the records are taken as *already filtered*; the query supplies control state (sort links, filter values) and the helper inherits its fieldset. This is how you paginate — see below |
 | `false` | **static** | no filter row, no sort links, params ignored. What an embedded secondary table usually wants |
@@ -47,7 +46,7 @@ a filter form, not a set of records.)
 
 ## Fieldsets
 
-A **fieldset** is a named selection of fields and actions — never a definition.
+A **fieldset** is a named selection of fields and actions.
 Definitions are model-global; fieldsets say what appears where. It is deliberately *not*
 called a "view": table vs. list is a *layout* (`as:`), picked at the render site; a
 fieldset says *which fields*, and the same fieldset can feed a table today and cards
@@ -101,8 +100,7 @@ fieldset :index, %i[cover title price], filters: %i[genre published_on]
 <%= crud_collection @books, fieldset: :catalog, as: :cards %>   <%# a custom layout %>
 ```
 
-v1 ships `:table`. A `:list`, `:cards` or `:map` layout plugs in without touching any
-model — see [Extending → layouts](extending.md#add-a-layout). Selection (fieldset) and
+The gem ships with `:table`. If you want to use a different layout, you can add it by creating a partial in your app at `app/views/crud_components/layouts/_<layout_name>.html.erb`. See [Extending → layouts](extending.md#add-a-layout). Selection (fieldset) and
 arrangement (`as:`) are orthogonal: the same fieldset feeds any layout.
 
 ## Actions
@@ -115,7 +113,7 @@ label link in the same row — never two ways to the same page, always at least 
 
 Defaults are **self-disabling**: a derived action renders only if it is permitted
 (`can?(:edit, record)` when an ability is around) *and* its conventional route resolves.
-A model without RESTful routes simply gets no buttons — never a broken link.
+A model without RESTful routes simply gets no buttons.
 
 ### Route resolution
 
@@ -145,11 +143,20 @@ action :import, on: :collection, icon: 'upload' do
 end
 ```
 
+**Button text** comes from i18n: `t("crud_components.actions.#{name}")`, humanized fallback.
+The gem ships English and German defaults for the four built-in actions (`new`/`show`/`edit`/`destroy`);
+override any of them, or add your own custom actions, in your app's `config/locales`.
+
+**Icons** are [Bootstrap Icons](https://icons.getbootstrap.com) by default, rendered as
+`#{css.icon_prefix}#{icon}` (`icon_prefix` defaults to `'bi bi-'`). Use any library by
+setting it in the [class map](extending.md#styling), e.g. `config.css.icon_prefix = 'fa fa-'`
+for Font Awesome — the icon *names* differ per library, so adjust those too.
+
 The block is the path, run in the [view context](fields.md#custom-markup) with the record
 (for row actions). Keywords:
 
 | Keyword | Meaning | Default |
-| --- | --- | --- |
+| ---------- | ----------------------- | ----------------------------------------------- |
 | `icon:` | icon name | derived for `new/show/edit/destroy` |
 | `title:` | button text | i18n lookup, humanized fallback |
 | `class:` | CSS classes | from the [class map](extending.md#styling) |
@@ -170,7 +177,7 @@ any helper and place them yourself:
 
 ```erb
 <%= crud_actions @book %>    <%# the row actions of one record %>
-<%= crud_actions Book %>     <%# the collection actions %>
+<%= crud_actions Book %>     <%# the collection actions (a model class) %>
 ```
 
 For a fully custom actions cell, a fieldset can name a partial instead of a list — it
@@ -180,6 +187,48 @@ receives `record`:
 fieldset :index, %i[cover title price], actions: 'books/actions'
 ```
 
+## Grouping
+
+`group_by:` is a render-time *arrangement*, like the layout (`as:`) — not part of
+the fieldset (which is *what* shows) or the model. Pass it on the render call:
+
+```erb
+<%= crud_collection @books, group_by: :publisher %>   <%# belongs_to, enum or a column %>
+```
+
+The gem orders the relation by the group key first (your column sort applies *within*
+each group), splits the rows into groups, and renders a header row per group — a chevron,
+the group label (a `belongs_to`'s `label`, an enum's i18n value, or the column value) and a
+count. A nil value forms a trailing "—" group.
+
+Collapse state is a plain GET param, `?open=tor-books,ace`, so a half-expanded view is
+copy-pasteable and works without JavaScript (each chevron is a link that toggles its key).
+By default every group opens when the total row count is below
+`config.group_collapse_threshold` (50); above it only the first opens. Once `?open=` is set
+it is authoritative (and may open several).
+
+Grouping applies to the rendered set, so with pagination it groups per page — typically you
+group *instead of* paging. The key must be a column, `belongs_to` or enum (something with a
+SQL column to order by); anything else raises at render.
+
+## Selection (bulk actions)
+
+Declare a bulk action with `on: :selection` and the verb it uses:
+
+```ruby
+action :delete_selected, on: :selection, method: :delete, confirm: true do
+  delete_selected_books_path
+end
+action :export_selected, on: :selection do export_selected_books_path end   # GET
+```
+
+The table then grows a checkbox column and toolbar buttons. Ticked rows submit their
+`identify_by` values as `selected[]=<slug>` to the action's path with the declared method
+(POST/DELETE get a confirm and a global CSRF token; GET just navigates). It is one external
+`<form>` — the checkboxes bind via the HTML `form` attribute (the same trick as the inline
+filter row), and each button targets its action via `formaction`/`formmethod`. **No
+JavaScript required**; the optional `crud-select` controller adds "select all" (visible
+rows), per-group selection and a live count.
 ## The manual query, pagination, and big tables
 
 ![A paginated table: a footer pager seated in the table's tfoot — "Page 3 of 15 · 120 total" on the left and a windowed page control on the right](screenshots/pagination.png)
@@ -190,7 +239,7 @@ the query into your own hands — the explicit form of what the helper does auto
 ```ruby
 # controller
 @query = CrudComponents::Query.new(Book, params, fieldset: :catalog, ability: current_ability)
-@books = @query.apply(Book.accessible_by(current_ability)).page(params[:page])  # kaminari/pagy
+@books = @query.apply(Book.accessible_by(current_ability)).page(params[:page])  # kaminari
 ```
 
 ```erb

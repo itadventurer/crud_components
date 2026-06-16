@@ -1,123 +1,128 @@
-# Security & the URL model
+# Security
 
-The gem's job is to turn untrusted URL params into SQL safely. This is the reference for
-the guarantees and how they're enforced. Every item here is backed by a test in
-[`test/query_security_test.rb`](../test/query_security_test.rb).
+The gem has two security jobs:
 
-## The URL is the state
+1. **Show only what the user is allowed to see** — and never let them filter or sort by it
+   either. Visibility is permission-aware, end to end.
+2. **Turn untrusted URL params into SQL with no injection** — every value, name and spec
+   that reaches the query is whitelisted, validated and parameterized.
 
-Plain GET forms and links, `data-turbo-action="advance"`, shareable URLs. Flat params:
+   Both are encoded as tests in
+   [`test/query_security_test.rb`](../test/query_security_test.rb).
 
-| Param | Meaning |
-| --- | --- |
-| `?title=ruby` | filter a field (text / enum / boolean / belongs_to) |
-| `?price=12` / `?published_on=2026-01-01` | exact match (number / single day) |
-| `?price_geq=10&price_leq=20` | ranges (numeric, date; dates whole-day-inclusive) |
-| `?q=tolkien` | global search through `search_in` |
-| `?sort=title&dir=desc` | sorting; composes with active filters |
+## Permissions: `if:` and `editable:`
 
-Reserved: `q`, `sort`, `dir`, `page`, `per` (a field may not be named after them — it
-raises at boot). With `param_prefix: :books`, all of these gain a `books_` prefix and
-unprefixed params are ignored.
-
-## The one rule
-
-> **A URL param is applied iff it names a filterable field of the fieldset in play that
-> the current user may see (or one of the reserved params). Everything else never reaches
-> SQL.**
-
-## The guarantees
-
-### 1. Permissions come first
-
-A field gated by `if:` is invisible **and** unfilterable / unsortable for users without
-the permission — the whitelist is permission-aware. There is no way to filter or sort by
-a column you're not allowed to see. Pass the ability where you build the query:
+Two dimensions, declared on an attribute:
 
 ```ruby
-CrudComponents::Query.new(Book, params, ability: current_ability)
-# or, in auto mode, current_ability is picked up if your controller defines it
+attribute :purchase_price, if: :manage          # visible only to managers — hidden everywhere otherwise
+attribute :state,          editable: :publish   # everyone sees it; only :publish may change it in a form
+attribute :slug,           editable: false      # shown read-only in the form, never submitted
 ```
 
-No ability passed ⇒ permission-gated fields are treated as not permitted (safe by
-default).
+- **`if:`** governs **visibility** — and it is total. A field whose `if:` fails is absent
+  from the table, the record view, the form *and the query layer*: you cannot filter,
+  sort or `?q=`-search by a column you may not see. (See [the whitelist](#the-whitelist) and
+  [`?q=` and permissions](#q-search-and-permissions).)
+- **`editable:`** governs **writability in forms** only — a field can be visible but not
+  changeable. `false` (or an unmet permission) renders it read-only and drops it from the
+  [permit list](forms.md#the-permit-list); it stays visible for context.
 
-### 2. Whitelist by construction — unknown and unseen params are inert
+### Callable forms
 
-Only the current fieldset's filterable fields (plus its declared `filters:`) are ever
-read from the URL. A column that exists but isn't part of the surface, or is
-permission-gated, never reaches SQL. So **hidden data cannot be probed** by filtering or
-sorting — e.g. you cannot bisect an invisible `purchase_price` by watching which rows
-survive a `purchase_price_geq`. Non-scalar param values (`?title[]=…`, `?title[x]=…`) are
-ignored.
+Both `if:` and `editable:` accept the same three forms:
 
-### 3. No injection through `sort` / `dir`
+```ruby
+if: :manage                       # Symbol — sugar for can?(:manage, Model)
+if: -> { can?(:publish, Book) }   # zero-arity lambda — run where can? is available
+if: ->(record) { record.draft? }  # one-arity lambda — receives the record (nil for column-level checks)
+```
 
-`sort` resolves against the fieldset's sortable fields only — `?sort=title; DROP TABLE
-books` produces **no `ORDER BY` at all**, not an escaped one. `dir` is validated against
-`asc` / `desc`, defaulting to `asc`.
+- **Symbol** → `can?(symbol, model)`.
+- **Zero-arity lambda** runs in a context where `can?` works (the view when rendering, a
+  thin ability wrapper when querying); it receives no record.
+- **One-arity lambda** receives the record — or `nil` for a column-level decision, which by
+  nature can't depend on a single row (e.g. whether the *column* shows at all).
 
-### 4. No injection through values
+### The `can?` dependency (there isn't one)
 
-- LIKE wildcards (`%`, `_`) **and the backslash escape char itself** are escaped in every
-  gem-generated pattern (`sanitize_sql_like` with an explicit `\` escape), so a search for
-  `%` matches a literal percent and `\` a literal backslash.
-- Enum values are validated against the enum definition; invalid values leave the scope
-  unchanged.
-- Boolean values are validated against an explicit set (`t/f/1/0/yes/no/on/off`);
-  anything else (`2`, `" true"`, `banana`) is ignored — not coerced to `true`.
-- Numeric/date casts reject the unparsable *and* the non-finite (`NaN`, `Infinity`), so
-  neither reaches SQL.
-- belongs_to params resolve via the target's declared `identify_by` column, as a
-  parameterized subquery — never a raw id (unless `identify_by` is `:id`).
+`can?` is **feature-detected**, not required. The gem depends on no authorization library;
+it works with [CanCanCan](https://github.com/CanCanCommunity/cancancan) or anything exposing
+a `can?(action, subject)` method.
 
-### 5. No injection through specs
+- Pass the ability where you build the query, or let auto mode pick up `current_ability`:
 
-A like-spec contains only column/association names you wrote — no user-controlled SQL.
-The gem builds joins + parameterized ILIKE from it. The only place SQL is hand-written is
-an escape-hatch `filter { |scope, value| … }` block, and `where_like` exists so you
-rarely write any. Raw SQL in a block is your responsibility.
+  ```ruby
+  CrudComponents::Query.new(Book, params, ability: current_ability)
+  ```
+
+- **No `can?` provider and no ability?** A `Symbol` condition simply evaluates to *not
+  permitted* — the field is hidden. It does **not** raise. Safe by default: absent an
+  authority to say "yes", the answer is "no". (Lambdas that don't call `can?` are
+  unaffected.)
+
+## The whitelist
+
+> **A URL param is applied only if it names a filterable field of the fieldset in play
+> that the current user may see (or a reserved param). Everything else never reaches SQL.**
+
+Two consequences worth stating plainly:
+
+- **You can only filter and sort what you can see.** The set of filterable/sortable fields
+  is the visible fieldset (plus its declared `filters:`), minus anything an `if:` hides.
+- **Hidden data can't be probed.** Because a permission-gated column never reaches the
+  query, you can't bisect an invisible `purchase_price` by watching which rows survive a
+  crafted `purchase_price_geq`.
+
+## The injection-safe URL model
+
+The URL *is* the state — plain GET forms and links, `data-turbo-action="advance"`,
+shareable. Flat params:
+
+| Param                                    | Meaning                                             |
+| ---------------------------------------- | --------------------------------------------------- |
+| `?title=ruby`                            | filter a field (text / enum / boolean / belongs_to) |
+| `?price=12` / `?published_on=2026-01-01` | exact match (number / single day)                   |
+| `?price_geq=10&price_leq=20`             | ranges (numeric, date; dates whole-day-inclusive)   |
+| `?q=tolkien`                             | global search through `search_in`                   |
+| `?sort=title&dir=desc`                   | sorting; composes with active filters               |
+
+`q`, `sort`, `dir`, `page`, `per` are **reserved** — they're the gem's own control params.
+A field named after one would silently shadow it, so the gem raises at boot instead; rename
+the field (or scope the whole collection with `param_prefix: :books`, which prefixes every
+param). With `param_prefix:`, unprefixed params are ignored.
+
+The guarantees, each backed by a test:
+
+- **Unknown / non-scalar params are inert.** Only whitelisted fields are read; `?title[]=…`
+  and `?title[x]=…` are ignored.
+- **No injection through `sort`/`dir`.** `sort` resolves against sortable fields only —
+  `?sort=title;DROP TABLE books` yields *no* `ORDER BY`, not an escaped one. `dir` is
+  validated to `asc`/`desc`.
+- **Escaped LIKE.** Wildcards (`%`, `_`) and the backslash escape itself are escaped
+  (`sanitize_sql_like` with an explicit `\`), so `%` matches a literal percent.
+- **Validated casts.** Enum values are checked against the enum; booleans against an
+  explicit set (`t/f/1/0/yes/no/on/off`); numeric/date casts reject the unparsable *and*
+  the non-finite (`NaN`, `Infinity`). Anything invalid leaves the scope unchanged.
+- **belongs_to by `identify_by`.** belongs_to params resolve through the target's
+  `identify_by` column as a parameterized subquery — never a raw id (unless `identify_by`
+  is `:id` (default)).
+- **Specs are author-written.** A search spec contains only column/association names you
+  wrote; the gem builds joins + parameterized ILIKE from it. The one place SQL is
+  hand-written is the escape-hatch `filter { |scope, value| … }` block — and `where_like`
+  exists so you rarely need to. Raw SQL in a block is your responsibility.
 
 ## `?q=` search and permissions
 
 `search_in` is the model's **text identity**, used model-globally (it powers `?q=`, the
 belongs_to text fallback, and delegated specs). Two things follow:
 
-- A **declared, permission-gated** column (`attribute :notes, if: :manage`) is dropped
-  from the search spec for a user who can't see it — `?q=` upholds "hidden everywhere".
-- An **undeclared** column in the zero-config default spec (which is *all* string/text
-  columns) is searched model-globally by design. If a model has a sensitive string column
-  you don't want reachable via `?q=`, declare `search_in` explicitly (naming the columns
-  you do want) — the default is broad on purpose, so that zero-config search "just finds
-  things", but it is the author's call to narrow it.
+- A **declared, permission-gated** column (`attribute :notes, if: :manage`) is dropped from
+  the search spec for a user who can't see it — `?q=` upholds "hidden everywhere".
+- An **undeclared** column in the zero-config default spec (all string/text columns) is
+  searched model-globally by design. If a model has a sensitive string column you don't
+  want reachable via `?q=`, declare `search_in` explicitly with only the columns you want.
+  The default is broad so zero-config search "just finds things"; narrowing it is the
+  author's call.
 
-## Permissions
-
-`if:` / `editable:` accept any of these callable forms:
-
-```ruby
-if: :manage                       # sugar for -> { can?(:manage, Model) }
-if: -> { can?(:manage, Book) }    # zero-arity lambda, run where can? works
-if: ->(record) { record.draft? }  # one-arity lambda — receives the record
-if: -> { it.draft? }              # `it` — also receives the record (action context)
-```
-
-- Symbol → `can?(symbol, model)`. Requires a `can?` provider (CanCanCan or anything with
-  the same interface). The gem depends on **none** of them — `can?` is feature-detected.
-- A zero-arity lambda runs in a context where `can?` is available (the view when
-  rendering; a thin ability wrapper when querying).
-- A one-arity lambda / `it` receives the record (and `nil` for column-level decisions,
-  which by nature can't depend on a single row).
-
-## Performance defenses (security-adjacent, on by default)
-
-- Associations of visible fields (`belongs_to` *and* `has_many`) are eager-loaded — no
-  N+1 from the derived columns.
-- belongs_to filter selects switch to a text input (over the target's `search_in`) beyond
-  `config.select_limit` (default 250); autocomplete is a later version.
-- Long text truncates in collections (full value on the record page).
-- No pagination in auto mode yet — pass a bounded scope or use the
-  [manual query](views.md#the-manual-query-pagination-and-big-tables) for big tables. A
-  1600-row table rendered unbounded is the documented footgun.
-
-See also: [Views](views.md) · [Fields](fields.md) · [Forms](forms.md).
+  See also: [Performance](performance.md) · [Views](views.md) · [Fields](fields.md) · [Forms](forms.md).

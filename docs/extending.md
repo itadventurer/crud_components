@@ -1,23 +1,27 @@
 # Extending & styling
 
-The gem ships **no CSS** and is built to drop into an app that has its own design — even
-one on a CSS framework that works nothing like Bootstrap. Two facts make that practical:
+The gem ships **no CSS** but is designed for **Bootstrap 5 by default**, and is built to
+drop into an app that has its own design — even one on a CSS framework that works nothing
+like Bootstrap. The class map and the partials cover overrides: swap cosmetic classes in
+the map, override individual partials where the structure differs. For a whole different
+framework, PRs are welcome — open an issue to talk it through first. Two facts make that
+practical:
 
 1. **Everything visual is a partial**, and a file at the same path in your app wins
    (standard Rails view-path precedence — the same mechanism as Devise or Kaminari
-   views). That one rule is the entire extension API; there are no registries.
+   views). That one rule is the entire extension API.
 2. **The surfaces are decomposed**, so overriding one piece doesn't mean reimplementing
    the others — you reuse the presenter and the sub-partials.
 
 ## How far do you need to go?
 
-| You want to… | Do this | Reach for |
-| --- | --- | --- |
-| tweak colours / button styles | change CSS class names | the [class map](#styling) |
-| restructure **one** surface (different table markup, your grid) | override **one** partial | `rails g crud_components:views`, then edit |
-| add a whole new arrangement (cards, list, kanban) | add a layout partial | [Add a layout](#add-a-layout) |
-| change a single field's display rendering | add a renderer partial | [renderers](#add-a-field-renderer) |
-| move to a different CSS framework | override the partials (class map covers the easy bits) | this whole doc |
+| You want to…                                                    | Do this                                                | Reach for                                  |
+| --------------------------------------------------------------- | ------------------------------------------------------ | ------------------------------------------ |
+| tweak colours / button styles                                   | change CSS class names                                 | the [class map](#styling)                  |
+| restructure **one** surface (different table markup, your grid) | override **one** partial                               | `rails g crud_components:views`, then edit |
+| add a whole new arrangement (cards, list, kanban)               | add a layout partial                                   | [Add a layout](#add-a-layout)              |
+| change a single field's display rendering                       | add a renderer partial                                 | [renderers](#add-a-field-renderer)         |
+| move to a different CSS framework                               | override the partials (class map covers the easy bits) | this whole doc                             |
 
 The class map is the *simplest* lever and deliberately covers only the common, cosmetic
 cases — colours, sizes, button variants. It is **not** a full theming engine: structural
@@ -36,11 +40,13 @@ bin/rails generate crud_components:views   # copy the gem's partials into your a
 crud_components/
   layouts/_table.html.erb          # collection layouts (as: :table, …)
   _toolbar.html.erb                # search box + reset + collection actions (reused by layouts)
-  _pager.html.erb                  # footer pager (shown when the relation is paginated)
+  _pager.html.erb                  # footer pager in the table (shown when the relation is paginated)
   _actions.html.erb                # a group of action buttons
   fields/_string.html.erb …        # value renderers (as: :string, …)
   filters/_text.html.erb …         # filter controls
-  _record.html.erb _filter.html.erb _form.html.erb   # _form renders via simple_form
+  _record.html.erb
+  _filter.html.erb
+  _form.html.erb                   # _form renders via simple_form
 ```
 
 ## Overriding one surface without rewriting the rest
@@ -58,7 +64,18 @@ the `collection` presenter and the sub-partials hand them to you:
     <% collection.fields.each do |field| %>
       <th>
         <% if collection.sortable_field?(field) %>
-          <a href="<%= collection.sort_url(field) %>"><%= field.human_name %><%= collection.sort_indicator(field) %></a>
+          <a href="<%= collection.sort_url(field) %>">
+            <%= field.human_name %>
+            <%# sort_direction is :asc / :desc / nil (nil = not the active column).
+                sort_numeric? picks a numeric vs alphabetic icon; css.icon_prefix is
+                the library prefix. %>
+            <% if (dir = collection.sort_direction(field)) %>
+              <% family = collection.sort_numeric?(field) ? 'sort-numeric' : 'sort-alpha' %>
+              <i class="<%= collection.css.icon_prefix %><%= family %>-<%= dir == :desc ? 'up' : 'down' %>"></i>
+            <% else %>
+              <i class="<%= collection.css.icon_prefix %>arrow-down-up text-muted opacity-25"></i>
+            <% end %>
+          </a>
         <% else %>
           <%= field.human_name %>
         <% end %>
@@ -78,16 +95,34 @@ the `collection` presenter and the sub-partials hand them to you:
 </table>
 ```
 
-The reusable building blocks the `collection` presenter exposes: `fields`, `records`,
-`cell(field, record)`, `sortable_field?` / `sort_url` / `sort_indicator`,
-`filterable_field?` / `render_filter_control(field, query, …)`, `row_actions(record)`,
-`collection_actions`, `searchable?` / `search_param_name`, `filtered?` / `reset_url`,
-`filter_form_id` / `preserved_params`. For pagination: `paginated?` and either render
-the gem's `_pager` sub-partial, or feed `page_scope` (the underlying relation) to your
-own pager — e.g. `<%= paginate collection.page_scope %>` for kaminari (you style its
-markup, as always with kaminari). Sub-partials you can drop in: `_toolbar`, `_pager`,
-`_actions`. Filtering and the whitelist are never reimplemented in a layout — the
-presenter has already done that.
+The reusable building blocks the `collection` presenter exposes:
+
+| Method                                   | Returns                                                                                       |
+| ---------------------------------------- | --------------------------------------------------------------------------------------------- |
+| `fields`                                 | the permitted fields (columns) to show, in order                                              |
+| `records`                                | the resolved, filtered, sorted rows (an array)                                                |
+| `cell(field, record)`                    | the type-aware cell HTML — value renderer, label link, click-to-filter                        |
+| `sortable_field?(field)`                 | boolean: is this column sortable                                                              |
+| `sort_url(field)`                        | the link that toggles/sets this column's sort                                                 |
+| `sort_active?(field)`                    | boolean: is the result currently sorted by this column                                        |
+| `sort_direction(field)`                  | `:asc` / `:desc`, or `nil` when not the active sort column — turn it into a glyph yourself    |
+| `sort_numeric?(field)`                   | boolean: does this column sort numerically (vs alphabetically) — pick a numeric vs alpha icon |
+| `filterable_field?(field)`               | boolean: does this column have a filter control                                               |
+| `render_filter_control(field, query, …)` | the inline filter control HTML for a field                                                    |
+| `row_actions(record)`                    | an `Actions` presenter for one row — feed to `_actions`                                       |
+| `collection_actions`                     | an `Actions` presenter for collection-level actions (e.g. "New")                              |
+| `searchable?`                            | boolean: is there a free-text search (`?q=`)                                                  |
+| `search_param_name`                      | the query-param name for the search box (respects `param_prefix:`)                            |
+| `filtered?`                              | boolean: is any filter/search/sort currently active                                           |
+| `reset_url`                              | URL that clears *this* collection's filter/search/sort/page params                            |
+| `filter_form_id`                         | the id of the external `<form>` the inline filter inputs bind to                              |
+| `preserved_params`                       | params to re-emit as hidden inputs so the filter form keeps unrelated state                   |
+| `paginated?`                             | boolean: was the relation handed in already `.page`-d (kaminari/will_paginate)                |
+| `page_scope`                             | the underlying (possibly paginated) relation, for driving your own pager                      |
+| `page_url(n)`                            | a URL for page `n` that keeps this collection's state and others' params                      |
+| `pager_pages(window:)`                   | page numbers to render, with `:gap` markers for elided ranges                                 |
+
+For pagination, either render the gem's `_pager` sub-partial, or feed `page_scope` (the underlying relation) to your own pager — e.g. `<%= paginate collection.page_scope %>` for kaminari (you style its markup, as always with kaminari). Sub-partials you can drop in: `_toolbar`, `_pager`, `_actions`. Filtering and the whitelist are never reimplemented in a layout — the presenter has already done that.
 
 ## Add a field renderer
 
@@ -110,10 +145,21 @@ attribute :rating, as: :stars
 
 ## Form inputs
 
-Form inputs are simple_form's job, not a per-control partial — see
-[Forms and your design system](#forms-and-your-design-system). The flavor → simple_form
-mapping lives in `Presenters::Form#simple_input`; to change it, override
-`crud_components/_form.html.erb`.
+Each input renders through a per-type partial,
+`crud_components/form_fields/_<type>.html.erb`: **the partial decides *what* to render
+(which `f.input`, its collection, blank options, …) and simple_form does the rest** (the
+wrapper, label, hint and error markup, following your app's simple_form config). See
+[Forms and your design system](#forms-and-your-design-system).
+
+Two ways to customize:
+
+* **Restyle a whole type** — shadow the partial, e.g. `form_fields/_enum.html.erb`, and it
+  changes everywhere that type appears.
+* **Point one field at a different partial** — `attribute :slug, form_as: :string` renders
+  `slug` through `form_fields/_string.html.erb` (this mirrors `as:` for the display
+  renderer). There is no `form` facet.
+
+To take over form rendering entirely, override `crud_components/_form.html.erb`.
 
 ## Add a layout
 
@@ -127,12 +173,11 @@ URLs — a custom layout never reimplements filtering or whitelisting:
 
 ![A custom cards layout: the same collection presenter rendered as a responsive card grid (cover image pulled out, fields below), reusing the gem's search, filter sidebar and row actions](screenshots/cards.png)
 
-The presenter's interface (the methods a layout calls — `fields`, `records`,
-`cell(field, record)`, `sortable_field?`, `sort_url`, `filterable?`,
-`render_filter_control`, `row_actions`, `collection_actions`, `searchable?`,
-`reset_url`, …) is what the built-in `_table` uses; copy it as a starting point. See the
-dummy app's `_cards.html.erb` for a worked example that pulls an image field out as a
-card image.
+A layout calls the same presenter interface [listed above](#overriding-one-surface-without-rewriting-the-rest)
+— `fields`, `records`, `cell`, the sort/filter/action helpers, the pagination helpers — so
+the built-in `_table` is a good starting point; copy it. For a worked example that pulls
+an image field out as a card image, see the dummy app's
+[`_cards.html.erb`](https://github.com/itadventurer/crud_components/blob/main/test/dummy/app/views/crud_components/layouts/_cards.html.erb).
 
 ## Progressive enhancement
 
@@ -147,13 +192,13 @@ The gem ships **two** optional controllers, copied in by the install generator (
 register them with Stimulus; the gem depends on neither):
 
 ```sh
-bin/rails generate crud_components:install   # initializer + crud-filter + crud-tokens
+bin/rails generate crud_components:install   # initializer + crud-filter + crud-multiselect
 ```
 
 - **`crud-filter`** strips empty params on submit (clean URLs) and auto-submits selects in
   the inline filter row only (the standalone filter form never auto-submits — users
   compose several filters there).
-- **`crud-tokens`** turns a habtm `<select multiple>` into a chips-list (each removable)
+- **`crud-multiselect`** turns a habtm `<select multiple>` into a chips-list (each removable)
   + an "add" dropdown. The select stays the hidden source of truth, so the form submits
   identically with or without JS. Good up to a few hundred options; for thousands, render
   an autocomplete against your own endpoint instead (see [forms.md](forms.md)).
@@ -190,9 +235,13 @@ of one kind of element (table, button, badge, inputs, the toolbar, the filter ro
 covers the elements whose class is a single configurable value. It does **not** abstract
 away structure — utility classes like `d-flex`, `input-group`, `form-check` and
 `table-responsive` live in the partials, because a class map that tried to model every
-framework's layout primitives would be a leaky abstraction that helps no one. Icons are
-rendered as `<i class="bi bi-…">` in `_actions.html.erb`; a different icon set means
-overriding that one partial.
+framework's layout primitives would be a leaky abstraction that helps no one.
+
+Icons are rendered as `<i class="#{css.icon_prefix}#{name}">` — **Bootstrap Icons by
+default** (`config.css.icon_prefix = 'bi bi-'`). Switch icon libraries by setting the
+prefix, e.g. `config.css.icon_prefix = 'fa fa-'` for Font Awesome (the built-in icon
+*names* are Bootstrap Icons, so a different library may need its own names — override the
+partial that uses an icon when the names differ).
 
 So the real cost of a different framework is: **swap the class map for the cosmetic
 classes, and override the few partials whose structure differs.** For a utility-first
@@ -222,9 +271,11 @@ there's no `field_with_errors` wart to neutralize). The gem still derives *which
 their types, the [permit list](forms.md) and the read-only/permission rules; simple_form
 owns the markup.
 
-Need to go further than wrappers allow? `crud_components/_form.html.erb` is a partial —
-override it and render the fields however you like (the `form` presenter hands you
-`fields`, `editable?`, `simple_input(f, field)`, `summary_errors`, `display`).
+Need to go further than wrappers allow? Override a per-type partial under
+`crud_components/form_fields/` (see [Form inputs](#form-inputs)), or override
+`crud_components/_form.html.erb` itself and render the fields however you like — the
+`form` presenter hands you `fields`, `editable?(field)`, `form_options`, `summary_errors`
+and `display(field)`, and each `field` knows its own `form_partial`.
 
 ## i18n
 
