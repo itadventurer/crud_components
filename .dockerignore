@@ -1,0 +1,11 @@
+.git
+*.gem
+log
+tmp
+node_modules
+.ruby-lsp
+.claude
+test/dummy/log
+test/dummy/tmp
+test/dummy/storage
+test/dummy/db/*.sqlite3

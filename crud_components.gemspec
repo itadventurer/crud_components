@@ -20,8 +20,14 @@ Gem::Specification.new do |spec|
   spec.metadata['homepage_uri'] = spec.homepage
   spec.metadata['source_code_uri'] = spec.homepage
 
-  spec.files = `git ls-files -z`.split("\x0").reject do |f|
-    f.start_with?('test/', 'script/', '.github/', 'docs/screenshots/') || f == 'AGENTS.md'
+  # Prefer git, but fall back to a glob so the gem (and the demo image) build
+  # without a .git directory. Excludes tests, the dummy, CI and demo-deploy
+  # artifacts — none ship in the gem.
+  tracked = `git ls-files -z`.split("\x0")
+  tracked = Dir.glob('**/*', File::FNM_DOTMATCH).select { |f| File.file?(f) } if tracked.empty?
+  spec.files = tracked.reject do |f|
+    f.start_with?('test/', 'script/', '.github/', 'docs/screenshots/') ||
+      %w[AGENTS.md Dockerfile fly.toml .dockerignore].include?(f)
   end
   spec.require_paths = ['lib']
 
