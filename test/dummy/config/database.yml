@@ -5,3 +5,10 @@ development:
 test:
   adapter: sqlite3
   database: db/test.sqlite3
+
+# Live demo: ephemeral SQLite (an emptyDir volume in k8s). Reset on boot + by
+# the DEMO_RESET thread, so it never needs to persist.
+production:
+  adapter: sqlite3
+  database: db/production.sqlite3
+  timeout: 5000

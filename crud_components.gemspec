@@ -26,8 +26,8 @@ Gem::Specification.new do |spec|
   tracked = `git ls-files -z`.split("\x0")
   tracked = Dir.glob('**/*', File::FNM_DOTMATCH).select { |f| File.file?(f) } if tracked.empty?
   spec.files = tracked.reject do |f|
-    f.start_with?('test/', 'script/', '.github/', 'docs/screenshots/') ||
-      %w[AGENTS.md Dockerfile fly.toml .dockerignore].include?(f)
+    f.start_with?('test/', 'script/', '.github/', 'docs/screenshots/', 'deploy/') ||
+      %w[AGENTS.md Dockerfile .dockerignore].include?(f)
   end
   spec.require_paths = ['lib']
 
