@@ -32,9 +32,9 @@
       <% if collection.selectable? %>
         <%# The bulk-action cluster: a count + the actions that operate on the
             ticked rows, kept together so it's clear they act on the selection.
-            crud-select hides the whole bar while nothing is selected (no-JS: it
-            stays, and the buttons act on whatever you ticked). %>
-        <div class="d-flex align-items-center gap-2 crud-selection-bar" data-crud-select-target="bar">
+            crud-select disables the buttons while nothing is selected (no-JS:
+            they stay enabled and act on whatever you ticked). %>
+        <div class="d-flex align-items-center gap-2 crud-selection-bar">
           <span class="<%= css.muted %> small" data-crud-select-target="count"></span>
           <% collection.selection_actions.items.each do |item| %>
             <% get = item.action.http_method == :get %>
@@ -42,7 +42,7 @@
                            formaction: item.path, formmethod: get ? 'get' : 'post',
                            name: get ? nil : '_method', value: get ? nil : item.action.http_method,
                            class: item.action.css_class, title: item.action.title,
-                           data: { turbo_confirm: item.action.confirm_message }.compact do %>
+                           data: { turbo_confirm: item.action.confirm_message, crud_select_target: 'button' }.compact do %>
               <% if item.action.icon %><i class="<%= css.icon_prefix %><%= item.action.icon %>" aria-hidden="true"></i> <% end %><%= item.action.title %>
             <% end %>
           <% end %>
