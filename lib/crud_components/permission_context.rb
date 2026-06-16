@@ -25,7 +25,11 @@ module CrudComponents
 
       case condition
       when Symbol
-        context.can?(condition, model)
+        # Sugar for can?(symbol, record) — the record being decided about — so a
+        # symbol matches the derived action check (can?(:edit, @book)). For a
+        # column-level decision there is no record, so fall back to the model
+        # class (can?(symbol, Book)).
+        context.can?(condition, record || model)
       when Proc
         if condition.lambda? && condition.arity.zero?
           context.instance_exec(&condition)

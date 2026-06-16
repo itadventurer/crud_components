@@ -74,6 +74,13 @@ class FullIntegrationTest < ActionDispatch::IntegrationTest
     assert_empty CrudComponents.selected(Book, {}).to_a
   end
 
+  test 'CrudComponents.selected narrows within a pre-authorized scope (safe default)' do
+    scope = Book.where(genre: :scifi)   # only The Dispossessed, not The Hobbit
+    # a slug outside the scope (the fiction Hobbit) cannot be reached through it
+    picked = CrudComponents.selected(scope, { selected: [@hobbit.slug, @dispossessed.slug] })
+    assert_equal %w[dispossessed], picked.map(&:slug)
+  end
+
   test 'a selectable collection renders row checkboxes and bulk-action buttons' do
     get books_path
     assert_select "form##{'crud_select_books'}"

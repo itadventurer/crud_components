@@ -86,13 +86,17 @@ module CrudComponents
 
     # Resolve a bulk-action selection from request params into a relation. The
     # row checkboxes submit `selected[]=<identify_by>` (a slug array; a comma
-    # string is also accepted), so a selection-action controller is one line:
-    #   CrudComponents.selected(Book, params).destroy_all
-    # Scope it yourself for authorization, e.g.
-    #   CrudComponents.selected(Book, params).merge(Book.accessible_by(current_ability))
-    def selected(model, params, param: :selected)
+    # string is also accepted).
+    #
+    # Pass the same authorized scope you'd render — selection narrows *within*
+    # it, so a tampered slug can never reach a row outside it:
+    #   CrudComponents.selected(@books, params).destroy_all   # @books already scoped
+    # A model class also works when you don't scope (acts on the whole table):
+    #   CrudComponents.selected(Book, params)
+    def selected(scope, params, param: :selected)
+      model = scope.respond_to?(:klass) ? scope.klass : scope
       values = Array(params[param]).flat_map { |v| v.to_s.split(',') }.map(&:strip).reject(&:blank?)
-      model.where(Structure.for(model).identify_by => values)
+      scope.where(Structure.for(model).identify_by => values)
     end
   end
 end

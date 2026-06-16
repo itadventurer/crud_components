@@ -192,9 +192,17 @@ class StructureTest < ActiveSupport::TestCase
     deny  = CrudTestHelpers::DenyAll.new
     P = CrudComponents::Permission
 
-    # symbol sugar → can?(symbol, model)
+    # symbol sugar → can?(symbol, record) — the record when there is one, else
+    # the model class for a column-level decision
     assert P.permitted?(:manage, Book, allow)
     refute P.permitted?(:manage, Book, deny)
+    subjects = []
+    spy = Object.new
+    spy.define_singleton_method(:can?) { |_action, subject| subjects << subject; true }
+    book = Book.new
+    P.permitted?(:manage, Book, spy, book)   # record present
+    P.permitted?(:manage, Book, spy, nil)    # column-level, no record
+    assert_equal [book, Book], subjects
 
     # zero-arity lambda → run in the can? context, no record needed
     gate = -> { can?(:manage, Book) }
