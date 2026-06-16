@@ -107,7 +107,12 @@
                            data-crud-select-target="group" data-group="<%= group.key %>"
                            data-action="change->crud-select#toggleGroup">
                   <% end %>
-                  <%= link_to collection.group_toggle_url(group), data: { turbo_action: 'advance' },
+                  <%# turbo_action: replace (not advance) so toggling ?open= counts as a
+                      Turbo page refresh — same pathname + replace → morph (only the
+                      affected rows change, scroll preserved per the layout's
+                      turbo-refresh-* metas). Collapsed rows stay unrendered. No JS
+                      needed; without Turbo this is a plain GET that reloads as before. %>
+                  <%= link_to collection.group_toggle_url(group), data: { turbo_action: 'replace' },
                               class: 'text-reset text-decoration-none d-inline-flex align-items-center gap-2' do %>
                     <i class="<%= css.icon_prefix %><%= collection.group_open?(group) ? 'chevron-down' : 'chevron-right' %>"></i>
                     <span class="fw-medium"><%= group.label %></span>
