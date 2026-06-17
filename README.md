@@ -26,7 +26,7 @@ filters and sorts it, with or without JavaScript. No controller code, no model c
 gem 'crud_components'
 ```
 
-Requires Rails >= 7.1 and Ruby >= 3.1.
+Requires Rails >= 7.1 and Ruby >= 3.2.
 
 Optionally, run the installer for an initializer for simple styling
 and optional Stimulus (JavaScript) controllers. (progressive enhancement; everything works without them):

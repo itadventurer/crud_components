@@ -13,9 +13,10 @@ Gem::Specification.new do |spec|
                      'nothing beyond Rails is otherwise required.'
   spec.homepage = 'https://github.com/itadventurer/crud_components'
   spec.license = 'MIT'
-  # 3.1 is the real floor: the lib uses the 3.1 keyword-argument shorthand
-  # (foo(bar:)); nothing needs 3.2. The CI matrix proves Ruby 3.1–3.4.
-  spec.required_ruby_version = '>= 3.1'
+  # 3.2 floor: the lib itself only needs 3.1-era syntax, but Ruby 3.1 is EOL and
+  # i18n (>= 1.15, pulled transitively by Rails) uses Fiber storage that needs
+  # 3.2+. The CI matrix proves Ruby 3.2–3.4.
+  spec.required_ruby_version = '>= 3.2'
 
   spec.metadata['homepage_uri'] = spec.homepage
   spec.metadata['source_code_uri'] = spec.homepage
