@@ -209,10 +209,11 @@ class StructureTest < ActiveSupport::TestCase
     assert P.permitted?(gate, Book, allow)
     refute P.permitted?(gate, Book, deny)
 
-    # one-arity lambda and an `it` proc → receive the record
+    # one-arity lambda and an implicit-param proc → receive the record
+    # (_1 works on every supported Ruby; `it` would need 3.4+)
     assert P.permitted?(->(rec) { rec.active }, Book, allow, Book.new(active: true))
     refute P.permitted?(->(rec) { rec.active }, Book, allow, Book.new(active: false))
-    assert P.permitted?(proc { it.active }, Book, allow, Book.new(active: true))
+    assert P.permitted?(proc { _1.active }, Book, allow, Book.new(active: true))
   end
 
   test 'editable_permitted? gates writability independently of visibility' do
