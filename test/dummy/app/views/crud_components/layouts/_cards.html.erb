@@ -1,7 +1,7 @@
 <%# A custom layout, living entirely in the host app — the worked example for
     "add a layout". Same `collection` presenter the table layout gets, so it
     inherits filtering, the query, actions and cells for free; it only decides
-    the arrangement. Selected with `crud_collection @books, as: :cards`.
+    the arrangement. Selected with `crud_collection @books, layout: :cards`.
 
     This one is a touch fancier than the gem's table: it pulls an image field
     out as the card image and renders the rest as a compact list — showing

@@ -68,6 +68,6 @@ class BooksController < ApplicationController
   # The gem is the single source of truth for what's editable — the form and
   # this permit list derive from the same metadata, so they can't drift.
   def book_params
-    params.require(:book).permit(*Book.crud_attribute_names(action_name.to_sym, ability: self))
+    params.require(:book).permit(*CrudComponents.permitted_attributes(Book, action: action_name.to_sym, ability: self))
   end
 end

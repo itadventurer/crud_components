@@ -8,6 +8,9 @@ require 'active_support/core_ext/date_and_time/calculations'
 require 'active_support/core_ext/integer/time'
 
 module CrudComponents
+  # The query params the gem owns (filters are top-level params named after the
+  # field, so a field can't share these names). Declaring such an attribute
+  # raises in the Builder rather than silently colliding with sort/pagination.
   RESERVED_PARAMS = %w[q sort dir page per].freeze
 
   # Sentinel filter value meaning "the column is NULL" (boolean/enum filters on
@@ -61,6 +64,7 @@ module CrudComponents
     # plus the configured variant backend's gem (ruby-vips or mini_magick).
     # When any is missing, the renderer shows an icon + filename rather than a
     # preview that would 500 at processing time.
+    # @api private
     def previews_available?
       return @previews_available if defined?(@previews_available)
 

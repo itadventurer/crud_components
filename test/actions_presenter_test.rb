@@ -25,4 +25,21 @@ class ActionsPresenterTest < ActiveSupport::TestCase
     assert_match(/not a relation/, error.message)
     assert_match(/Book/, error.message)
   end
+
+  test 'derived action icons come from config.action_icons (overridable at render)' do
+    edit = CrudComponents::Action.new(:edit, derived: true)
+    assert_equal 'pencil', edit.icon                      # the shipped default
+
+    icons = CrudComponents.config.action_icons.dup
+    CrudComponents.config.action_icons[:edit] = 'pencil-fill'
+    assert_equal 'pencil-fill', edit.icon                 # resolved against config, not frozen at build
+  ensure
+    CrudComponents.config.action_icons = icons
+  end
+
+  test 'an explicit icon: wins over config — including nil for no icon' do
+    assert_equal 'star', CrudComponents::Action.new(:feature, icon: 'star').icon
+    assert_nil CrudComponents::Action.new(:feature, icon: nil).icon  # explicitly none
+    assert_nil CrudComponents::Action.new(:feature).icon             # custom action, no config entry
+  end
 end

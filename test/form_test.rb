@@ -33,13 +33,6 @@ class FormTest < ActiveSupport::TestCase
     assert_includes list, :title
   end
 
-  test 'Model.crud_attribute_names mirrors the module method (on the full list)' do
-    ability = CrudTestHelpers::AllowAll.new
-    assert_equal CrudComponents.permitted_attributes(Book, action: :update, ability: ability),
-                 Book.crud_attribute_names(:update, ability: ability)
-    # and the full list actually contains the interesting shapes
-    assert_includes Book.crud_attribute_names(:update, ability: ability), ({ author_ids: [] })
-  end
 
   test 'a zero-config model still yields a derived permit list' do
     list = CrudComponents.permitted_attributes(Author)

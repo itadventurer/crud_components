@@ -53,14 +53,6 @@ class DslValidationTest < ActiveSupport::TestCase
     assert_match(/not both/, error.message)
   end
 
-  test 'the removed `like:` keyword raises a migration hint' do
-    error = assert_raises(CrudComponents::DefinitionError) do
-      structure_of(define_model { attribute(:title) { filter like: :title } })
-    end
-    assert_match(/`like:` keyword was removed/, error.message)
-    assert_match(/filter :title/, error.message)
-  end
-
   test 'filter facet takes a spec, `false`, or a block — not a spec and a block' do
     error = assert_raises(CrudComponents::DefinitionError) do
       structure_of(define_model do

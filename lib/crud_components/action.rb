@@ -3,16 +3,18 @@ module CrudComponents
   # :destroy) are self-disabling: they render only when permitted and their
   # conventional route resolves (see RouteResolver).
   class Action
+    # Behavioral defaults for the derived actions. Icons live in
+    # config.action_icons (see #icon); titles come from i18n (see #title).
     DERIVED = {
-      new: { on: :collection, icon: 'plus-lg' },
-      show: { on: :row, icon: 'eye' },
-      edit: { on: :row, icon: 'pencil' },
-      destroy: { on: :row, icon: 'trash', method: :delete, confirm: true, danger: true }
+      new: { on: :collection },
+      show: { on: :row },
+      edit: { on: :row },
+      destroy: { on: :row, method: :delete, confirm: true, danger: true }
     }.freeze
 
     KNOWN_OPTIONS = %i[on icon title class confirm method if].freeze
 
-    attr_reader :name, :icon, :on, :http_method, :path_block
+    attr_reader :name, :on, :http_method, :path_block
 
     def initialize(name, derived: false, **options, &path_block)
       unknown = options.keys - KNOWN_OPTIONS
@@ -25,7 +27,8 @@ module CrudComponents
       @name = name.to_sym
       @derived = derived
       @on = options[:on] || defaults[:on] || :row
-      @icon = options.key?(:icon) ? options[:icon] : defaults[:icon]
+      @icon_option = options[:icon]
+      @icon_given = options.key?(:icon)
       @title_option = options[:title]
       @css_class = options[:class]
       @confirm = options.key?(:confirm) ? options[:confirm] : defaults[:confirm]
@@ -33,6 +36,15 @@ module CrudComponents
       @condition = options[:if]
       @path_block = path_block
       @danger = defaults[:danger] || false
+    end
+
+    # Icon name (no library prefix — pair with css.icon_prefix). An explicit
+    # `icon:` on the action wins (including `icon: nil` for none); otherwise it
+    # comes from config.action_icons, which is empty for non-derived actions.
+    def icon(config = CrudComponents.config)
+      return @icon_option if @icon_given
+
+      config.action_icons[@name]
     end
 
     def derived? = @derived

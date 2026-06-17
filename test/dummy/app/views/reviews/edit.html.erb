@@ -9,7 +9,7 @@ end
 <% end %>
 <%= code_file('app/controllers/reviews_controller.rb') do %>
 def review_params
-  params.require(:review).permit(*Review.crud_attribute_names(:update, ability: current_ability))
+  params.require(:review).permit(*CrudComponents.permitted_attributes(Review, action: :update, ability: current_ability))
 end
 <% end %>
 <%= code_file('app/views/reviews/edit.html.erb', :erb) do %>

@@ -19,12 +19,9 @@ module CrudComponents
         @_crud_structure = nil
       end
 
-      # Strong-params permit list for this model's derived form. Convenience
-      # wrapper around CrudComponents.permitted_attributes for included models:
-      #   params.require(:book).permit(*Book.crud_attribute_names(:update, ability: current_ability))
-      def crud_attribute_names(action = :update, ability: nil)
-        CrudComponents.permitted_attributes(self, action: action, ability: ability)
-      end
+      # The strong-params permit list is {CrudComponents.permitted_attributes}
+      # (a model class works whether or not it includes this concern), so there
+      # is one way to ask for it — no model-side alias to drift from it.
 
       # For tests and code reloading.
       def reset_crud_structure!

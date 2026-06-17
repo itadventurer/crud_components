@@ -19,7 +19,7 @@
 &lt;%= paginate collection.page_scope %&gt;   &lt;%# kaminari's own pager, inside your card layout %&gt;
 <% end %>
 <%= code_file('app/views/pagination/index.html.erb', :erb) do %>
-&lt;%= crud_collection @books, query: @query, as: :cards %&gt;
+&lt;%= crud_collection @books, query: @query, layout: :cards %&gt;
 <% end %>
 <% end %>
 <% else %>
@@ -36,4 +36,4 @@
 <% end %>
 <% end %>
 
-<%= crud_collection @books, query: @query, as: layout %>
+<%= crud_collection @books, query: @query, layout: layout %>

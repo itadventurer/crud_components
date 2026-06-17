@@ -327,7 +327,7 @@ class FullIntegrationTest < ActionDispatch::IntegrationTest
   end
 
   # ── custom layout & custom collection action ──────────────────────────────
-  test 'a host-app layout renders via as:' do
+  test 'a host-app layout renders via layout:' do
     get books_path(layout: 'cards')
     assert_select '.card.h-100'
   end

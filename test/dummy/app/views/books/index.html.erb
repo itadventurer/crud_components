@@ -30,7 +30,7 @@
 &lt;% end %&gt;
 <% end %>
 <%= code_file('app/views/books/index.html.erb', :erb) do %>
-&lt;%= crud_collection @books, fieldset: :<%= fieldset %>, as: :cards %&gt;
+&lt;%= crud_collection @books, fieldset: :<%= fieldset %>, layout: :cards %&gt;
 <% end %>
 <% end %>
 <% else %>
@@ -55,7 +55,7 @@ end
 <div class="row">
   <div class="col-xl-9">
     <div class="card"><div class="card-body">
-      <%= crud_collection @books, fieldset: fieldset, as: layout %>
+      <%= crud_collection @books, fieldset: fieldset, layout: layout %>
     </div></div>
   </div>
   <div class="col-xl-3">

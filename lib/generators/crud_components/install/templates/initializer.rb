@@ -4,6 +4,18 @@ CrudComponents.configure do |config|
   # search_in beyond this many records:
   # config.select_limit = 250
 
+  # Grouped collections (`group_by:`) open all groups below this row count, the
+  # first only above it:
+  # config.group_collapse_threshold = 50
+
+  # Icon names (no library prefix — paired with css.icon_prefix). Action glyphs
+  # are a name=>icon map (nil = no icon); file glyphs map an extension to a full
+  # icon name, with a fallback. Full key lists: Config::DEFAULT_ACTION_ICONS /
+  # Config::DEFAULT_FILE_ICONS.
+  # config.action_icons[:destroy] = 'trash-fill'
+  # config.file_icons['zip'] = 'file-earmark-zip'
+  # config.file_fallback_icon = 'file-earmark-text'
+
   # CSS class map (Bootstrap 5 defaults). The full key list:
   # CrudComponents::Config::DEFAULT_CSS  
   # config.css.table = 'table align-middle'

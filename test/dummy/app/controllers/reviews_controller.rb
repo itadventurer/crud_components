@@ -26,6 +26,6 @@ class ReviewsController < ApplicationController
   private
 
   def review_params
-    params.require(:review).permit(*Review.crud_attribute_names(action_name.to_sym, ability: self))
+    params.require(:review).permit(*CrudComponents.permitted_attributes(Review, action: action_name.to_sym, ability: self))
   end
 end

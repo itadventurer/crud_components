@@ -43,6 +43,6 @@ class PublishersController < ApplicationController
   end
 
   def publisher_params
-    params.require(:publisher).permit(*Publisher.crud_attribute_names(action_name.to_sym, ability: self))
+    params.require(:publisher).permit(*CrudComponents.permitted_attributes(Publisher, action: action_name.to_sym, ability: self))
   end
 end

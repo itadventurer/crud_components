@@ -1,6 +1,6 @@
 <h1>Edit: <%= crud_label(@publisher) %></h1>
 <%= docs_panel(
-      intro: "A derived form. <code>fieldset :form</code> chooses the editable fields; the permit list is the gem's <code>crud_attribute_names</code>, kept in lockstep with the form.",
+      intro: "A derived form. <code>fieldset :form</code> chooses the editable fields; the permit list is the gem's <code>CrudComponents.permitted_attributes</code>, kept in lockstep with the form.",
       docs: { 'Forms' => 'docs/forms.md', 'Fieldsets' => 'docs/views.md#fieldsets' }) do %>
 <%= code_file('app/models/publisher.rb') do %>
 crud_structure do
@@ -9,7 +9,7 @@ end
 <% end %>
 <%= code_file('app/controllers/publishers_controller.rb') do %>
 def publisher_params
-  params.require(:publisher).permit(*Publisher.crud_attribute_names(:update, ability: current_ability))
+  params.require(:publisher).permit(*CrudComponents.permitted_attributes(Publisher, action: :update, ability: current_ability))
 end
 <% end %>
 <%= code_file('app/views/publishers/edit.html.erb', :erb) do %>

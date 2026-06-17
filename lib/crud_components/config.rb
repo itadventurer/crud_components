@@ -40,7 +40,30 @@ module CrudComponents
       dd: 'col-sm-9'
     }.freeze
 
-    attr_accessor :select_limit, :group_collapse_threshold
+    # Icon name (no library prefix — paired with css.icon_prefix) for each
+    # derived action. Override a glyph, or set one to nil for no icon:
+    #   config.action_icons[:destroy] = 'trash-fill'
+    DEFAULT_ACTION_ICONS = {
+      new: 'plus-lg', show: 'eye', edit: 'pencil', destroy: 'trash'
+    }.freeze
+
+    # Map of file extension → icon name (no library prefix — paired with
+    # css.icon_prefix) for the attachment icon fallback; an unmapped extension
+    # uses file_fallback_icon. Full names (not a prefix) so non-conforming ones
+    # fit too — e.g. yaml→filetype-yml, zip→file-earmark-zip. Bootstrap Icons'
+    # whole `filetype-*` family is included; override/extend per your set.
+    DEFAULT_FILE_ICONS = %w[
+      aac ai bmp cs css csv doc docx exe gif heic html java jpg js json jsx key
+      m4p md mdx mov mp3 mp4 otf pdf php png ppt pptx psd py raw rb sass scss sh
+      sql svg tiff tsx ttf txt wav woff xls xlsx xml yml
+    ].to_h { |ext| [ext, "filetype-#{ext}"] }.merge(
+      'yaml' => 'filetype-yml',          # alias of yml
+      'jpeg' => 'filetype-jpg',          # alias of jpg
+      'zip'  => 'file-earmark-zip'       # no filetype- glyph exists
+    ).freeze
+
+    attr_accessor :select_limit, :group_collapse_threshold, :action_icons,
+                  :file_icons, :file_fallback_icon
     attr_reader :css
 
     def initialize
@@ -49,6 +72,9 @@ module CrudComponents
       # this, and only the first group above it (the rest collapse).
       @group_collapse_threshold = 50
       @css = ActiveSupport::OrderedOptions.new.merge!(DEFAULT_CSS)
+      @action_icons = DEFAULT_ACTION_ICONS.dup
+      @file_icons = DEFAULT_FILE_ICONS.dup
+      @file_fallback_icon = 'file-earmark-text'
     end
   end
 end

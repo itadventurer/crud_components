@@ -17,7 +17,7 @@ def update
 end
 
 def book_params
-  params.require(:book).permit(*Book.crud_attribute_names(:update, ability: current_ability))
+  params.require(:book).permit(*CrudComponents.permitted_attributes(Book, action: :update, ability: current_ability))
 end
 <% end %>
 <%= code_file('app/views/books/edit.html.erb', :erb) do %>
