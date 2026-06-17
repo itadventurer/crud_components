@@ -1,4 +1,7 @@
-ActiveRecord::Schema[8.1].define(version: 1) do
+# Pinned to 7.1 (the gem's Rails floor) so the CI matrix (Rails 7.1–8.0) can load
+# this schema. Do NOT let a `db:schema:dump` on a newer Rails bump this version —
+# older Rails can't parse a higher one (e.g. "Unknown migration version 8.1").
+ActiveRecord::Schema[7.1].define(version: 1) do
   create_table :publishers, force: :cascade do |t|
     t.string :name
     t.string :slug
