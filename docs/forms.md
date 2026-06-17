@@ -18,7 +18,7 @@ in one and missing from the other. Use the list the gem derived the form from:
 ```ruby
 def book_params
   params.require(:book)
-        .permit(*Book.crud_attribute_names(action_name.to_sym, ability: current_ability))
+        .permit(*CrudComponents.permitted_attributes(Book, action: action_name.to_sym, ability: current_ability))
 end
 ```
 
@@ -151,10 +151,11 @@ nothing*, so leaving it empty keeps the current file(s).
 A plain `@record.update(permitted)` keeps / adds / removes correctly; you write no
 attachment-specific controller code.
 
-The non-image fallback icon is chosen by file extension (a Bootstrap `filetype-*` glyph for
-common types, a generic file icon otherwise). The icon *library* is the `icon_prefix` entry
-in the [class map](extending.md#styling); the per-type mapping lives in the renderer — to
-change either, override `crud_components/fields/_attachment_thumb.html.erb`.
+The non-image fallback icon is chosen by file extension via `config.file_icons` (a map of
+extension → icon name, e.g. `'pdf' => 'filetype-pdf'`, `'zip' => 'file-earmark-zip'`),
+falling back to `config.file_fallback_icon`. The icon *library* is the `icon_prefix` entry
+in the [class map](extending.md#styling). Add or remap an extension in the config, or
+override `crud_components/fields/_attachment_thumb.html.erb` to change the markup.
 
 ## Customising an input
 
@@ -236,7 +237,7 @@ end
 private
 
 def book_params
-  params.require(:book).permit(*Book.crud_attribute_names(action_name.to_sym, ability: self))
+  params.require(:book).permit(*CrudComponents.permitted_attributes(Book, action: action_name.to_sym, ability: self))
 end
 ```
 

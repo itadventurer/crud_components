@@ -47,8 +47,9 @@ attribute :blurb,  as: :markdown
 attribute :rating, as: :stars       # a custom renderer, see Extending
 ```
 
-`as:` reads the same as on `crud_collection` ("present this as a …") and as simple_form's
-`f.input :price, as: :string`.
+`as:` is the field's renderer ("present this as a …"), reading like simple_form's
+`f.input :price, as: :string`. (It's distinct from `crud_collection`'s `layout:`, which
+picks the whole-collection arrangement — field renderer vs. component layout.)
 
 For one-off markup, a block that takes the record renders the cell inline — no named
 renderer needed:

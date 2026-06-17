@@ -38,7 +38,7 @@ bin/rails generate crud_components:views   # copy the gem's partials into your a
 
 ```
 crud_components/
-  layouts/_table.html.erb          # collection layouts (as: :table, …)
+  layouts/_table.html.erb          # collection layouts (layout: :table, …)
   _toolbar.html.erb                # search box + reset + collection actions (reused by layouts)
   _pager.html.erb                  # footer pager in the table (shown when the relation is paginated)
   _actions.html.erb                # a group of action buttons
@@ -168,7 +168,7 @@ receiving one `collection` presenter with resolved fields, rows, query state and
 URLs — a custom layout never reimplements filtering or whitelisting:
 
 ```erb
-<%= crud_collection @books, as: :cards %>
+<%= crud_collection @books, layout: :cards %>
 ```
 
 ![A custom cards layout: the same collection presenter rendered as a responsive card grid (cover image pulled out, fields below), reusing the gem's search, filter sidebar and row actions](screenshots/cards.png)
@@ -240,8 +240,21 @@ framework's layout primitives would be a leaky abstraction that helps no one.
 Icons are rendered as `<i class="#{css.icon_prefix}#{name}">` — **Bootstrap Icons by
 default** (`config.css.icon_prefix = 'bi bi-'`). Switch icon libraries by setting the
 prefix, e.g. `config.css.icon_prefix = 'fa fa-'` for Font Awesome (the built-in icon
-*names* are Bootstrap Icons, so a different library may need its own names — override the
-partial that uses an icon when the names differ).
+*names* are Bootstrap Icons, so a different library may need its own names — see below).
+
+The icon **names** (the part after the prefix) live in two maps, so a different library is
+a config change rather than a partial override:
+
+```ruby
+config.action_icons[:destroy] = 'trash-fill'   # per derived action; nil = no icon
+config.file_icons['zip'] = 'file-earmark-zip'   # attachment glyph by file extension
+config.file_fallback_icon = 'file-earmark-text' # extension not in the map
+```
+
+`config.action_icons` keys are the derived actions (`:new`/`:show`/`:edit`/`:destroy`);
+`config.file_icons` maps a file extension to a full icon name (the whole Bootstrap
+`filetype-*` family ships by default). Full lists: `Config::DEFAULT_ACTION_ICONS` /
+`Config::DEFAULT_FILE_ICONS`.
 
 So the real cost of a different framework is: **swap the class map for the cosmetic
 classes, and override the few partials whose structure differs.** For a utility-first

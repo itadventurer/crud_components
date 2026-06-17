@@ -181,7 +181,7 @@ fieldset :playground, %i[cover title authors price published_on active]
 
 ```erb
 <%= crud_collection @books, fieldset: :playground %>
-<%= crud_collection @books, fieldset: :playground, as: :cards %>   <%# layout is a separate axis %>
+<%= crud_collection @books, fieldset: :playground, layout: :cards %>   <%# layout is a separate axis %>
 ```
 
 Filterability follows the fieldset — **you can only filter and sort what you can see** (a
@@ -218,7 +218,7 @@ The gem uses [simple_form](https://github.com/heartcombo/simple_form) to render 
 The gem does not own any controllers so it is your responsibility to handle the actions. But the gem provides a permit list for the controller you can use so the two can't drift:
 
 ```ruby
-params.require(:book).permit(*Book.crud_attribute_names(action_name.to_sym, ability: current_ability))
+params.require(:book).permit(*CrudComponents.permitted_attributes(Book, action: action_name.to_sym, ability: current_ability))
 ```
 
 `editable:` adds a second permission dimension (you may *see* a field but not *change*
@@ -251,24 +251,24 @@ exclusively the job of fieldsets.
 The whole DSL:
 
 
-| Declaration | Role |
+| Declaration                  | Role                                                                       |
 | ---------------------------- | -------------------------------------------------------------------------- |
-| `attribute` / `attributes` | improve one/several fields (model-global) |
+| `attribute` / `attributes`   | improve one/several fields (model-global)                                  |
 | `render` / `filter` / `sort` | facets inside an `attribute` block — override exactly one derived behavior |
-| `label`, `identify_by` | identity: display name; the column URL params resolve |
-| `search_in` | the model's text identity (`?q=`, and what delegation expands to) |
-| `action` | buttons, per row or per collection |
-| `fieldset` | a named *selection* of fields and actions |
+| `label`, `identify_by`       | identity: display name; the column URL params resolve                      |
+| `search_in`                  | the model's text identity (`?q=`, and what delegation expands to)          |
+| `action`                     | buttons, per row or per collection                                         |
+| `fieldset`                   | a named *selection* of fields and actions                                  |
 
 
 Three ideas organize it:
 
 1. **Derived vs. declared — per facet.** Everything Rails knows is derived. A declared
-   facet overrides that facet only; the rest stays derived.
+  facet overrides that facet only; the rest stays derived.
 2. **Definition vs. selection.** `attribute`/`action` define once, model-globally;
-   `fieldset` selects per surface. Never visibility flags on definitions.
+  `fieldset` selects per surface. Never visibility flags on definitions.
 3. **Identity composes through associations.** `label` + `identify_by` + `search_in`
-   define how other models render, link and search this one. Declare once, correct
+  define how other models render, link and search this one. Declare once, correct
    everywhere.
 
 And one uniform query rule:
@@ -282,19 +282,19 @@ And one uniform query rule:
 Keyed by what a field *is* — with zero config, every row applies without declarations.
 
 
-| Field kind | Rendered as | Filter control | Query behavior | Sortable |
+| Field kind                | Rendered as                                  | Filter control                                                                       | Query behavior                                          | Sortable    |
 | ------------------------- | -------------------------------------------- | ------------------------------------------------------------------------------------ | ------------------------------------------------------- | ----------- |
-| string / text column | text (truncated in tables) | text input | `ILIKE %v%`, wildcards escaped | yes |
-| numeric column | number (`as: :number` for `unit:`/`digits:`) | min–max pair | `_geq`/`_leq` ranges + `?f=v` exact; non-finite ignored | yes |
-| date / datetime column | localized | from–to pair | whole-day-inclusive ranges + exact day | yes |
+| string / text column      | text (truncated in tables)                   | text input                                                                           | `ILIKE %v%`, wildcards escaped                          | yes         |
+| numeric column            | number (`as: :number` for `unit:`/`digits:`) | min–max pair                                                                         | `_geq`/`_leq` ranges + `?f=v` exact; non-finite ignored | yes         |
+| date / datetime column    | localized                                    | from–to pair                                                                         | whole-day-inclusive ranges + exact day                  | yes         |
 | boolean column            | ✓/✗ icon (click to filter; `—` if null)      | any/yes/no select (+ "not set" if nullable)                                          | cast & validated; invalid ignored; "not set" → IS NULL  | yes         |
 | enum                      | i18n'd badge (click to filter; `—` if null)  | select of enum keys (+ "not set" if nullable)                                        | validated against the enum; "not set" → IS NULL         | yes         |
-| json column | pretty `<pre>` (rouge if present) | — | — | no |
+| json column               | pretty `<pre>` (rouge if present)            | —                                                                                    | —                                                       | no          |
 | Active Storage attachment | image / preview / icon by content type       | —                                                                                    | —                                                       | no          |
-| `belongs_to` | nil-safe link via target's `label` | select valued by target's `identify_by` (text over `search_in` above `select_limit`) | `where(assoc: Target.where(identify_by => v))` | v2 |
+| `belongs_to`              | nil-safe link via target's `label`           | select valued by target's `identify_by` (text over `search_in` above `select_limit`) | `where(assoc: Target.where(identify_by => v))`          | v2          |
 | `has_many` / habtm        | "a, b +n more" links                         | opt-in via `filter` facet                                                            | —                                                       | no          |
-| public model method | by value type | — | — | — |
-| `render` block / `as:` | as declared | — *(unless `filter` facet)* | — *(unless `sort` facet)* | facet-gated |
+| public model method       | by value type                                | —                                                                                    | —                                                       | —           |
+| `render` block / `as:`    | as declared                                  | — *(unless `filter` facet)*                                                          | — *(unless `sort` facet)*                               | facet-gated |
 
 
 The bottom rows have empty query cells for a principled reason: filtering and sorting run
@@ -341,11 +341,11 @@ map plus a few partials, never a fork. → [Extending → styling](docs/extendin
 ### Helpers (the everyday API)
 
 ```ruby
-crud_collection(records, fieldset: nil, as: :table, query: nil,
-                param_prefix: nil, actions: true)
-crud_record(record, fieldset: nil, actions: true)
-crud_filter(model, fieldset: nil, query: nil, param_prefix: nil)
-crud_form(record, fieldset: nil, action: nil, url: nil, method: nil)
+crud_collection(records, fieldset: nil, layout: :table, query: nil,
+                param_prefix: nil, actions: true, group_by: nil)
+crud_record(record, fieldset: nil, actions: true, layout: :record)
+crud_filter(model, fieldset: nil, query: nil, param_prefix: nil, layout: :filter)
+crud_form(record, fieldset: nil, action: nil, url: nil, method: nil, layout: :form)
 crud_actions(record_or_model, fieldset: nil)
 ```
 
@@ -387,32 +387,31 @@ a block; an `as:` renderer with no matching partial or a missing gem.
 CrudComponents::Query.new(model, params, fieldset: :default, ability: nil, param_prefix: nil)
                                             # #apply(scope) → relation; #active?
 CrudComponents.permitted_attributes(model, action: :update, ability: nil)  # strong-params list
-Model.crud_attribute_names(action = :update, ability: nil)                 # same, for included models
-CrudComponents.configure { |config| … }     # css map, select_limit, defaults
+CrudComponents.configure { |config| … }     # css/icon maps, select_limit, defaults
 ```
 
 ## Documentation
 
 
-| Doc | What |
+| Doc                                        | What                                                                             |
 | ------------------------------------------ | -------------------------------------------------------------------------------- |
 | [docs/fields.md](docs/fields.md)           | Fields, renderers, facets, the search spec, identity, per-flavor behavior        |
-| [docs/views.md](docs/views.md) | The helpers, fieldsets, actions & route resolution, the manual query, pagination |
-| [docs/forms.md](docs/forms.md) | `crud_form`, the permit list, `editable:`, form controls, attachments |
+| [docs/views.md](docs/views.md)             | The helpers, fieldsets, actions & route resolution, the manual query, pagination |
+| [docs/forms.md](docs/forms.md)             | `crud_form`, the permit list, `editable:`, form controls, attachments            |
 | [docs/security.md](docs/security.md)       | Permissions (`if:`/`editable:`), the whitelist, and the injection-safe URL model |
-| [docs/extending.md](docs/extending.md) | Partials/renderers/layouts, progressive enhancement, styling, i18n |
+| [docs/extending.md](docs/extending.md)     | Partials/renderers/layouts, progressive enhancement, styling, i18n               |
 | [docs/performance.md](docs/performance.md) | Eager-loading, the belongs_to select→text threshold, pagination                  |
 
 
 ## Dependencies
 
 
-| Gem | Why |
+| Gem                      | Why                                                                                                                                                                                    |
 | ------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `activerecord` (>= 7.1) | deriving structure from AR reflection is the whole point |
-| `activesupport` (>= 7.1) | core extensions, i18n |
-| `actionview` (>= 7.1) | rendering (partials, helpers) |
-| `simple_form` (>= 5.0) | form rendering — its wrappers make form markup match your design system across frameworks; deferring to it is less code and a better fit than reinventing wrappers. Light + ubiquitous |
+| `activerecord` (>= 7.1)  | deriving structure from AR reflection is the whole point                                                                                                                               |
+| `activesupport` (>= 7.1) | core extensions, i18n                                                                                                                                                                  |
+| `actionview` (>= 7.1)    | rendering (partials, helpers)                                                                                                                                                          |
+| `simple_form` (>= 5.0)   | form rendering — its wrappers make form markup match your design system across frameworks; deferring to it is less code and a better fit than reinventing wrappers. Light + ubiquitous |
 
 
 The first three ship with Rails; simple_form is the one deliberate third-party dependency, and only the form surface uses it. Everything else stays integration-by-detection: CanCanCan, turbo-rails, Stimulus, Bootstrap, kaminari, markdown and highlighting gems are feature-detected or documented integration points, never required. Development: `minitest`, `rake`, `sqlite3`, plus a minimal dummy Rails app.

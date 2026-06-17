@@ -10,11 +10,11 @@ this doc.
 ![A collection table derived from the schema — cover thumbnails, genre badge, currency, publisher links and a boolean icon, with header search, an inline filter row, sortable columns, row actions and a standalone filter sidebar](screenshots/table.png)
 
 ```ruby
-crud_collection(records, fieldset: nil, as: :table, query: nil,
-                param_prefix: nil, actions: true)
-crud_record(record, fieldset: nil, actions: true)
-crud_filter(model, fieldset: nil, query: nil, param_prefix: nil)
-crud_form(record, fieldset: nil, action: nil, url: nil, method: nil)   # see forms.md
+crud_collection(records, fieldset: nil, layout: :table, query: nil,
+                param_prefix: nil, actions: true, group_by: nil)
+crud_record(record, fieldset: nil, actions: true, layout: :record)
+crud_filter(model, fieldset: nil, query: nil, param_prefix: nil, layout: :filter)
+crud_form(record, fieldset: nil, action: nil, url: nil, method: nil, layout: :form)   # see forms.md
 crud_actions(record_or_model, fieldset: nil)   # a record → row actions; a model class → collection actions
 ```
 
@@ -96,12 +96,14 @@ fieldset :index, %i[cover title price], filters: %i[genre published_on]
 ### Layout is a separate axis
 
 ```erb
-<%= crud_collection @books, fieldset: :catalog, as: :table %>   <%# default %>
-<%= crud_collection @books, fieldset: :catalog, as: :cards %>   <%# a custom layout %>
+<%= crud_collection @books, fieldset: :catalog, layout: :table %>   <%# default %>
+<%= crud_collection @books, fieldset: :catalog, layout: :cards %>   <%# a custom layout %>
 ```
 
 The gem ships with `:table`. If you want to use a different layout, you can add it by creating a partial in your app at `app/views/crud_components/layouts/_<layout_name>.html.erb`. See [Extending → layouts](extending.md#add-a-layout). Selection (fieldset) and
-arrangement (`as:`) are orthogonal: the same fieldset feeds any layout.
+arrangement (`layout:`) are orthogonal: the same fieldset feeds any layout. (`crud_record`,
+`crud_filter` and `crud_form` take `layout:` too — the partial each renders, defaulting to
+`:record`/`:filter`/`:form`.)
 
 ## Actions
 
