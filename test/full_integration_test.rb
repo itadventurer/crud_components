@@ -573,4 +573,50 @@ class FullIntegrationTest < ActionDispatch::IntegrationTest
     assert_select 'nav.pagination'        # kaminari's own pager markup
     assert_select 'nav.crud-pager', count: 0 # not the gem's footer pager
   end
+
+  # ── fast cell rendering (#1) ──────────────────────────────────────────────
+  # The inline renderers must be drop-in equivalents of the field partials —
+  # same DOM with config.fast_cells on (default) and off.
+  test 'inline cells equal the partials on the record page (all read-only types)' do
+    dl = lambda do |fast|
+      CrudComponents.config.fast_cells = fast
+      get book_path(@hobbit)   # string, text, number, boolean, date, enum, json, associations…
+      assert_response :success
+      response.body[%r{<dl.*?</dl>}m]   # the book's definition list — no CSRF tokens inside
+    end
+    assert_dom_equal dl.call(false), dl.call(true)
+  ensure
+    CrudComponents.config.fast_cells = true
+  end
+
+  test 'inline cells equal the partials on a collection (incl. surface truncation)' do
+    @hobbit.update!(subtitle: 'S' * 300)   # exercises the surface==:collection truncate(120) branch
+    body = lambda do |fast|
+      CrudComponents.config.fast_cells = fast
+      get books_path(fieldset: :catalog)
+      assert_response :success
+      # drop the per-row action <form>s: their CSRF token differs per request
+      response.body[%r{<tbody.*?</tbody>}m].gsub(%r{<form\b.*?</form>}m, '')
+    end
+    assert_dom_equal body.call(false), body.call(true)
+  ensure
+    CrudComponents.config.fast_cells = true
+  end
+
+  test 'a host override of a field partial is honored (fast path skips that type)' do
+    require 'tmpdir'
+    original = BooksController.view_paths.to_a
+    Dir.mktmpdir do |dir|
+      FileUtils.mkdir_p(File.join(dir, 'crud_components', 'fields'))
+      File.write(File.join(dir, 'crud_components', 'fields', '_string.html.erb'),
+                 %(<span class="host-string"><%= value %></span>))
+      BooksController.prepend_view_path(dir)
+      get books_path   # fast_cells on by default; :string is overridden → partial path
+      assert_response :success
+      assert_select 'span.host-string', minimum: 1
+      assert_select 'span.badge', minimum: 1   # other types still take the fast inline path
+    end
+  ensure
+    BooksController.view_paths = original
+  end
 end

@@ -63,7 +63,7 @@ module CrudComponents
     ).freeze
 
     attr_accessor :select_limit, :group_collapse_threshold, :action_icons,
-                  :file_icons, :file_fallback_icon
+                  :file_icons, :file_fallback_icon, :fast_cells
     attr_reader :css
 
     def initialize
@@ -71,6 +71,10 @@ module CrudComponents
       # Grouped collections open every group when the total row count is below
       # this, and only the first group above it (the rest collapse).
       @group_collapse_threshold = 50
+      # Render built-in cell types inline (in Ruby) instead of one partial per
+      # cell — an order of magnitude faster on big tables. A host override of a
+      # field partial is still honored; set false to force partials everywhere.
+      @fast_cells = true
       @css = ActiveSupport::OrderedOptions.new.merge!(DEFAULT_CSS)
       @action_icons = DEFAULT_ACTION_ICONS.dup
       @file_icons = DEFAULT_FILE_ICONS.dup
