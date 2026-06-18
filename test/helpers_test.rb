@@ -3,6 +3,18 @@ require 'test_helper'
 class HelpersTest < ActiveSupport::TestCase
   def view = @view ||= Class.new { include CrudComponents::Helpers }.new
 
+  # #3: an association column can re-title the associated record per context.
+  test 'crud_association_label uses a per-column label: callable, else the default label' do
+    pub = Publisher.create!(name: 'Tor', slug: 'tor-assoc-label')
+    field = Struct.new(:options)
+    with_label = field.new({ label: ->(p) { "P:#{p.name}" } })
+    no_label   = field.new({})
+    assert_equal 'P:Tor', view.crud_association_label(with_label, pub)
+    assert_equal 'Tor',   view.crud_association_label(no_label, pub)   # default == crud_label
+  ensure
+    pub&.destroy
+  end
+
   test 'crud_file_icon maps a known extension via config.file_icons, else the fallback' do
     assert_equal 'filetype-pdf', view.crud_file_icon('report.PDF')   # case-insensitive, known
     assert_equal 'filetype-md',  view.crud_file_icon('README.md')

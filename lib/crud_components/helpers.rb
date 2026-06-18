@@ -113,6 +113,19 @@ module CrudComponents
       Structure.for(record.class).label_for(record, self)
     end
 
+    # The label for an associated record in an association column: a per-column
+    # `label:` callable (`attribute :order, label: ->(o) { o.full_title(short: true) }`)
+    # when given, else the target's default {#crud_label}. Used by the
+    # association / association_list renderers so a column can re-title the
+    # associated record for its context while keeping the nil-safe link.
+    # @param field [CrudComponents::Fields::Base] the association field.
+    # @param record [ActiveRecord::Base] the associated record.
+    # @return [String]
+    def crud_association_label(field, record)
+      callable = field.options[:label]
+      callable.respond_to?(:call) ? callable.call(record) : crud_label(record)
+    end
+
     # A Bootstrap-icon name (no library prefix — pair with css.icon_prefix) for a
     # filename, by extension: config.file_icons[ext], else config.file_fallback_icon.
     # Used by the attachment renderer's icon fallback; override that partial to

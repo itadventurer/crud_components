@@ -223,6 +223,14 @@ class StructureTest < ActiveSupport::TestCase
     assert field.editable_permitted?(CrudTestHelpers::AllowAll.new)
   end
 
+  # #3: a label: callable (used by association columns to re-title the record)
+  # plumbs through to the field, and is metadata only — never in renderer_options.
+  test 'attribute label: reaches field.options and stays out of renderer_options' do
+    field = structure_of(define_model { attribute :title, label: ->(r) { r.title } }).field(:title)
+    assert_respond_to field.options[:label], :call
+    refute_includes field.renderer_options.keys, :label
+  end
+
   # ── belongs_to select/text threshold (config.select_limit) ─────────────────
   test 'belongs_to filter control flips to text above select_limit' do
     Publisher.create!(name: 'A', slug: 'a')

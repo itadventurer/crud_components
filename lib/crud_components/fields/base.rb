@@ -56,7 +56,7 @@ module CrudComponents
       end
 
       def renderer_options
-        options.except(:as, :if, :form_as)
+        options.except(:as, :if, :form_as, :label)
       end
 
       # ── permissions ──────────────────────────────────────────────────────
