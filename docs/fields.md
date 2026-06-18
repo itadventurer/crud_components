@@ -193,6 +193,9 @@ search_in :title, :subtitle, :publisher   # default: own string/text columns
 - **`label`** — the record's display name: links, select options, record headings.
   Block form: `label { |book| "#{book.title} (#{book.published_on&.year})" }`. With no
   string column at all it falls back to `"Book #42"` (`model_name.human` + ` #` + id).
+  When the label reaches into associations, declare them with `preload:` so they're
+  eager-loaded wherever this model is shown — `label :full_title, preload: %i[publisher]`
+  ([Performance](performance.md#eager-loading-render-dependencies)).
 - **`identify_by`** — the column URL params use to identify a record of this model. With
   `identify_by :slug`, a filter URL reads `?publisher=tor-books` and resolves via
   `Publisher.where(slug: …)`.
@@ -220,6 +223,22 @@ publisher's name as a link (or a muted placeholder when nil), a filter valued by
 and — wherever a spec says `:publisher` — text search through the publisher's
 name. Declared once, where Publisher lives; correct everywhere it appears. This is the
 gem's central idea: per-model declarations composed over the association graph.
+
+### Re-titling an association column
+
+A `belongs_to`/`has_many` column links the associated record using the
+**target's** `label`. To title it differently *for this column* — keeping the same
+nil-safe link and route resolution — pass a `label:` callable that receives the record.
+For example, a `Review`'s `book` column, re-titled to include the publisher:
+
+```ruby
+attribute :book, label: ->(book) { "#{book.title} (#{book.publisher.name})" }
+```
+
+The same `Book` reads as just `The Hobbit` on its own pages and in most columns, but here
+it shows `The Hobbit (Tor Books)` — without dropping to a full `render` block that has to
+rebuild the link by hand. (When the callable reaches into the target like this, pair it
+with `preload: %i[publisher]` — [Performance](performance.md#eager-loading-render-dependencies).)
 
 ## Field flavors in depth
 
