@@ -13,8 +13,11 @@ module CrudComponents
         reflection.klass
       end
 
-      def eager_load_name
-        name
+      # Load the association, nesting each target's identity_preloads (+ this
+      # column's `preload:`) so rendering the list's labels never N+1s.
+      def eager_load
+        nested = (target_structure.identity_preloads + declared_preloads).uniq
+        [nested.empty? ? name : { name => nested }]
       end
 
       # The index a "+n more" / list link points at: the nested route under

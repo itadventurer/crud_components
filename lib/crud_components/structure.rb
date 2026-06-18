@@ -39,7 +39,10 @@ module CrudComponents
       end
     end
 
-    attr_reader :model, :identify_by
+    # identity_preloads: associations to eager-load whenever this model is shown
+    # as another model's association cell (its label/render dependencies), from
+    # `label …, preload:` and the standalone `preload` declaration.
+    attr_reader :model, :identify_by, :identity_preloads
 
     def initialize(model, builder = nil)
       @model = model
@@ -47,6 +50,7 @@ module CrudComponents
       @label_decl = builder&.label_decl
       @identify_by = builder&.identify_by_decl || :id
       @search_decl = builder&.search_decl
+      @identity_preloads = ((builder&.label_preload_decl || []) + (builder&.preload_decl || [])).uniq
       @declared_actions = builder&.actions || {}
       @declared_fieldsets = builder&.fieldsets || {}
       @fields = {}

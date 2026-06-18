@@ -231,6 +231,27 @@ class StructureTest < ActiveSupport::TestCase
     refute_includes field.renderer_options.keys, :label
   end
 
+  # #2: eager-load composition — association columns nest the target's declared
+  # identity_preloads; a per-attribute preload: contributes top-level.
+  test 'eager_load nests the target identity_preloads and the per-column preload' do
+    s = structure_of(Book)
+    # Publisher declares no preloads → a bare association name
+    assert_equal [:publisher], s.field(:publisher).eager_load
+    # Review declares `label preload: %i[book]` → nested under the has_many
+    assert_equal [{ reviews: %i[book] }], s.field(:reviews).eager_load
+    # a per-attribute preload on a non-association column → top-level
+    f = structure_of(define_model { attribute :title, preload: %i[foo bar] }).field(:title)
+    assert_equal %i[foo bar], f.eager_load
+  end
+
+  test 'identity_preloads combines label preload: and the standalone preload declaration' do
+    s = structure_of(define_model do
+      label(:title, preload: %i[publisher])
+      preload :reviews
+    end)
+    assert_equal %i[publisher reviews], s.identity_preloads
+  end
+
   # ── belongs_to select/text threshold (config.select_limit) ─────────────────
   test 'belongs_to filter control flips to text above select_limit' do
     Publisher.create!(name: 'A', slug: 'a')

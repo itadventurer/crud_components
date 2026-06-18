@@ -17,7 +17,8 @@ module CrudComponents
   #   end
   class Builder
     attr_reader :model, :declarations, :actions, :fieldsets,
-                :label_decl, :identify_by_decl, :search_decl
+                :label_decl, :identify_by_decl, :search_decl,
+                :label_preload_decl, :preload_decl
 
     # @param model [Class] the ActiveRecord model being described.
     # @yield the `crud_structure` block, evaluated against this Builder.
@@ -32,14 +33,29 @@ module CrudComponents
 
     # How a record is titled (links, headings). Give a method name or a block.
     # @param method [Symbol, nil] a method on the record returning its label.
+    # @param preload [Array<Symbol>, Symbol, nil] associations the label reaches
+    #   into (`label :full_title, preload: %i[customer training]`). They're
+    #   eager-loaded automatically whenever this model is shown as another
+    #   model's association column — declare once, no N+1 anywhere.
     # @yield [record] computes the label; receives the record.
     # @return [void]
-    def label(method = nil, &block)
+    def label(method = nil, preload: nil, &block)
       raise DefinitionError, "#{model}: label declared twice" if defined?(@label_decl) && @label_decl
       raise DefinitionError, "#{model}: label takes a method name or a block, not both" if method && block
       raise DefinitionError, "#{model}: label needs a method name or a block" unless method || block
 
       @label_decl = block || method.to_sym
+      @label_preload_decl = preload_list(preload)
+    end
+
+    # Associations to eager-load whenever this model is rendered (as a row or as
+    # another model's association cell) — for label/render dependencies the gem
+    # can't infer. Additive with `label …, preload:`; declare more than once to
+    # accumulate. e.g. `preload :customer, :training`.
+    # @param names [Array<Symbol>] association names (nested hashes allowed).
+    # @return [void]
+    def preload(*names)
+      @preload_decl = (@preload_decl || []) + names
     end
 
     # The column used in URLs (`to_param`) and to resolve a bulk selection.
@@ -125,6 +141,16 @@ module CrudComponents
     end
 
     private
+
+    # Normalize a preload value to an array of includes-specs, leaving a nested
+    # hash (`{ customer: :company }`) intact (Array() would split it).
+    def preload_list(value)
+      case value
+      when nil then []
+      when Array then value
+      else [value]
+      end
+    end
 
     # Bare block taking the record (arity 1, including `it`/`_1`) is the
     # render facet; a zero-arity block declares facets.

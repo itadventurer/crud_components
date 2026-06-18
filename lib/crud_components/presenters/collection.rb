@@ -388,8 +388,8 @@ module CrudComponents
       def eager_load(relation)
         return relation unless relation.is_a?(ActiveRecord::Relation)
 
-        names = fields.filter_map(&:eager_load_name)
-        names.any? ? relation.includes(*names) : relation
+        specs = fields.flat_map(&:eager_load)
+        specs.any? ? relation.includes(*specs) : relation
       end
     end
   end

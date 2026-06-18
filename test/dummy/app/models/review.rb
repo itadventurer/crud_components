@@ -6,7 +6,9 @@ class Review < ApplicationRecord
   validates :rating, inclusion: { in: 1..5, message: 'must be between 1 and 5' }
 
   crud_structure do
-    label { |review| "#{review.reviewer_name} on #{review.book.title}" }
+    # the label reaches into :book — declaring it eager-loads :book wherever a
+    # Review is shown as an association (e.g. a Book's reviews column), no N+1
+    label(preload: %i[book]) { |review| "#{review.reviewer_name} on #{review.book.title}" }
     search_in :reviewer_name, :body, :book   # :book delegates to Book's search_in
 
     attribute :rating, as: :stars            # custom renderer partial in the host app

@@ -195,9 +195,23 @@ module CrudComponents
       end
 
       # ── loading ──────────────────────────────────────────────────────────
-      # Association to eager-load when this field is visible.
-      def eager_load_name
-        nil
+      # Includes-specs (symbols/nested hashes for ActiveRecord#includes) to
+      # eager-load when this column is shown. Base contributes the per-attribute
+      # `preload:` — associations a render block / custom renderer reaches on the
+      # listed model. Association fields override to also nest the target's
+      # identity_preloads under the association name.
+      def eager_load
+        declared_preloads
+      end
+
+      # The `preload:` option as an array of includes-specs (a nested hash kept
+      # intact, unlike Array()).
+      def declared_preloads
+        case (p = options[:preload])
+        when nil then []
+        when Array then p
+        else [p]
+        end
       end
 
       private

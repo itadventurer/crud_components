@@ -619,4 +619,32 @@ class FullIntegrationTest < ActionDispatch::IntegrationTest
   ensure
     BooksController.view_paths = original
   end
+
+  # ── automatic nested eager-loading (#2) ───────────────────────────────────
+  test 'an association column nests the target label preloads (no N+1)' do
+    # Each review's label reaches review.book.title; on the :catalog page the
+    # reviews column renders those labels. Distinct books per review so the
+    # query cache can't mask an N+1.
+    6.times do |i|
+      b = Book.create!(title: "EL #{i}", slug: "el-#{i}", genre: :fiction, publisher: @tor)
+      b.reviews.create!(rating: 3, reviewer_name: "R#{i}", body: 'x')
+    end
+    books_q = count_sql(/FROM ["`]books["`]/i) { get books_path(fieldset: :catalog) }
+    assert_response :success
+    # main books query + ONE batched load of the reviews' books — not one per review
+    assert books_q <= 3, "reviews' books should be preloaded (reviews: [:book]); saw #{books_q} books queries"
+  end
+
+  private
+
+  def count_sql(pattern)
+    n = 0
+    sub = ActiveSupport::Notifications.subscribe('sql.active_record') do |*, payload|
+      n += 1 if payload[:sql].to_s.match?(pattern) && payload[:name] != 'SCHEMA' && !payload[:cached]
+    end
+    yield
+    n
+  ensure
+    ActiveSupport::Notifications.unsubscribe(sub)
+  end
 end

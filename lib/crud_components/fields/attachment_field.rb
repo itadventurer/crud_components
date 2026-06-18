@@ -9,8 +9,8 @@ module CrudComponents
         @many ||= model.reflect_on_attachment(name).macro == :has_many_attached
       end
 
-      def eager_load_name
-        many? ? :"#{name}_attachments" : :"#{name}_attachment"
+      def eager_load
+        [many? ? :"#{name}_attachments" : :"#{name}_attachment", *declared_preloads]
       end
 
       # ── forms ────────────────────────────────────────────────────────────

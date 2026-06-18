@@ -30,7 +30,7 @@ class Book < ApplicationRecord
     attribute :slug, editable: false                        # shown in forms, but read-only
     attribute :active, editable: :manage                    # everyone sees it; only managers edit it
 
-    attribute :author_names do
+    attribute :author_names, preload: %i[authors] do   # render block reaches :authors → preload it
       render { |book| book.authors.map(&:name).to_sentence }
       filter authors: :name
       sort { |scope, dir| scope.left_joins(:authors).order(Author.arel_table[:name].public_send(dir)) }

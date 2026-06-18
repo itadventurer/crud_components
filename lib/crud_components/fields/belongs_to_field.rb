@@ -46,8 +46,12 @@ module CrudComponents
         searched ? identified.or(searched) : identified
       end
 
-      def eager_load_name
-        name
+      # Load the association, nesting the target's identity_preloads (its label's
+      # own association deps) plus any per-column `preload:` so the target's
+      # label never N+1s. e.g. { order: %i[customer training] }.
+      def eager_load
+        nested = (target_structure.identity_preloads + declared_preloads).uniq
+        [nested.empty? ? name : { name => nested }]
       end
 
       # ── forms ────────────────────────────────────────────────────────────
