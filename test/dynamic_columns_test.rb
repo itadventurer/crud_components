@@ -134,6 +134,14 @@ class DynamicColumnsTest < ActiveSupport::TestCase
     shelf = presenter.fields.find { |f| f.name == :shelf }
     assert_equal 'A1', shelf.value(book)   # batch-loaded on [record] and resolved
   end
+
+  test 'a dynamic/computed column header uses its label: instead of the humanized slug' do
+    column = CrudComponents::DynamicColumn.new(:shelf_no, label: 'Bookshelf')
+    field = column.to_field(Book)
+
+    assert_equal 'Bookshelf', field.human_name    # not the humanized "Shelf no"
+    assert_equal 'Bookshelf', field.picker_label  # the picker agrees with the header
+  end
 end
 
 # End-to-end through the dummy app's playground pages, JavaScript-free.
