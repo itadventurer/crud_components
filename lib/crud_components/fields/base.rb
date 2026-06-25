@@ -18,6 +18,8 @@ module CrudComponents
       end
 
       def human_name
+        return options[:label] if options[:label].is_a?(String)
+
         model.human_attribute_name(name)
       end
 

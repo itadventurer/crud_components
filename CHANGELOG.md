@@ -37,6 +37,14 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   (overridable partials); `as:` overrides. See `docs/fields.md#renderers`.
 - **`config.max_path_depth`** — caps how deep a path column may chain (default 3).
 
+### Fixed
+
+- A column's `label:` is now honoured as the table header and picker label for every
+  field flavor (computed and dynamic columns included), not just path columns. Previously
+  `DynamicColumn.new(:slug, label: 'Custom')` fell back to the humanized slug in the
+  header, so user-defined property labels were lost. `human_name` checks a String `label:`
+  first, then `human_attribute_name`.
+
 ## [0.1.0]
 
 - Initial release: declarative CRUD tables, record views and filter forms derived from
