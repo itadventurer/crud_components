@@ -109,19 +109,36 @@ arrangement (`layout:`) are orthogonal: the same fieldset feeds any layout. (`cr
 
 A fieldset is the *author's* default set of columns. A column picker lets the *user*
 narrow and reorder it — the CRM "which columns do I want" control. Turn it on with
-`column_picker: true` and the toolbar grows a **Columns** dropdown listing every column
-the user may see (declared columns and any [dynamic columns](fields.md#dynamic-columns)),
-each a checkbox, draggable to reorder:
+`column_picker: true` and a **gear** appears in the header row's actions cell; it opens a
+checklist of every column the user may see (declared columns and any
+[dynamic columns](fields.md#dynamic-columns)), each a checkbox, draggable to reorder:
 
 ```erb
 <%= crud_collection @books, fieldset: :index, column_picker: true %>
 ```
 
 The picker is **just another query param**. Its form submits `?cols[]=` to the same URL —
-exactly like the sort links and filter row — so it works without JavaScript (ticking
-columns is plain HTML; the optional `crud-columns` Stimulus controller only adds
-drag-to-reorder) and composes with filters, search, sort and `param_prefix:`. The
-selection rides in the URL; nothing is stored server-side.
+exactly like the sort links and filter row — so it composes with filters, search, sort and
+`param_prefix:`, and the selection rides in the URL with nothing stored server-side.
+
+**No JavaScript required.** The gear is a native `<details>`/`<summary>` disclosure, so it
+opens and closes without JS; ticking columns is plain HTML, and Apply/Reset are a plain GET.
+The optional `crud-columns` Stimulus controller only adds drag-to-reorder.
+
+### Reuse anywhere with `crud_column_picker`
+
+![A record detail view (a definition list) with the column-picker gear open above it, narrowing which fields the dl shows](screenshots/record-picker.png)
+
+The gear is also a standalone helper, so you can place it outside a table — e.g. above a
+`crud_record` detail view, which reads the same `?cols=` via `visible:`:
+
+```erb
+<%= crud_column_picker @book, fieldset: :show %>   <%# the gear, submits ?cols= to this page %>
+<%= crud_record @book, visible: @visible %>         <%# narrows/orders the dl to match %>
+```
+
+`crud_column_picker` takes a relation, a model class or a record. Match its `param_prefix:`
+to the consuming `crud_collection`/`crud_record` so they read the same param.
 
 Two ways to set the visible set:
 
@@ -138,13 +155,14 @@ The chosen names are always **intersected with the permitted set**: a forged or 
 `?cols=` (or a `visible:` naming a column the user lost access to) can only hide or reorder
 columns, never reveal one the `if:` gate forbids. See [security](security.md).
 
-**Persistence is yours, and optional.** The gem reads the param; it doesn't store it. To
-make a pick stick across visits, read it in your controller, save it wherever you keep
-per-user state, and pass it back via `visible:`:
+**Persistence is yours, and optional.** The gem reads the param; it doesn't store it. Use
+`CrudComponents.selected_columns(params)` to pull the ordered selection out of a request
+(it honors `param_prefix:`), save it wherever you keep per-user state, and pass it back via
+`visible:`. The block form runs only when the picker was actually submitted:
 
 ```ruby
 def index
-  current_user.update!(book_columns: params[:cols]) if params.key?(:cols)
+  CrudComponents.selected_columns(params) { |cols| current_user.update!(book_columns: cols) }
   @books = Book.all
 end
 # view: crud_collection @books, column_picker: true, visible: current_user.book_columns

@@ -1,20 +1,18 @@
-<%# The column picker: lets a user choose which of the columns they may see are
-    shown, and (with the optional crud-columns controller) in what order. It is a
-    plain GET form that submits `cols[]` to the same URL — exactly like the sort
-    links and filter row — so it works without JavaScript and composes with every
-    other param. What you do with the resulting `?cols=` is up to you: let it ride
-    in the URL, or read params[:cols] in your controller and persist it per user,
-    then feed it back via `visible:`.
-    Local: `collection` (CrudComponents::Presenters::Collection). %>
+<%# The column picker: a gear that opens a checklist of the columns this user may
+    see. Native <details> disclosure — opening needs no JavaScript; the optional
+    crud-columns controller only adds drag-to-reorder. The form is a plain GET that
+    submits `cols[]` to `url` (this page by default), exactly like the sort links
+    and filter row, so it composes with every other param and works no-JS.
+    Locals: `collection` (a Collection presenter), `url`. %>
 <% css = collection.css %>
 <details class="crud-column-picker dropdown" data-controller="crud-columns">
-  <summary class="<%= css.button %>" role="button">
-    <i class="<%= css.icon_prefix %>layout-three-columns" aria-hidden="true"></i>
-    <%= t('crud_components.columns.edit', default: 'Columns') %>
+  <summary class="crud-column-picker-toggle" role="button"
+           title="<%= t('crud_components.columns.edit', default: 'Columns') %>"
+           aria-label="<%= t('crud_components.columns.edit', default: 'Columns') %>">
+    <i class="<%= css.icon_prefix %>gear" aria-hidden="true"></i>
   </summary>
   <div class="crud-column-picker-menu">
-    <%# GET so it behaves like sort/filter; advance so Turbo treats it as a nav. %>
-    <%= form_with url: request.path, method: :get, data: { turbo_action: 'advance' } do %>
+    <%= form_with url: url, method: :get, data: { turbo_action: 'advance' } do %>
       <% collection.picker_preserved_params.each do |name, value| %>
         <%= hidden_field_tag name, value, id: nil %>
       <% end %>
@@ -23,9 +21,8 @@
         <ul class="crud-column-picker-list list-unstyled" data-crud-columns-target="list">
           <% collection.available_fields.each do |field| %>
             <%# Pure-HTML behaviour: a ticked checkbox submits cols[]=<name> in DOM
-                order, an unticked one submits nothing. crud-columns adds drag-to-
-                reorder by moving these <li>s (and keeps a hidden input so a hidden
-                column can still be dragged into a position). %>
+                order, an unticked one submits nothing. crud-columns reorders these
+                <li>s on drag, which reorders the submitted columns. %>
             <li class="crud-column-picker-item" draggable="true" data-crud-columns-target="item">
               <span class="crud-column-picker-handle" aria-hidden="true" data-crud-columns-target="handle">
                 <i class="<%= css.icon_prefix %>grip-vertical"></i>
@@ -45,7 +42,7 @@
           <%= t('crud_components.columns.apply', default: 'Apply') %>
         </button>
         <%= link_to t('crud_components.columns.reset', default: 'Reset'),
-                    request.path + (collection.picker_preserved_params.any? ? "?#{collection.picker_preserved_params.to_query}" : ''),
+                    collection.picker_preserved_params.any? ? "#{url}?#{collection.picker_preserved_params.to_query}" : url,
                     class: css.button, data: { turbo_action: 'advance' } %>
       </div>
     <% end %>

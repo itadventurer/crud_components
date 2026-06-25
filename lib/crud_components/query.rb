@@ -37,18 +37,6 @@ module CrudComponents
         .select { |f| f.permitted?(@permission) }
     end
 
-    # The ordered column names the user asked to see via ?cols[]= (namespaced by
-    # param_prefix), or nil when the param is absent. Read like sort/dir; the
-    # presenter intersects it with the permitted set, so a forged or stale value
-    # can never surface a column the user may not see.
-    def visible_columns
-      raw = @params[param_name('cols')]
-      return nil unless raw.is_a?(Array)
-
-      names = raw.map(&:to_s).reject(&:blank?)
-      names.empty? ? nil : names
-    end
-
     def searchable? = structure.searchable?
 
     # Current value of a (logical, unprefixed) param — for filter controls.

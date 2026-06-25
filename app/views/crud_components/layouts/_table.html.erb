@@ -64,7 +64,13 @@
               <% end %>
             </th>
           <% end %>
-          <% if collection.actions_column? %><th scope="col"></th><% end %>
+          <% if collection.trailing_column? %>
+            <th scope="col" class="<%= css.actions_cell %>">
+              <% if collection.column_picker? %>
+                <%= render 'crud_components/column_picker', collection: collection, url: request.path %>
+              <% end %>
+            </th>
+          <% end %>
         </tr>
         <% if collection.filterable? %>
           <tr class="<%= css.filter_row %>">
@@ -78,7 +84,7 @@
                 <% end %>
               </td>
             <% end %>
-            <% if collection.actions_column? %>
+            <% if collection.trailing_column? %>
               <td class="<%= css.actions_cell %>">
                 <div class="<%= css.button_group %>">
                   <button type="submit" form="<%= collection.filter_form_id %>" class="<%= css.button %>">

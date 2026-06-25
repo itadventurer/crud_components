@@ -3,7 +3,7 @@
     so swapping the table shell doesn't mean reimplementing search/actions.
     Local: `collection`. %>
 <% css = collection.css %>
-<% if collection.searchable? || collection.collection_actions&.any? || collection.selectable? || collection.column_picker? %>
+<% if collection.searchable? || collection.collection_actions&.any? || collection.selectable? %>
   <div class="<%= css.toolbar %>">
     <div class="d-flex align-items-center gap-2">
       <% if collection.searchable? %>
@@ -29,9 +29,6 @@
       <% end %>
     </div>
     <div class="d-flex align-items-center gap-2">
-      <% if collection.column_picker? %>
-        <%= render 'crud_components/column_picker', collection: collection %>
-      <% end %>
       <% if collection.selectable? %>
         <%# The bulk-action cluster: a count + the actions that operate on the
             ticked rows, kept together so it's clear they act on the selection.

@@ -60,6 +60,26 @@ module CrudComponents
       Structure.for(model)
     end
 
+    # The column-picker selection from a request's params: the ordered list of
+    # column names the user ticked, or nil when the picker wasn't submitted.
+    # Honors `param_prefix:` (match it to the picker's). Persist it however you
+    # like, then feed it back via `visible:`.
+    #
+    #   cols = CrudComponents.selected_columns(params)
+    #   current_user.update!(book_columns: cols) if cols
+    #
+    # A block runs only when a selection was submitted, and receives the list:
+    #
+    #   CrudComponents.selected_columns(params) { |cols| current_user.update!(book_columns: cols) }
+    def selected_columns(params, param_prefix: nil)
+      key = param_prefix ? "#{param_prefix}_cols" : 'cols'
+      raw = params[key] || params[key.to_sym]
+      names = raw.is_a?(Array) ? raw.map(&:to_s).reject(&:blank?) : nil
+      names = nil if names && names.empty?
+      yield names if block_given? && names
+      names
+    end
+
     # Whether non-image attachment previews (e.g. a PDF's first page) can
     # actually be generated here. Beyond a previewer binary (poppler/ffmpeg,
     # which `previewable?` already checks), processing needs `image_processing`

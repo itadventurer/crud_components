@@ -13,10 +13,12 @@
   <%# Syntax highlighting for the "how this page is built" code panels. %>
   <link href="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/styles/github.min.css" rel="stylesheet">
   <style>
-    /* Column picker: a plain <details> dropdown — no JS needed to open it. */
+    /* Column picker: a gear that opens a <details> dropdown — no JS to open it. */
     .crud-column-picker { position: relative; display: inline-block; }
-    .crud-column-picker > summary { list-style: none; cursor: pointer; }
-    .crud-column-picker > summary::-webkit-details-marker { display: none; }
+    .crud-column-picker-toggle { list-style: none; cursor: pointer; color: var(--bs-secondary); padding: .15rem .3rem; border-radius: .25rem; }
+    .crud-column-picker-toggle::-webkit-details-marker { display: none; }
+    .crud-column-picker-toggle:hover { color: var(--bs-body-color); background: var(--bs-secondary-bg); }
+    .crud-column-picker[open] .crud-column-picker-toggle { color: var(--bs-body-color); }
     .crud-column-picker-menu {
       position: absolute; right: 0; z-index: 1050; margin-top: .25rem; min-width: 14rem;
       background: #fff; border: 1px solid var(--bs-border-color); border-radius: .375rem;

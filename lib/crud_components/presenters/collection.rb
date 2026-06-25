@@ -6,6 +6,8 @@ module CrudComponents
     # query: Query  → manual mode (records arrive already filtered)
     # query: false  → static (no filter row, no sort links)
     class Collection < Base
+      include ColumnSelection
+
       attr_reader :model, :structure, :fieldset, :query, :layout, :param_prefix, :owner
 
       def initialize(view:, records:, fieldset: nil, query: nil, layout: :table,
@@ -66,31 +68,13 @@ module CrudComponents
         end
       end
 
-      # The columns actually rendered: the permitted set, narrowed and ordered by
-      # the user's selection (?cols= or the `visible:` default) when there is one.
-      def fields
-        @fields ||= select_visible(available_fields)
-      end
-
       # Every column this user is allowed to see — declared fieldset fields plus
       # the dynamic columns — regardless of the current visibility selection.
       # This is what a column picker offers as the universe to choose from.
+      # (`fields`, `column_visible?` and `visible_columns` come from ColumnSelection.)
       def available_fields
         @available_fields ||=
           (structure.fieldset_fields(fieldset) + @dynamic_fields).select { |f| f.permitted?(permission_context) }
-      end
-
-      # Is this column part of the current view (ticked in the picker)?
-      def column_visible?(field)
-        fields.include?(field)
-      end
-
-      # The ordered column names the user selected, or nil for "all permitted".
-      # ?cols= (a picker submit) wins over the `visible:` server default.
-      def visible_columns
-        return @visible_columns if defined?(@visible_columns)
-
-        @visible_columns = (query&.visible_columns&.map(&:to_sym)) || @visible_override
       end
 
       # Whether to offer the column picker UI for this collection.
@@ -179,7 +163,7 @@ module CrudComponents
       # Whether the toolbar (search + collection actions) has anything to show —
       # lets a layout skip an empty header row.
       def show_toolbar?
-        searchable? || collection_actions&.any? || column_picker?
+        searchable? || collection_actions&.any?
       end
 
       # Reset clears *this* collection's filter/search/sort/page params and
@@ -324,6 +308,13 @@ module CrudComponents
         @actions_enabled && (custom_actions_partial.present? || row_action_definitions.any?)
       end
 
+      # The trailing column exists when there are row actions *or* a column
+      # picker (its gear lives in that column's header cell) — so the header,
+      # rows and width all agree even on a picker-only, action-less table.
+      def trailing_column?
+        actions_column? || column_picker?
+      end
+
       def custom_actions_partial
         fieldset.custom_actions_partial
       end
@@ -371,7 +362,7 @@ module CrudComponents
       def select_value(record) = record.public_send(structure.identify_by).to_s
 
       def columns_count
-        fields.size + (selectable? ? 1 : 0) + (actions_column? ? 1 : 0)
+        fields.size + (selectable? ? 1 : 0) + (trailing_column? ? 1 : 0)
       end
 
       private
@@ -435,16 +426,6 @@ module CrudComponents
 
       def pn(key)
         query ? query.param_name(key) : key
-      end
-
-      # Narrow and order `list` by the user's selection. Always intersected with
-      # the permitted set (`list`), so a forged or stale ?cols= can only hide or
-      # reorder columns, never reveal one the user isn't allowed to see.
-      def select_visible(list)
-        names = visible_columns
-        return list unless names
-
-        names.filter_map { |n| list.find { |f| f.name == n } }
       end
 
       def eager_load(relation)

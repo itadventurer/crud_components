@@ -98,6 +98,29 @@ class DynamicColumnsTest < ActiveSupport::TestCase
     assert_includes collection(extra_columns: [gated], admin: true).available_fields.map(&:name), :cost
     assert_not_includes collection(extra_columns: [gated], admin: false).available_fields.map(&:name), :cost
   end
+
+  # ── controller helper + reuse in the record presenter ────────────────────────
+  test 'CrudComponents.selected_columns extracts the picker selection from params' do
+    assert_nil CrudComponents.selected_columns({})
+    assert_equal %w[title price], CrudComponents.selected_columns({ 'cols' => %w[title price] })
+    assert_equal %w[title], CrudComponents.selected_columns({ 'books_cols' => %w[title] }, param_prefix: :books)
+    assert_nil CrudComponents.selected_columns({ 'cols' => ['', nil] })  # empty submit → nil
+
+    yielded = nil
+    CrudComponents.selected_columns({ 'cols' => %w[a b] }) { |cols| yielded = cols }
+    assert_equal %w[a b], yielded
+    CrudComponents.selected_columns({}) { |_cols| flunk 'block must not run when nothing was submitted' }
+  end
+
+  test 'crud_record (the Record presenter) honors visible: and ?cols=, intersected with permitted fields' do
+    book = Book.create!(title: 'R', slug: 'rec-vis', price: 1)
+    base = CrudComponents::Presenters::Record.new(view: view, record: book, visible: %i[price title])
+    assert_equal %i[price title], base.fields.map(&:name)   # visible: default, in order
+
+    picked = CrudComponents::Presenters::Record.new(view: view(params: { 'cols' => %w[title] }),
+                                                    record: book, visible: %i[price title])
+    assert_equal %i[title], picked.fields.map(&:name)       # ?cols= overrides the default
+  end
 end
 
 # End-to-end through the dummy app's playground pages, JavaScript-free.
@@ -146,6 +169,24 @@ class DynamicColumnsIntegrationTest < ActionDispatch::IntegrationTest
     get '/columns', params: { cols: %w[title] }
     assert_select 'input[type=checkbox][name="cols[]"][value=title][checked]'
     assert_select 'input[type=checkbox][name="cols[]"][value=shelf]:not([checked])'
+  end
+
+  test 'the picker is a gear in the table header, not a toolbar button' do
+    get '/columns'
+    assert_select 'thead details.crud-column-picker summary i[class*=gear]'   # gear, in the header
+    assert_select '.crud-toolbar-cell details.crud-column-picker', count: 0   # not in the toolbar
+  end
+
+  test 'the standalone picker drives a detail view via ?cols=' do
+    book = Book.create!(title: 'Solo', slug: 'solo-detail', price: 7)
+    get book_path(book)
+    assert_select 'details.crud-column-picker'                 # the standalone gear renders
+    assert_select 'dt', text: /Title/
+    assert_select 'dt', text: /Price/
+
+    get book_path(book), params: { cols: %w[title] }
+    assert_select 'dt', text: /Title/
+    assert_select 'dt', { text: /Price/, count: 0 }            # crud_record narrowed to the pick
   end
 
   test 'dynamic columns batch-load: a fixed number of value queries, independent of row count' do

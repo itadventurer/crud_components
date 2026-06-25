@@ -158,12 +158,13 @@ request and pass `extra_columns:`. A `preload:` lambda batch-loads the page (no 
 
 ### Let users pick their columns
 
-![The same table with the Columns dropdown open — a checklist of every column the user may see (declared and dynamic), each toggleable, with Apply and Reset](docs/screenshots/column-picker.png)
+![The same table with the column-picker gear open in the header — a checklist of every column the user may see (declared and dynamic), each toggleable, with Apply and Reset](docs/screenshots/column-picker.png)
 
-Add `column_picker: true` and the toolbar grows a CRM-style **Columns** control: users
-hide and reorder the columns they may see. It submits `?cols[]=` to the same URL — like
-sort and filter — so it needs no endpoint, works without JavaScript, and is always
-intersected with the permitted set (a forged param can't reveal a gated column).
+Add `column_picker: true` and a **gear** appears in the header row: users hide and reorder
+the columns they may see. It submits `?cols[]=` to the same URL — like sort and filter — so
+it needs no endpoint, opens and works without JavaScript (native `<details>`), and is always
+intersected with the permitted set (a forged param can't reveal a gated column). It's also a
+standalone helper (`crud_column_picker`) you can drop above a `crud_record` detail view.
 
 ```erb
 <%= crud_collection @books, column_picker: true, visible: current_user.book_columns %>
