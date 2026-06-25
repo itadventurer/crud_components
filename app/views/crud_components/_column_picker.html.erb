@@ -1,0 +1,53 @@
+<%# The column picker: lets a user choose which of the columns they may see are
+    shown, and (with the optional crud-columns controller) in what order. It is a
+    plain GET form that submits `cols[]` to the same URL — exactly like the sort
+    links and filter row — so it works without JavaScript and composes with every
+    other param. What you do with the resulting `?cols=` is up to you: let it ride
+    in the URL, or read params[:cols] in your controller and persist it per user,
+    then feed it back via `visible:`.
+    Local: `collection` (CrudComponents::Presenters::Collection). %>
+<% css = collection.css %>
+<details class="crud-column-picker dropdown" data-controller="crud-columns">
+  <summary class="<%= css.button %>" role="button">
+    <i class="<%= css.icon_prefix %>layout-three-columns" aria-hidden="true"></i>
+    <%= t('crud_components.columns.edit', default: 'Columns') %>
+  </summary>
+  <div class="crud-column-picker-menu">
+    <%# GET so it behaves like sort/filter; advance so Turbo treats it as a nav. %>
+    <%= form_with url: request.path, method: :get, data: { turbo_action: 'advance' } do %>
+      <% collection.picker_preserved_params.each do |name, value| %>
+        <%= hidden_field_tag name, value, id: nil %>
+      <% end %>
+      <fieldset>
+        <legend class="<%= css.muted %> small"><%= t('crud_components.columns.legend', default: 'Show columns') %></legend>
+        <ul class="crud-column-picker-list list-unstyled" data-crud-columns-target="list">
+          <% collection.available_fields.each do |field| %>
+            <%# Pure-HTML behaviour: a ticked checkbox submits cols[]=<name> in DOM
+                order, an unticked one submits nothing. crud-columns adds drag-to-
+                reorder by moving these <li>s (and keeps a hidden input so a hidden
+                column can still be dragged into a position). %>
+            <li class="crud-column-picker-item" draggable="true" data-crud-columns-target="item">
+              <span class="crud-column-picker-handle" aria-hidden="true" data-crud-columns-target="handle">
+                <i class="<%= css.icon_prefix %>grip-vertical"></i>
+              </span>
+              <label class="d-inline-flex align-items-center gap-2">
+                <input type="checkbox" class="form-check-input" name="<%= collection.column_param_name %>"
+                       value="<%= field.name %>" <%= 'checked' if collection.column_visible?(field) %>
+                       data-action="change->crud-columns#toggle">
+                <span><%= field.human_name %></span>
+              </label>
+            </li>
+          <% end %>
+        </ul>
+      </fieldset>
+      <div class="<%= css.button_group %>">
+        <button type="submit" class="<%= css.button %>">
+          <%= t('crud_components.columns.apply', default: 'Apply') %>
+        </button>
+        <%= link_to t('crud_components.columns.reset', default: 'Reset'),
+                    request.path + (collection.picker_preserved_params.any? ? "?#{collection.picker_preserved_params.to_query}" : ''),
+                    class: css.button, data: { turbo_action: 'advance' } %>
+      </div>
+    <% end %>
+  </div>
+</details>

@@ -1,0 +1,164 @@
+require 'test_helper'
+
+# Dynamic columns (CrudComponents::DynamicColumn / Fields::DynamicField) and the
+# per-user column picker. Unit specs drive the field + the Collection presenter
+# directly; the integration class drives the dummy app's /custom_fields and
+# /columns pages exactly the way a no-JS browser would.
+class DynamicColumnsTest < ActiveSupport::TestCase
+  # A minimal can?-shaped view with request params, enough to build a Collection
+  # without ActionView (we only assert on field selection, not rendered HTML).
+  def view(params: {}, admin: true)
+    request = Struct.new(:query_parameters, :path).new(params, '/x')
+    view = Object.new
+    view.define_singleton_method(:request) { request }
+    view.define_singleton_method(:can?) { |*| admin }
+    view
+  end
+
+  def collection(params: {}, admin: true, **opts)
+    CrudComponents::Presenters::Collection.new(
+      view: view(params: params, admin: admin), records: Book.all, fieldset: :index, **opts
+    )
+  end
+
+  def color = CrudComponents::DynamicColumn.new(:color, label: 'Color') { |r, _| "c#{r.id}" }
+
+  # ── the field ──────────────────────────────────────────────────────────────
+  test 'a dynamic column resolves its value from the resolver block + preload cache' do
+    column = CrudComponents::DynamicColumn.new(:weight, as: :number,
+                                               preload: ->(records) { records.to_h { |r| [r.id, r.id * 10] } }) do |record, loaded|
+      loaded[record.id]
+    end
+    book = Book.create!(title: 'W', slug: 'dc-weight', price: 1)
+    field = column.to_field(Book).preload!([book])
+
+    assert_equal book.id * 10, field.value(book)
+    assert_equal :number, field.renderer(book)   # explicit as:
+    assert_nil field.column                       # no backing DB column
+  end
+
+  test 'renderer is inferred from the value type when no as: is given' do
+    book = Book.create!(title: 'I', slug: 'dc-infer', price: 1)
+    assert_equal :boolean, CrudComponents::DynamicColumn.new(:flag) { |_r| true }.to_field(Book).renderer(book)
+    assert_equal :date, CrudComponents::DynamicColumn.new(:on) { |_r| Date.today }.to_field(Book).renderer(book)
+    assert_equal :string, CrudComponents::DynamicColumn.new(:txt) { |_r| 'x' }.to_field(Book).renderer(book)
+  end
+
+  test 'filter/sort are off unless the column supplies the facet (keeps the query whitelist tight)' do
+    plain = CrudComponents::DynamicColumn.new(:c) { |_r| 1 }.to_field(Book)
+    assert_not plain.filterable?
+    assert_not plain.sortable?
+
+    rich = CrudComponents::DynamicColumn.new(:c, filter: ->(s, _v) { s }, sort: ->(s, _d) { s }).to_field(Book)
+    assert rich.filterable?
+    assert rich.sortable?
+  end
+
+  # ── the presenter: selection + ordering ──────────────────────────────────────
+  test 'dynamic columns are appended to the permitted column set' do
+    names = collection(extra_columns: [color]).available_fields.map(&:name)
+    assert_includes names, :color
+    assert_equal :color, names.last
+  end
+
+  test '?cols= limits and orders the visible columns' do
+    fields = collection(params: { 'cols' => %w[color title] }, extra_columns: [color]).fields
+    assert_equal %i[color title], fields.map(&:name)
+  end
+
+  test 'an unknown ?cols= name is ignored, not rendered' do
+    fields = collection(params: { 'cols' => %w[nope title] }).fields
+    assert_equal %i[title], fields.map(&:name)
+  end
+
+  test 'visible: is the default selection; ?cols= overrides it' do
+    assert_equal %i[title color], collection(extra_columns: [color], visible: %i[title color]).fields.map(&:name)
+    assert_equal %i[color],
+                 collection(params: { 'cols' => %w[color] }, extra_columns: [color], visible: %i[title]).fields.map(&:name)
+  end
+
+  test 'column_visible? reflects the current selection' do
+    c = collection(params: { 'cols' => %w[title] }, extra_columns: [color])
+    assert c.column_visible?(c.available_fields.find { |f| f.name == :title })
+    assert_not c.column_visible?(c.available_fields.find { |f| f.name == :color })
+  end
+
+  # ── security: a hidden column stays hidden, however ?cols= is forged ──────────
+  test 'a permission-gated dynamic column never appears, even when ?cols= names it' do
+    gated = CrudComponents::DynamicColumn.new(:secret, if: -> { false }) { |_r| 's' }
+
+    assert_not_includes collection(extra_columns: [gated]).available_fields.map(&:name), :secret
+    # forged param can only hide/reorder permitted columns — never reveal this one
+    assert_equal %i[color], collection(params: { 'cols' => %w[secret color] },
+                                       extra_columns: [color, gated]).fields.map(&:name)
+  end
+
+  test 'a manage-gated dynamic column follows the ability like a declared if: field' do
+    gated = CrudComponents::DynamicColumn.new(:cost, if: :manage) { |_r| 9 }
+    assert_includes collection(extra_columns: [gated], admin: true).available_fields.map(&:name), :cost
+    assert_not_includes collection(extra_columns: [gated], admin: false).available_fields.map(&:name), :cost
+  end
+end
+
+# End-to-end through the dummy app's playground pages, JavaScript-free.
+class DynamicColumnsIntegrationTest < ActionDispatch::IntegrationTest
+  setup do
+    @shelf  = PropertyDefinition.create!(key: 'shelf',  label: 'Shelf',  flavor: 'string')
+    @weight = PropertyDefinition.create!(key: 'weight', label: 'Weight', flavor: 'number', unit: 'g')
+    @alpha = Book.create!(title: 'Alpha', slug: 'dc-alpha', price: 1)
+    @beta  = Book.create!(title: 'Beta',  slug: 'dc-beta',  price: 2)
+    PropertyValue.create!(property_definition: @shelf,  subject: @alpha, value: 'A1')
+    PropertyValue.create!(property_definition: @shelf,  subject: @beta,  value: 'B2')
+    PropertyValue.create!(property_definition: @weight, subject: @alpha, value: '300')
+    PropertyValue.create!(property_definition: @weight, subject: @beta,  value: '900')
+  end
+
+  test 'dynamic columns render with type-aware formatting' do
+    get '/custom_fields'
+    assert_response :success
+    assert_select 'th', text: /Shelf/
+    assert_select 'td', text: /A1/
+    assert_match(/300.* g/, response.body)   # number flavor + unit
+  end
+
+  test 'a dynamic column filters via a plain GET param' do
+    get '/custom_fields', params: { shelf: 'A1' }
+    assert_select 'td', text: /A1/
+    assert_select 'td', { text: /B2/, count: 0 }
+  end
+
+  test 'a dynamic column sorts via plain GET params' do
+    get '/custom_fields', params: { sort: 'weight', dir: 'desc' }
+    assert_response :success
+    assert response.body.index('Beta') < response.body.index('Alpha'), 'desc weight: 900 (Beta) before 300 (Alpha)'
+  end
+
+  test 'the column picker limits the visible columns via ?cols=' do
+    get '/columns', params: { cols: %w[shelf title] }
+    assert_response :success
+    # Assert on the sortable header links (the picker's labels are <span>s, so
+    # scope to <th> <a> to avoid matching the picker list).
+    assert_select 'thead th a', text: /Shelf/
+    assert_select 'thead th a', { text: /Genre/, count: 0 }   # dropped by the selection
+  end
+
+  test 'the picker renders a checkbox per available column, pre-ticked for the current view' do
+    get '/columns', params: { cols: %w[title] }
+    assert_select 'input[type=checkbox][name="cols[]"][value=title][checked]'
+    assert_select 'input[type=checkbox][name="cols[]"][value=shelf]:not([checked])'
+  end
+
+  test 'dynamic columns batch-load: a fixed number of value queries, independent of row count' do
+    8.times { |i| Book.create!(title: "Bulk #{i}", slug: "dc-bulk-#{i}", price: 1) }
+    selects = []
+    callback = lambda do |_name, _start, _finish, _id, payload|
+      selects << payload[:sql] if payload[:sql].to_s.match?(/SELECT.*property_values/i)
+    end
+    ActiveSupport::Notifications.subscribed(callback, 'sql.active_record') { get '/custom_fields' }
+
+    # No filter/sort here, so the only property_values reads are the per-column
+    # preloads — one each, never one per book.
+    assert_operator selects.size, :<=, PropertyDefinition.count + 1,
+                    "expected ≤ #{PropertyDefinition.count + 1} property_values queries, got #{selects.size}"
+  end
+end

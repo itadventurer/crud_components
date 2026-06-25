@@ -88,8 +88,9 @@ shareable. Flat params:
 | `?price_geq=10&price_leq=20`             | ranges (numeric, date; dates whole-day-inclusive)   |
 | `?q=tolkien`                             | global search through `search_in`                   |
 | `?sort=title&dir=desc`                   | sorting; composes with active filters               |
+| `?cols[]=title&cols[]=price`             | column-picker selection (ordered, permitted subset) |
 
-`q`, `sort`, `dir`, `page`, `per` are **reserved** — they're the gem's own control params.
+`q`, `sort`, `dir`, `page`, `per`, `cols` are **reserved** — they're the gem's own control params.
 A field named after one would silently shadow it, so the gem raises at boot instead; rename
 the field (or scope the whole collection with `param_prefix: :books`, which prefixes every
 param). With `param_prefix:`, unprefixed params are ignored.
@@ -101,6 +102,10 @@ The guarantees, each backed by a test:
 - **No injection through `sort`/`dir`.** `sort` resolves against sortable fields only —
   `?sort=title;DROP TABLE books` yields *no* `ORDER BY`, not an escaped one. `dir` is
   validated to `asc`/`desc`.
+- **`?cols=` can only narrow, never widen.** The column-picker selection is intersected
+  with the permitted column set, so a forged or stale `cols` (or a `visible:` default
+  naming a now-gated column) can hide or reorder columns but never surface one the `if:`
+  gate forbids.
 - **Escaped LIKE.** Wildcards (`%`, `_`) and the backslash escape itself are escaped
   (`sanitize_sql_like` with an explicit `\`), so `%` matches a literal percent.
 - **Validated casts.** Enum values are checked against the enum; booleans against an

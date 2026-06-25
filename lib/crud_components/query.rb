@@ -9,13 +9,14 @@ module CrudComponents
 
     attr_reader :model, :structure, :fieldset, :param_prefix
 
-    def initialize(model, params, fieldset: nil, ability: nil, param_prefix: nil)
+    def initialize(model, params, fieldset: nil, ability: nil, param_prefix: nil, extra_fields: [])
       @model = model
       @structure = Structure.for(model)
       @fieldset = fieldset.is_a?(Fieldset) ? fieldset : @structure.fieldset(fieldset)
       @params = extract(params)
       @permission = PermissionContext.new(ability)
       @param_prefix = param_prefix
+      @extra_fields = extra_fields
     end
 
     def apply(scope)
@@ -27,11 +28,25 @@ module CrudComponents
     def fieldset_name = fieldset.name
 
     def filter_fields
-      structure.fieldset_filter_fields(fieldset).select { |f| f.permitted?(@permission) }
+      (structure.fieldset_filter_fields(fieldset) + @extra_fields.select(&:filterable?))
+        .select { |f| f.permitted?(@permission) }
     end
 
     def sortable_fields
-      structure.fieldset_sortable_fields(fieldset).select { |f| f.permitted?(@permission) }
+      (structure.fieldset_sortable_fields(fieldset) + @extra_fields.select(&:sortable?))
+        .select { |f| f.permitted?(@permission) }
+    end
+
+    # The ordered column names the user asked to see via ?cols[]= (namespaced by
+    # param_prefix), or nil when the param is absent. Read like sort/dir; the
+    # presenter intersects it with the permitted set, so a forged or stale value
+    # can never surface a column the user may not see.
+    def visible_columns
+      raw = @params[param_name('cols')]
+      return nil unless raw.is_a?(Array)
+
+      names = raw.map(&:to_s).reject(&:blank?)
+      names.empty? ? nil : names
     end
 
     def searchable? = structure.searchable?

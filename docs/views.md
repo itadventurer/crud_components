@@ -105,6 +105,53 @@ arrangement (`layout:`) are orthogonal: the same fieldset feeds any layout. (`cr
 `crud_filter` and `crud_form` take `layout:` too — the partial each renders, defaulting to
 `:record`/`:filter`/`:form`.)
 
+## Column picker
+
+A fieldset is the *author's* default set of columns. A column picker lets the *user*
+narrow and reorder it — the CRM "which columns do I want" control. Turn it on with
+`column_picker: true` and the toolbar grows a **Columns** dropdown listing every column
+the user may see (declared columns and any [dynamic columns](fields.md#dynamic-columns)),
+each a checkbox, draggable to reorder:
+
+```erb
+<%= crud_collection @books, fieldset: :index, column_picker: true %>
+```
+
+The picker is **just another query param**. Its form submits `?cols[]=` to the same URL —
+exactly like the sort links and filter row — so it works without JavaScript (ticking
+columns is plain HTML; the optional `crud-columns` Stimulus controller only adds
+drag-to-reorder) and composes with filters, search, sort and `param_prefix:`. The
+selection rides in the URL; nothing is stored server-side.
+
+Two ways to set the visible set:
+
+| Source | Wins | Use for |
+| --- | --- | --- |
+| `?cols[]=` param | highest | a live pick from the picker (or a hand-built URL) |
+| `visible: %i[…]` | fallback | a server-supplied default — e.g. a preference you loaded |
+
+```erb
+<%= crud_collection @books, column_picker: true, visible: current_user.book_columns %>
+```
+
+The chosen names are always **intersected with the permitted set**: a forged or stale
+`?cols=` (or a `visible:` naming a column the user lost access to) can only hide or reorder
+columns, never reveal one the `if:` gate forbids. See [security](security.md).
+
+**Persistence is yours, and optional.** The gem reads the param; it doesn't store it. To
+make a pick stick across visits, read it in your controller, save it wherever you keep
+per-user state, and pass it back via `visible:`:
+
+```ruby
+def index
+  current_user.update!(book_columns: params[:cols]) if params.key?(:cols)
+  @books = Book.all
+end
+# view: crud_collection @books, column_picker: true, visible: current_user.book_columns
+```
+
+The `/columns` page in `test/dummy` is a runnable example.
+
 ## Actions
 
 Four actions exist by default: **`:new`** (collection), **`:show`**, **`:edit`** and

@@ -9,7 +9,8 @@ module CrudComponents
       attr_reader :model, :structure, :fieldset, :query, :layout, :param_prefix, :owner
 
       def initialize(view:, records:, fieldset: nil, query: nil, layout: :table,
-                     param_prefix: nil, actions: true, group_by: nil)
+                     param_prefix: nil, actions: true, group_by: nil,
+                     extra_columns: nil, visible: nil, column_picker: false)
         super(view: view)
         unless records.respond_to?(:klass)
           raise ArgumentError,
@@ -24,6 +25,14 @@ module CrudComponents
         @layout = layout
         @param_prefix = param_prefix
         @actions_enabled = actions
+        @column_picker = column_picker
+        # User-defined columns whose data lives outside the model's table. Built
+        # fresh per request (never on the immutable Structure), so they may carry
+        # the per-page value cache.
+        @dynamic_fields = Array(extra_columns).map { |c| c.to_field(@model) }
+        # A server-supplied default selection (e.g. a persisted preference); the
+        # ?cols= param, when present, takes precedence over it.
+        @visible_override = visible&.map(&:to_sym)
 
         case query
         when false
@@ -32,7 +41,7 @@ module CrudComponents
         when nil
           @fieldset = @structure.fieldset(fieldset || :index)
           @query = Query.new(@model, view.request.query_parameters, fieldset: @fieldset,
-                             ability: ability, param_prefix: param_prefix)
+                             ability: ability, param_prefix: param_prefix, extra_fields: @dynamic_fields)
           relation = @query.apply(relation)
         else
           @query = query
@@ -48,11 +57,54 @@ module CrudComponents
       def surface = :collection
 
       def records
-        @records ||= @relation.to_a
+        @records ||= begin
+          rows = @relation.to_a
+          # Prime each visible dynamic column's per-page cache once (no N+1); the
+          # cell resolver then reads per row from what `preload:` returned.
+          fields.each { |f| f.preload!(rows) if f.is_a?(Fields::DynamicField) }
+          rows
+        end
       end
 
+      # The columns actually rendered: the permitted set, narrowed and ordered by
+      # the user's selection (?cols= or the `visible:` default) when there is one.
       def fields
-        @fields ||= structure.fieldset_fields(fieldset).select { |f| f.permitted?(permission_context) }
+        @fields ||= select_visible(available_fields)
+      end
+
+      # Every column this user is allowed to see — declared fieldset fields plus
+      # the dynamic columns — regardless of the current visibility selection.
+      # This is what a column picker offers as the universe to choose from.
+      def available_fields
+        @available_fields ||=
+          (structure.fieldset_fields(fieldset) + @dynamic_fields).select { |f| f.permitted?(permission_context) }
+      end
+
+      # Is this column part of the current view (ticked in the picker)?
+      def column_visible?(field)
+        fields.include?(field)
+      end
+
+      # The ordered column names the user selected, or nil for "all permitted".
+      # ?cols= (a picker submit) wins over the `visible:` server default.
+      def visible_columns
+        return @visible_columns if defined?(@visible_columns)
+
+        @visible_columns = (query&.visible_columns&.map(&:to_sym)) || @visible_override
+      end
+
+      # Whether to offer the column picker UI for this collection.
+      def column_picker? = @column_picker && available_fields.any?
+
+      # The checkbox param name the picker submits (respects param_prefix).
+      def column_param_name = "#{pn('cols')}[]"
+
+      # Hidden inputs for the picker's GET form: keep every other param (filters,
+      # search, sort, other collections) but drop our own cols (the checkboxes
+      # resubmit it) and page (a column change resets paging).
+      def picker_preserved_params
+        drop = [pn('cols'), pn('page')]
+        view.request.query_parameters.reject { |key, _| drop.include?(key) }
       end
 
       # ── cells ────────────────────────────────────────────────────────────
@@ -127,7 +179,7 @@ module CrudComponents
       # Whether the toolbar (search + collection actions) has anything to show —
       # lets a layout skip an empty header row.
       def show_toolbar?
-        searchable? || collection_actions&.any?
+        searchable? || collection_actions&.any? || column_picker?
       end
 
       # Reset clears *this* collection's filter/search/sort/page params and
@@ -383,6 +435,16 @@ module CrudComponents
 
       def pn(key)
         query ? query.param_name(key) : key
+      end
+
+      # Narrow and order `list` by the user's selection. Always intersected with
+      # the permitted set (`list`), so a forged or stale ?cols= can only hide or
+      # reorder columns, never reveal one the user isn't allowed to see.
+      def select_visible(list)
+        names = visible_columns
+        return list unless names
+
+        names.filter_map { |n| list.find { |f| f.name == n } }
       end
 
       def eager_load(relation)

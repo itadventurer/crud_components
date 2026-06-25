@@ -126,4 +126,24 @@ Book.find_each do |book|
   end
 end
 
-puts "  #{Publisher.count} publishers, #{Author.count} authors, #{Book.count} books, #{Review.count} reviews."
+# ── custom properties (dynamic-columns demo) ────────────────────────────────
+# Four user-defined columns in different flavors, plus a value per book — the
+# data the dynamic columns read from. None of this touches the Book model.
+definitions = {
+  'shelf'    => PropertyDefinition.create!(key: 'shelf',    label: 'Shelf',    flavor: 'string'),
+  'weight'   => PropertyDefinition.create!(key: 'weight',   label: 'Weight',   flavor: 'number', unit: 'g'),
+  'signed'   => PropertyDefinition.create!(key: 'signed',   label: 'Signed',   flavor: 'boolean'),
+  'acquired' => PropertyDefinition.create!(key: 'acquired', label: 'Acquired', flavor: 'date')
+}
+
+shelves = %w[A1 A2 B1 B2 C1 C2 Reserve]
+Book.find_each do |book|
+  PropertyValue.create!(property_definition: definitions['shelf'],  subject: book, value: shelves.sample)
+  PropertyValue.create!(property_definition: definitions['weight'], subject: book, value: rand(180..950).to_s)
+  PropertyValue.create!(property_definition: definitions['signed'], subject: book, value: [true, false].sample.to_s)
+  PropertyValue.create!(property_definition: definitions['acquired'], subject: book,
+                        value: (Date.today - rand(0..2000)).iso8601)
+end
+
+puts "  #{Publisher.count} publishers, #{Author.count} authors, #{Book.count} books, #{Review.count} reviews, " \
+     "#{PropertyDefinition.count} custom properties (#{PropertyValue.count} values)."

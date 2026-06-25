@@ -21,12 +21,26 @@ module CrudComponents
     #   them yourself with {#crud_actions}).
     # @param group_by [Symbol, nil] a column, belongs_to or enum to group rows
     #   under collapsible headers.
+    # @param extra_columns [Array<CrudComponents::DynamicColumn>, nil] user-defined
+    #   columns whose data lives outside the model's table (custom properties from
+    #   a separate store, JSONB, an API). Appended after the declared columns and
+    #   subject to the same `if:` permission gate; filter/sort only when the column
+    #   supplies those facets.
+    # @param visible [Array<Symbol>, nil] the default ordered subset of columns to
+    #   show (e.g. a persisted per-user preference). The `?cols=` param a column
+    #   picker submits takes precedence over it.
+    # @param column_picker [Boolean] render the column-picker control in the toolbar
+    #   (lets a user hide/reorder the columns they may see; submits `?cols=` to the
+    #   same URL, like sort/filter).
     # @return [ActiveSupport::SafeBuffer] the rendered HTML.
     def crud_collection(records, fieldset: nil, layout: :table, query: nil, param_prefix: nil,
-                        actions: true, group_by: nil)
+                        actions: true, group_by: nil, extra_columns: nil, visible: nil,
+                        column_picker: false)
       presenter = Presenters::Collection.new(view: self, records: records, fieldset: fieldset,
                                              query: query, layout: layout, param_prefix: param_prefix,
-                                             actions: actions, group_by: group_by)
+                                             actions: actions, group_by: group_by,
+                                             extra_columns: extra_columns, visible: visible,
+                                             column_picker: column_picker)
       render "crud_components/layouts/#{presenter.layout}", collection: presenter
     end
 

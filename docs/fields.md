@@ -143,6 +143,58 @@ meaning until a facet tells the gem how to express it.
 > (or `(scope, dir)` for sort) and return a relation. There is no view context at query
 > time; the scope arrives extended with `where_like` (below).
 
+## Dynamic columns
+
+Some columns aren't part of the model at all — user-defined properties kept in a
+separate store (a definitions + values pair, a JSONB blob, a remote API). They are
+per-account, per-request data, so they don't belong in the model's `crud_structure`
+(which is built once per class and shared by every request). Instead you build a
+`CrudComponents::DynamicColumn` per request and pass the set to `crud_collection` via
+`extra_columns:` — the model stays untouched, the column rides alongside the declared
+ones:
+
+```ruby
+# however your custom properties are stored, you adapt them to columns:
+columns = current_account.custom_properties.map do |prop|
+  CrudComponents::DynamicColumn.new(
+    prop.key,                                  # the column name (→ ?sort=, ?cols=)
+    label: prop.label, as: prop.renderer,      # any built-in renderer: :number, :date, …
+    if:      -> { can?(:read, prop) },         # same gate as a field's if:
+    preload: ->(records) {                     # one batch-load per page — no N+1
+      PropertyValue.where(definition: prop, subject: records).index_by(&:subject_id)
+    }
+  ) { |record, loaded| loaded[record.id]&.value }  # the value resolver
+end
+
+crud_collection @books, extra_columns: columns
+```
+
+The block is the **value resolver**: `|record|` or `|record, loaded|`, where `loaded`
+is whatever `preload:` returned. It returns a plain value that the `as:` renderer (or,
+with no `as:`, the value's type, exactly like a [computed field](#computed-fields))
+displays. `preload:` runs once over the page's rows so a whole table costs one fetch,
+not one per row.
+
+A dynamic column is **display-only** until you give it the query facets — the same
+`filter:`/`sort:` blocks the DSL takes, supplied as keyword arguments. Give them only
+when the data is reachable in SQL; without them the column never reaches the query
+layer, which keeps the [whitelist](security.md) tight:
+
+```ruby
+CrudComponents::DynamicColumn.new(:priority, as: :number,
+  preload: ->(records) { … },
+  filter:  ->(scope, value) { scope.where(id: PropertyValue.where(definition: prop)
+                                            .where('value LIKE ?', "%#{value}%").select(:subject_id)) },
+  sort:    ->(scope, dir)   { scope.order(Arel.sql("(#{subquery_for(prop)}) #{dir}")) }
+) { |record, loaded| loaded[record.id]&.value }
+```
+
+`if:` follows the same rules as a declared field's: a denied column is absent from the
+table, the filter row, sorting and `?cols=` — everywhere. See the column picker in
+[views.md](views.md#column-picker) for letting users choose which of these they see, and
+the `/custom_fields` page in `test/dummy` for a full worked example (string, number,
+boolean and date flavors, all filtering and sorting).
+
 ## The search spec
 
 One declarative mini-language for "case-insensitive contains across these columns,

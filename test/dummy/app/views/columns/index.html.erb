@@ -1,0 +1,21 @@
+<h1 class="mb-3">Column picker</h1>
+
+<%= docs_panel(
+      intro: "Add <code>column_picker: true</code> and the toolbar grows a <strong>Columns</strong> control: the user " \
+             "ticks which of the columns they may see are shown and (with the optional <code>crud-columns</code> " \
+             "Stimulus controller) drags to reorder them. It submits <code>?cols[]=</code> to this same URL — just " \
+             "like the sort links and filter row — so it works without JavaScript and composes with every other " \
+             "param. The selection is always intersected with the permitted set, so a forged or stale <code>?cols=</code> " \
+             "can only hide or reorder columns, never reveal one. Persisting it per user is the app's call (read " \
+             "<code>params[:cols]</code>, store it, feed it back via <code>visible:</code>); here it just rides in the URL.".html_safe,
+      docs: { 'Column picker' => 'docs/views.md#column-picker', 'Security' => 'docs/security.md' }) do %>
+<%= code_file('app/views/columns/index.html.erb', :erb) do %>
+&lt;%= crud_collection @books, fieldset: :index,
+                     extra_columns: @columns,   &lt;%# declared + dynamic columns are both pickable %&gt;
+                     column_picker: true %&gt;
+<% end %>
+<% end %>
+
+<div class="card"><div class="card-body">
+  <%= crud_collection @books, fieldset: :index, extra_columns: @columns, column_picker: true %>
+</div></div>

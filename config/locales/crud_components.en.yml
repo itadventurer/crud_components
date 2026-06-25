@@ -9,6 +9,11 @@ en:
     more: "+%{count} more"
     sort: "Sort"
     filter_by: "Filter by %{name}"
+    columns:
+      edit: "Columns"
+      apply: "Apply"
+      reset: "Reset"
+      legend: "Show columns"
     attachment:
       keep: "Keep"
       remove: "Remove"
