@@ -21,6 +21,12 @@ module CrudComponents
         model.human_attribute_name(name)
       end
 
+      # Column-picker grouping: the heading this column sits under (a path
+      # column groups under the association(s) it reaches through), or nil for an
+      # own column. `picker_label` is the label shown within that group.
+      def group_label = nil
+      def picker_label = human_name
+
       # The DB column backing this field, if any (nil for associations and
       # computed fields).
       def column

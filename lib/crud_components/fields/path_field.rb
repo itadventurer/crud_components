@@ -33,23 +33,45 @@ module CrudComponents
         collection? ? values : values.first
       end
 
-      # Single paths render through the inferred renderer (date/number/…) like a
-      # computed field; collection paths render as a joined list via this block.
+      # Single value: render through the inferred renderer (date/number/…) like a
+      # computed field, but honor the name-gated smart renderers too (a target
+      # column named `email`/`url` → a link). Collection: the list render block.
+      def renderer(record = nil)
+        return options[:as] if options[:as]
+        return nil if render_block
+
+        SemanticRenderer.renderer_for(attribute_name) || super
+      end
+
+      # Single paths render through the renderer; collection paths render as a
+      # joined list via this block (linkifying emails/urls per the target name).
       def render_block
         facets[:render] || (collection? ? list_renderer : nil)
       end
 
-      # @api private — used by the collection render block (runs in view context).
-      def list_text(record)
+      # @api private — runs in the view context (`view`), via the render block.
+      def render_list(view, record)
         items = Array(value(record)).map { |v| v.to_s.strip }.reject(&:blank?)
-        items.empty? ? '—' : items.join(', ')
+        return view.tag.span('—', class: CrudComponents.config.css.muted) if items.empty?
+
+        semantic = SemanticRenderer.renderer_for(attribute_name)
+        view.safe_join(items.map { |item| link_value(view, semantic, item) }, ', ')
       end
 
+      # Header: a breadcrumb "Parent › Attribute" (Pipedrive-style). The picker
+      # groups by `group_label` and shows the short `picker_label`, so it isn't
+      # repeated there.
       def human_name
         return options[:label] if options[:label].is_a?(String)
 
-        "#{model.human_attribute_name(assoc_segments.first)} · #{target_model.human_attribute_name(attribute_name)}"
+        "#{group_label} › #{picker_label}"
       end
+
+      def group_label
+        reflections.map { |ref| ref.active_record.human_attribute_name(ref.name) }.join(' › ')
+      end
+
+      def picker_label = target_model.human_attribute_name(attribute_name)
 
       # Eager-load the association chain so a whole page costs one query, not one
       # per row (e.g. `publisher.founded_on` → includes(:publisher)).
@@ -119,7 +141,18 @@ module CrudComponents
 
       def list_renderer
         field = self
-        proc { |record| field.list_text(record) }
+        # `self` inside the block is the view (instance_exec'd by render_cell).
+        proc { |record| field.render_list(self, record) }
+      end
+
+      # One list item as a link (mailto / http) when the target name calls for
+      # it, else a plain (escaped-on-join) value.
+      def link_value(view, semantic, value)
+        case semantic
+        when :email then view.mail_to(value)
+        when :url   then value.match?(%r{\Ahttps?://}i) ? view.link_to(value, value, rel: 'noopener', target: '_blank') : value
+        else value
+        end
       end
 
       def validate!

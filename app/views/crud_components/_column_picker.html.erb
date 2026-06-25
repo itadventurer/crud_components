@@ -19,21 +19,29 @@
       <fieldset>
         <legend class="<%= css.muted %> small"><%= t('crud_components.columns.legend', default: 'Show columns') %></legend>
         <ul class="crud-column-picker-list list-unstyled" data-crud-columns-target="list">
-          <% collection.available_fields.each do |field| %>
-            <%# Pure-HTML behaviour: a ticked checkbox submits cols[]=<name> in DOM
-                order, an unticked one submits nothing. crud-columns reorders these
-                <li>s on drag, which reorders the submitted columns. %>
-            <li class="crud-column-picker-item" draggable="true" data-crud-columns-target="item">
-              <span class="crud-column-picker-handle" aria-hidden="true" data-crud-columns-target="handle">
-                <i class="<%= css.icon_prefix %>grip-vertical"></i>
-              </span>
-              <label class="d-inline-flex align-items-center gap-2">
-                <input type="checkbox" class="form-check-input" name="<%= collection.column_param_name %>"
-                       value="<%= field.name %>" <%= 'checked' if collection.column_visible?(field) %>
-                       data-action="change->crud-columns#toggle">
-                <span><%= field.human_name %></span>
-              </label>
-            </li>
+          <%# Own columns sit at the top (no heading); columns that reach through
+              an association are grouped under that association's name — so a path
+              column reads as "Email" under "Authors", not "Authors › Email". %>
+          <% collection.available_fields.group_by(&:group_label).each do |group, fields| %>
+            <% if group.present? %>
+              <li class="crud-column-picker-group"><%= group %></li>
+            <% end %>
+            <% fields.each do |field| %>
+              <%# Pure-HTML behaviour: a ticked checkbox submits cols[]=<name> in DOM
+                  order, an unticked one submits nothing. crud-columns reorders these
+                  <li>s on drag, which reorders the submitted columns. %>
+              <li class="crud-column-picker-item" draggable="true" data-crud-columns-target="item">
+                <span class="crud-column-picker-handle" aria-hidden="true" data-crud-columns-target="handle">
+                  <i class="<%= css.icon_prefix %>grip-vertical"></i>
+                </span>
+                <label class="d-inline-flex align-items-center gap-2">
+                  <input type="checkbox" class="form-check-input" name="<%= collection.column_param_name %>"
+                         value="<%= field.name %>" <%= 'checked' if collection.column_visible?(field) %>
+                         data-action="change->crud-columns#toggle">
+                  <span><%= field.picker_label %></span>
+                </label>
+              </li>
+            <% end %>
           <% end %>
         </ul>
       </fieldset>

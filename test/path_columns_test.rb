@@ -5,6 +5,7 @@ require 'test_helper'
 # the two structural limits, and end-to-end through the picker page.
 class PathColumnsTest < ActiveSupport::TestCase
   def field(path, model = Book) = CrudComponents::Fields::PathField.new(path.to_sym, model)
+  def view = @view ||= ActionView::Base.empty
 
   setup do
     @pub = Publisher.create!(name: 'Tor', slug: 'tor-path', founded_on: Date.new(1980, 1, 1))
@@ -26,10 +27,23 @@ class PathColumnsTest < ActiveSupport::TestCase
     mail = field('authors.email')
     assert mail.collection?
     assert_equal %w[ann@x.com bo@y.com], mail.value(@book)
-    assert_equal 'ann@x.com, bo@y.com', mail.list_text(@book)
+    assert_equal 'Ann, Bo', field('authors.name').render_list(view, @book)   # plain join
     assert_not mail.sortable?            # no single value to order by
     assert mail.filterable?
     assert_equal [:authors], mail.eager_load
+  end
+
+  test 'a to-many path of emails renders each as a mailto link' do
+    html = field('authors.email').render_list(view, @book)
+    assert_includes html, 'href="mailto:ann@x.com"'
+    assert_includes html, '>bo@y.com</a>'
+  end
+
+  test 'path columns group under their association; the header is a breadcrumb' do
+    mail = field('authors.email')
+    assert_equal 'Authors', mail.group_label       # picker heading
+    assert_equal 'Email', mail.picker_label        # label within the group
+    assert_equal 'Authors › Email', mail.human_name # table header (breadcrumb)
   end
 
   test 'a path filters through the association via the safe like-spec' do
@@ -77,7 +91,7 @@ class PathColumnsIntegrationTest < ActionDispatch::IntegrationTest
   test 'the picker page renders path columns and their values' do
     get '/columns'
     assert_response :success
-    assert_select 'th', text: /Authors · Email/        # path-column header
+    assert_select 'th', text: /Authors.*Email/         # path-column header (breadcrumb)
     assert_select 'td', text: /ann@example.com/        # the list value
     assert_select 'td', text: /1980/                   # publisher.founded_on (a date)
   end
@@ -86,5 +100,11 @@ class PathColumnsIntegrationTest < ActionDispatch::IntegrationTest
     get '/columns', params: { cols: ['title', 'authors.email'] }
     assert_select 'td', text: /ann@example.com/
     assert_select 'thead th a', { text: /Genre/, count: 0 }   # narrowed away
+  end
+
+  test 'the picker groups path columns under their association' do
+    get '/columns'
+    assert_select 'li.crud-column-picker-group', text: 'Authors'
+    assert_select 'li.crud-column-picker-group', text: 'Publisher'
   end
 end

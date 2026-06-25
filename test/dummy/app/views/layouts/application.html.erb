@@ -24,10 +24,13 @@
       background: #fff; border: 1px solid var(--bs-border-color); border-radius: .375rem;
       box-shadow: 0 .5rem 1rem rgba(0,0,0,.15); padding: .75rem;
     }
-    .crud-column-picker-list { margin: .25rem 0 .5rem; max-height: 16rem; overflow-y: auto; }
+    .crud-column-picker-list { margin: .25rem 0 .5rem; max-height: 28rem; overflow-y: auto; }
     .crud-column-picker-item { display: flex; align-items: center; gap: .5rem; padding: .15rem .25rem; border-radius: .25rem; }
     .crud-column-picker-item.is-dragging { opacity: .5; background: var(--bs-secondary-bg); }
     .crud-column-picker-handle { cursor: grab; color: var(--bs-secondary); }
+    .crud-column-picker-group { margin: .5rem 0 .15rem; padding: 0 .25rem; font-size: .7rem; font-weight: 600;
+      text-transform: uppercase; letter-spacing: .03em; color: var(--bs-secondary); }
+    .crud-column-picker-group:first-child { margin-top: 0; }
   </style>
   <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/highlight.min.js"></script>
   <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/languages/erb.min.js"></script>

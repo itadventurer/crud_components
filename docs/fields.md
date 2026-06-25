@@ -75,6 +75,15 @@ Built-in renderers:
 * `:json` — pretty-printed `<pre>`, syntax-highlighted when [rouge](https://github.com/rouge-ruby/rouge) is present (optional — no rouge, no colors, no error).
 * `:markdown` — needs one of [commonmarker](https://github.com/gjtorikian/commonmarker), [redcarpet](https://github.com/vmg/redcarpet) or [kramdown](https://github.com/gettalong/kramdown) in your bundle; **raises at boot** if none is present.
 * `:asciidoc` — needs [asciidoctor](https://github.com/asciidoctor/asciidoctor); **raises at boot** if absent.
+* `:email` — a `mailto:` link.
+* `:url` — an http(s) value as a link (a non-URL stays plain text).
+
+**Smart links by name.** A string column named `email` (or `*_email`) renders as `:email`,
+and one named `url`, `website`, `link` or `homepage` renders as `:url`, with no
+configuration. The trigger is the *column name*, never the value — a `description` that
+happens to contain a URL is left alone — so it stays predictable and safe. `as:` overrides
+either way. [Path columns](#path-columns) apply the same rule to their target name, so
+`authors.email` shows a list of `mailto:` links.
 
 **Renderers are surface-aware.** Each receives `surface:` (`:collection` or `:record`)
 and adapts: `:text` truncates in a collection but keeps line breaks on a record,

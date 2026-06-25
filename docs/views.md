@@ -112,7 +112,9 @@ narrow and reorder it — the CRM "which columns do I want" control. Turn it on 
 `column_picker: true` and a **gear** appears in the header row's actions cell; it opens a
 checklist of every column the user may see — declared columns,
 [dynamic columns](fields.md#dynamic-columns) and [path columns](fields.md#path-columns)
-(`authors.email` & co.) alike — each a checkbox, draggable to reorder:
+(`authors.email` & co.) alike — each a checkbox, draggable to reorder. Own columns sit at
+the top; path columns group under their association (a "Authors" heading with **Name**,
+**Email** beneath), so the list reads cleanly however many you expose:
 
 ```erb
 <%= crud_collection @books, fieldset: :index, column_picker: true %>
