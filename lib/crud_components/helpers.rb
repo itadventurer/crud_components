@@ -57,10 +57,14 @@ module CrudComponents
     #   column picker placed on the page); the `?cols=` param overrides it.
     # @param param_prefix [Symbol, nil] namespaces the `?cols=` param this view reads
     #   (match it to the picker's `param_prefix:`).
+    # @param extra_columns [Array<CrudComponents::DynamicColumn>, nil] user-defined
+    #   columns whose data lives outside the model's table, shown as extra rows
+    #   (same as {#crud_collection}'s `extra_columns:`, for a detail view).
     # @return [ActiveSupport::SafeBuffer] the rendered HTML.
-    def crud_record(record, fieldset: nil, actions: true, layout: :record, visible: nil, param_prefix: nil)
+    def crud_record(record, fieldset: nil, actions: true, layout: :record, visible: nil, param_prefix: nil,
+                    extra_columns: nil)
       presenter = Presenters::Record.new(view: self, record: record, fieldset: fieldset, actions: actions,
-                                         visible: visible, param_prefix: param_prefix)
+                                         visible: visible, param_prefix: param_prefix, extra_columns: extra_columns)
       render "crud_components/#{layout}", record_presenter: presenter
     end
 

@@ -204,6 +204,9 @@ table, the filter row, sorting and `?cols=` — everywhere. See the column picke
 the `/custom_fields` page in `test/dummy` for a full worked example (string, number,
 boolean and date flavors, all filtering and sorting).
 
+`crud_record` takes `extra_columns:` too, so the same user-defined properties show as extra
+rows on a detail view — batch-loaded on the single record.
+
 ## Path columns
 
 A field name with a **dot** reaches through associations: `publisher.name`,

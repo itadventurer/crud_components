@@ -121,6 +121,19 @@ class DynamicColumnsTest < ActiveSupport::TestCase
                                                     record: book, visible: %i[price title])
     assert_equal %i[title], picked.fields.map(&:name)       # ?cols= overrides the default
   end
+
+  test 'crud_record renders dynamic columns as extra rows (extra_columns:)' do
+    book = Book.create!(title: 'Rec', slug: 'rec-extra', price: 1)
+    column = CrudComponents::DynamicColumn.new(:shelf, label: 'Shelf',
+                                               preload: ->(records) { records.to_h { |r| [r.id, 'A1'] } }) do |record, loaded|
+      loaded[record.id]
+    end
+    presenter = CrudComponents::Presenters::Record.new(view: view, record: book, extra_columns: [column])
+
+    assert_includes presenter.available_fields.map(&:name), :shelf
+    shelf = presenter.fields.find { |f| f.name == :shelf }
+    assert_equal 'A1', shelf.value(book)   # batch-loaded on [record] and resolved
+  end
 end
 
 # End-to-end through the dummy app's playground pages, JavaScript-free.
