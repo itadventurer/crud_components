@@ -1,5 +1,10 @@
 name: Push gem
 
+# Publishes to RubyGems when you publish a GitHub Release (tag `vX.Y.Z`).
+# Uses RubyGems Trusted Publishing (OIDC) — no API key stored as a secret.
+# One-time setup: on rubygems.org → the gem → Trusted Publishers → add a GitHub
+# Actions publisher for this repo with workflow `gem-push.yml`. (For the very
+# first release of a brand-new gem, create a *pending* trusted publisher first.)
 on:
   release:
     types: [published]
@@ -7,6 +12,9 @@ on:
 jobs:
   push:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write   # let the action attach a build provenance attestation to the release
+      id-token: write   # required for Trusted Publishing (OIDC)
     steps:
       - uses: actions/checkout@v4
       - uses: ruby/setup-ruby@v1
@@ -14,9 +22,6 @@ jobs:
           ruby-version: '3.4'
           bundler-cache: true
       - run: bundle exec rake test
-      - name: Build and push
-        env:
-          GEM_HOST_API_KEY: ${{ secrets.RUBYGEMS_API_KEY }}
-        run: |
-          gem build crud_components.gemspec
-          gem push crud_components-*.gem
+      # Verifies the tag matches lib/crud_components/version.rb, builds, attests,
+      # and pushes via trusted publishing.
+      - uses: rubygems/release-gem@v1
