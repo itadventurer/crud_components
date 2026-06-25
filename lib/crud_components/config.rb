@@ -63,7 +63,7 @@ module CrudComponents
     ).freeze
 
     attr_accessor :select_limit, :group_collapse_threshold, :action_icons,
-                  :file_icons, :file_fallback_icon, :fast_cells
+                  :file_icons, :file_fallback_icon, :fast_cells, :max_path_depth
     attr_reader :css
 
     def initialize
@@ -71,6 +71,11 @@ module CrudComponents
       # Grouped collections open every group when the total row count is below
       # this, and only the first group above it (the rest collapse).
       @group_collapse_threshold = 50
+      # How many associations a path column (e.g. `publisher.country.name`) may
+      # chain through. A guard rail against runaway joins — raise it if you have
+      # legitimately deeper paths. (Crossing more than one *to-many* association
+      # is forbidden regardless of this, since that yields a list-of-lists.)
+      @max_path_depth = 3
       # Render built-in cell types inline (in Ruby) instead of one partial per
       # cell — an order of magnitude faster on big tables. A host override of a
       # field partial is still honored; set false to force partials everywhere.

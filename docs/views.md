@@ -110,8 +110,9 @@ arrangement (`layout:`) are orthogonal: the same fieldset feeds any layout. (`cr
 A fieldset is the *author's* default set of columns. A column picker lets the *user*
 narrow and reorder it — the CRM "which columns do I want" control. Turn it on with
 `column_picker: true` and a **gear** appears in the header row's actions cell; it opens a
-checklist of every column the user may see (declared columns and any
-[dynamic columns](fields.md#dynamic-columns)), each a checkbox, draggable to reorder:
+checklist of every column the user may see — declared columns,
+[dynamic columns](fields.md#dynamic-columns) and [path columns](fields.md#path-columns)
+(`authors.email` & co.) alike — each a checkbox, draggable to reorder:
 
 ```erb
 <%= crud_collection @books, fieldset: :index, column_picker: true %>

@@ -195,6 +195,40 @@ table, the filter row, sorting and `?cols=` — everywhere. See the column picke
 the `/custom_fields` page in `test/dummy` for a full worked example (string, number,
 boolean and date flavors, all filtering and sorting).
 
+## Path columns
+
+A field name with a **dot** reaches through associations: `publisher.name`,
+`publisher.founded_on`, `authors.email`. The leading segments are associations on the
+model; the last is an attribute (or method) on the target. Use them anywhere a field name
+goes — a fieldset, `visible:`, `?cols=` — so they show up in the [column picker](views.md#column-picker)
+like any other column. No block needed; it's the declarative shortcut for what you'd
+otherwise write as a computed field with a `render` + `filter` + `sort`:
+
+```ruby
+fieldset :index, %i[title publisher.name authors.email]
+```
+
+- A **single-valued** path (belongs_to / has_one) renders like the target column —
+  `publisher.founded_on` formats as a date — and is **sortable** (a LEFT JOIN + ORDER BY).
+- A **list** path (has_many / habtm) renders the values joined — `authors.email` shows
+  every author's email — and is **filterable** (a contains-match through the join, via the
+  [search spec](#the-search-spec)) but not sortable by default (no single value to order by;
+  add a `sort` facet if you have a meaningful aggregate).
+
+The association is eager-loaded automatically, so a path column costs one query per page,
+not one per row.
+
+**Two limits.** The chain may be at most `config.max_path_depth` associations deep (default
+3 — a guard rail against runaway joins; raise it if you need deeper). And it may cross **at
+most one to-many** association: chain belongs_to/has_one freely, but a second has_many/habtm
+would fan the list out into a meaningless list-of-lists. So `authors.publisher.name`
+(habtm → one) is fine; `authors.books.title` (habtm → many) raises at resolve time. Both
+limits report a clear `DefinitionError`.
+
+`if:`, `label:` and facet overrides work as on any field — declare the path with
+`attribute(:"authors.email", if: :manage)` to gate it, or give it a block to override how it
+renders, filters or sorts.
+
 ## The search spec
 
 One declarative mini-language for "case-insensitive contains across these columns,

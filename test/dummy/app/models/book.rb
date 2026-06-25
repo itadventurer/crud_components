@@ -52,6 +52,10 @@ class Book < ApplicationRecord
                           shop_margin pages published_on publisher reviews active manual created_at],
              filters: %i[blurb]
     fieldset :compact, %i[title price]
+    # Path columns reach through associations: `publisher.founded_on` (a single
+    # belongs_to → a date), `authors.name` / `authors.email` (a habtm → a list).
+    fieldset :picker, %i[title genre price publisher publisher.founded_on
+                         authors.name authors.email active]
     fieldset :form, %i[title subtitle slug blurb price purchase_price pages
                        published_on genre active publisher authors cover manual]
   end

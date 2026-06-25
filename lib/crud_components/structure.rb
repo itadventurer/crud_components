@@ -284,7 +284,9 @@ module CrudComponents
     end
 
     def field_class_for(name, facets)
-      if model.defined_enums.key?(name.to_s)
+      if name.to_s.include?('.')
+        Fields::PathField
+      elsif model.defined_enums.key?(name.to_s)
         Fields::EnumField
       elsif (reflection = model.reflect_on_association(name))
         reflection.collection? ? Fields::HasManyField : Fields::BelongsToField
