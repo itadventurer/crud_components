@@ -126,6 +126,14 @@ module CrudComponents
       values = Array(params[param]).flat_map { |v| v.to_s.split(',') }.map(&:strip).reject(&:blank?)
       scope.where(Structure.for(model).identify_by => values)
     end
+
+    # The gem's stylesheet (the column-picker float styles), read once from the
+    # packaged file. Backs the `crud_components_styles` helper, which inlines it;
+    # the same file is also linkable via `stylesheet_link_tag "crud_components"`
+    # on hosts whose asset pipeline serves engine assets.
+    def bundled_css
+      @bundled_css ||= File.read(File.expand_path('../app/assets/stylesheets/crud_components.css', __dir__))
+    end
   end
 end
 

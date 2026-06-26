@@ -205,5 +205,16 @@ module CrudComponents
     def crud_association_index_path(owner, field)
       RouteResolver.collection_index_path(self, field.target, owner, field.name)
     end
+
+    # Inline the gem's stylesheet (the column-picker float styles) as a <style>
+    # tag — drop `<%= crud_components_styles %>` once in your layout <head>. This
+    # is the pipeline-agnostic way to load it: it needs no asset compilation, so
+    # it works the same under cssbundling/sass, importmap, sprockets or propshaft.
+    # Hosts whose pipeline serves engine assets can instead link the same file
+    # with `stylesheet_link_tag "crud_components"`.
+    def crud_components_styles
+      nonce = content_security_policy_nonce if respond_to?(:content_security_policy_nonce)
+      tag.style(CrudComponents.bundled_css.html_safe, type: 'text/css', nonce: nonce)
+    end
   end
 end
