@@ -125,15 +125,15 @@ module CrudComponents
         field.custom_header?
       end
 
-      # The rendered custom header HTML for `field`, or nil when it has none. A
-      # String is emitted as-is (html_safe to carry markup); a block is evaluated
-      # in the view so it may call link_to/url helpers.
+      # The `<th>` title for `field`: a custom `header:` (a String — html_safe to
+      # carry markup — or a view-context block, e.g. a link) replaces the plain
+      # `human_name`; otherwise the `human_name` itself. `header:` substitutes only
+      # the name — the layout still wraps this in a sort link when the column is
+      # sortable, and appends any header actions.
       def column_header(field)
-        return nil unless custom_header?(field)
-
         header = field.header
         case header
-        when nil then nil
+        when nil then field.human_name
         when Proc then view.instance_exec(&header)
         else header
         end
@@ -145,7 +145,7 @@ module CrudComponents
       # object; the layout renders a :selection action as a select-form submitter
       # and any other as a link/button.
       def column_header_actions(field)
-        return nil unless custom_header?(field) && field.header_actions.any?
+        return nil unless field.header_actions.any?
 
         (@column_header_actions ||= {})[field] ||=
           Actions.new(view: view, subject: model, structure: structure,

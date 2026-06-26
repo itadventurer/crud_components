@@ -1,5 +1,42 @@
 <h1 class="mb-3">Column headers &amp; actions</h1>
 
+<%= docs_panel(
+      intro: "A dynamic column often <em>is</em> a domain object — here every " \
+             "<code>PropertyDefinition</code> becomes a column whose <code>&lt;th&gt;</code> carries a " \
+             "<strong>link</strong> (via <code>header:</code>) and its own <strong>bulk action</strong> " \
+             "(via <code>header_actions:</code>). The action is declared <code>on: :selection</code>, so it " \
+             "submits the same shared select-form the toolbar's bulk actions use: tick a few rows, hit " \
+             "<strong>Tag</strong> in a column, and the checked <code>selected[]</code> reach that column's " \
+             "endpoint — acting on the ticked rows × that column's object. Declaring a <code>:selection</code> " \
+             "header action is what makes the table selectable (the checkboxes appear) — no extra wiring. " \
+             "<code>header:</code> replaces only the <code>human_name</code>; the same options work on a declared " \
+             "<code>attribute</code> too, not just a <code>DynamicColumn</code>.".html_safe,
+      docs: { 'Custom headers & column actions' => 'docs/fields.md#custom-headers-and-column-actions',
+              'Dynamic columns' => 'docs/fields.md#dynamic-columns' }) do %>
+<%= code_file('app/controllers/column_headers_controller.rb') do %>
+@columns = PropertyDefinition.order(:id).map do |defn|
+  CrudComponents::DynamicColumn.new(defn.key.to_sym,
+    label:  defn.label,
+    header: -> { link_to defn.label, columns_path(anchor: defn.key) },   # replaces only the human_name
+    header_actions: [
+      # acts on the TICKED rows × this column (defn); submits the shared select-form
+      CrudComponents::Action.new(:tag_selected, on: :selection, icon: 'tag', method: :post) do
+        tag_column_headers_path(key: defn.key)
+      end
+    ],
+    preload: ->(records) { defn.values_by_subject(Book, records) }
+  ) { |record, loaded| defn.cast(loaded[record.id]&.value) }
+end
+<% end %>
+<%= code_file('app/controllers/column_headers_controller.rb', :ruby) do %>
+def tag                                       # the :selection header action's target
+  books = CrudComponents.selected(Book, params)   # resolves the ticked selected[] slugs
+  redirect_to column_headers_path,
+              notice: "Tagged #{books.count} book(s) for '#{params[:key]}'…"
+end
+<% end %>
+<% end %>
+
 <div class="card"><div class="card-body">
   <%= crud_collection @books, fieldset: :compact, extra_columns: @columns %>
 </div></div>

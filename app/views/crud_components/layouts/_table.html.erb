@@ -45,17 +45,7 @@
             </th>
           <% end %>
           <% collection.fields.each do |field| %>
-            <th scope="col">
-              <% if collection.custom_header?(field) %>
-                <%# A column with its own header (link/text) and/or actions —
-                    rendered instead of the plain human_name + sort link. %>
-                <%= render 'crud_components/column_header', collection: collection, field: field %>
-              <% elsif collection.sortable_field?(field) %>
-                <%= render 'crud_components/sort_link', collection: collection, field: field, css: css %>
-              <% else %>
-                <%= field.human_name %>
-              <% end %>
-            </th>
+            <th scope="col"><%= render 'crud_components/column_header', collection: collection, field: field %></th>
           <% end %>
           <% if collection.trailing_column? %>
             <th scope="col" class="<%= css.actions_cell %>">

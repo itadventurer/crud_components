@@ -213,6 +213,8 @@ A dynamic column often *is* a domain object — a mail, a resource, a property �
 header naturally wants a **link** to that object and its own **bulk actions** ("Send to
 selected", "Activate for all"). Two keyword arguments put those right in the `<th>`:
 
+![A collection table whose Shelf, Weight, Signed and Acquired columns each have a linked header and a "Tag selected" bulk button in the header, with a row-selection checkbox column — the per-column actions act on the ticked rows](screenshots/column-headers.png)
+
 ```ruby
 CrudComponents::DynamicColumn.new(:mail_42,
   label:  'Welcome mail',
