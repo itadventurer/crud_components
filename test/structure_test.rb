@@ -214,6 +214,25 @@ class StructureTest < ActiveSupport::TestCase
     assert P.permitted?(->(rec) { rec.active }, Book, allow, Book.new(active: true))
     refute P.permitted?(->(rec) { rec.active }, Book, allow, Book.new(active: false))
     assert P.permitted?(proc { _1.active }, Book, allow, Book.new(active: true))
+
+    # a record-dependent lambda may use BOTH the record and the ability:
+    assert P.permitted?(->(b) { can?(:edit, b) && b.active }, Book, allow, Book.new(active: true))
+    refute P.permitted?(->(b) { can?(:edit, b) && b.active }, Book, deny,  Book.new(active: true))
+  end
+
+  # No record to decide on (a column / strong-params check): a record-dependent
+  # condition can't run, so it falls back to `recordless` — true for visibility
+  # (show the column), false for editability (a class-level permit list must not
+  # grant per-record write access).
+  test 'a record-dependent condition defers to recordless when there is no record' do
+    allow = CrudTestHelpers::AllowAll.new
+    P = CrudComponents::Permission
+    assert P.permitted?(->(b) { b.active }, Book, allow, nil)                    # visibility default
+    refute P.permitted?(->(b) { b.active }, Book, allow, nil, recordless: false) # editability default
+    # the editable_permitted? path uses the secure default
+    field = structure_of(define_model { attribute :title, editable: ->(b) { b.active } }).field(:title)
+    refute field.editable_permitted?(allow)                       # no record → not in the permit list
+    assert field.editable_permitted?(allow, Book.new(active: true))  # record present → evaluated
   end
 
   test 'editable_permitted? gates writability independently of visibility' do
