@@ -180,7 +180,10 @@ module CrudComponents
         condition = options[:editable]
         return true unless condition.is_a?(Symbol) || condition.is_a?(Proc)
 
-        Permission.permitted?(condition, model, context, record)
+        # recordless: false — a record-dependent `editable:` can't be granted by
+        # the class-level permit list (no record there); deny by default and let
+        # the per-record form check decide where a record is present.
+        Permission.permitted?(condition, model, context, record, recordless: false)
       end
 
       # The form-input flavor; nil = no form representation (json, computed).
