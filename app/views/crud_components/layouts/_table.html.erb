@@ -46,7 +46,16 @@
           <% end %>
           <% collection.fields.each do |field| %>
             <th scope="col">
-              <% if collection.sortable_field?(field) %>
+              <% if collection.custom_header?(field) %>
+                <%# A dynamic column with its own header (link/text) and/or actions —
+                    rendered instead of the plain human_name + sort link. %>
+                <span class="crud-column-header d-inline-flex align-items-center gap-1">
+                  <% if (header = collection.column_header(field)) %><%= header %><% end %>
+                  <% if (header_actions = collection.column_header_actions(field)) %>
+                    <%= render 'crud_components/actions', actions: header_actions %>
+                  <% end %>
+                </span>
+              <% elsif collection.sortable_field?(field) %>
                 <%= link_to collection.sort_url(field),
                             class: "#{css.sort_link} d-inline-flex align-items-center gap-1",
                             title: t('crud_components.sort', default: 'Sort'),

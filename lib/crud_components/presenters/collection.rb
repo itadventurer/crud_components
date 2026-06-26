@@ -113,6 +113,42 @@ module CrudComponents
         field.name == structure.label_field_name
       end
 
+      # ── column headers ─────────────────────────────────────────────────────
+      # A dynamic column may carry a custom `<th>` content: a header (String or a
+      # view-context block) and/or its own actions. The layout renders these
+      # *instead of* the plain human_name + sort link; for every other field
+      # these return nil/[] and the layout keeps its default behavior.
+
+      # Whether `field` brings its own header markup or header actions.
+      def custom_header?(field)
+        field.is_a?(Fields::DynamicField) && field.custom_header?
+      end
+
+      # The rendered custom header HTML for `field`, or nil when it has none. A
+      # String is emitted as-is (html_safe to carry markup); a block is evaluated
+      # in the view so it may call link_to/url helpers.
+      def column_header(field)
+        return nil unless custom_header?(field)
+
+        header = field.header
+        case header
+        when nil then nil
+        when Proc then view.instance_exec(&header)
+        else header
+        end
+      end
+
+      # The header actions for `field` as an Actions presenter (collection-kind:
+      # they act on the column's domain object, not a row), or nil. Each action's
+      # path block closes over that object — it's instance_exec'ed in the view
+      # like any collection action, so a :post action renders as a button_to form.
+      def column_header_actions(field)
+        return nil unless custom_header?(field) && field.header_actions.any?
+
+        Actions.new(view: view, subject: model, structure: structure,
+                    actions: field.header_actions, owner: owner)
+      end
+
       def record_link(record)
         @record_links ||= {}
         return @record_links[record.id] if @record_links.key?(record.id)

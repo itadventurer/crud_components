@@ -142,6 +142,53 @@ class DynamicColumnsTest < ActiveSupport::TestCase
     assert_equal 'Bookshelf', field.human_name    # not the humanized "Shelf no"
     assert_equal 'Bookshelf', field.picker_label  # the picker agrees with the header
   end
+
+  # ── custom column headers + header actions (issue #4) ─────────────────────────
+  test 'a plain dynamic column has no custom header (layout keeps human_name + sort)' do
+    field = color.to_field(Book)
+    assert_not field.custom_header?
+    assert_not collection(extra_columns: [color]).custom_header?(field)
+  end
+
+  test 'header: and header_actions: flow from the column onto its field' do
+    action = CrudComponents::Action.new(:send_all, method: :post) { '/send' }
+    column = CrudComponents::DynamicColumn.new(:mail, label: 'Mail',
+                                               header: -> { 'X' }, header_actions: [action])
+    field = column.to_field(Book)
+
+    assert field.custom_header?
+    assert_equal [action], field.header_actions
+    assert_kind_of Proc, field.header
+  end
+
+  test 'column_header renders a String header verbatim and evaluates a block in the view' do
+    string_col = CrudComponents::DynamicColumn.new(:s, header: '<b>Hi</b>'.html_safe) { |_r| 1 }
+    block_col  = CrudComponents::DynamicColumn.new(:b, header: -> { upcase_me }) { |_r| 1 }
+
+    v = view
+    v.define_singleton_method(:upcase_me) { 'FROM-VIEW' }
+    col = CrudComponents::Presenters::Collection.new(view: v, records: Book.all, fieldset: :index,
+                                                     extra_columns: [string_col, block_col])
+
+    s_field = col.available_fields.find { |f| f.name == :s }
+    b_field = col.available_fields.find { |f| f.name == :b }
+    assert_equal '<b>Hi</b>', col.column_header(s_field)        # String passes through as-is
+    assert_equal 'FROM-VIEW', col.column_header(b_field)        # block runs in view context
+  end
+
+  test 'column_header_actions builds a collection-kind Actions presenter, nil when none' do
+    action = CrudComponents::Action.new(:send_all, method: :post) { '/send' }
+    with    = CrudComponents::DynamicColumn.new(:m, header_actions: [action]) { |_r| 1 }
+    without = CrudComponents::DynamicColumn.new(:n, header: -> { 'h' }) { |_r| 1 }
+
+    col = collection(extra_columns: [with, without])
+    with_field    = col.available_fields.find { |f| f.name == :m }
+    without_field = col.available_fields.find { |f| f.name == :n }
+
+    actions = col.column_header_actions(with_field)
+    assert_equal :collection, actions.kind                     # acts on the column, not a row
+    assert_nil col.column_header_actions(without_field)        # header but no actions
+  end
 end
 
 # End-to-end through the dummy app's playground pages, JavaScript-free.
@@ -208,6 +255,33 @@ class DynamicColumnsIntegrationTest < ActionDispatch::IntegrationTest
     get book_path(book), params: { cols: %w[title] }
     assert_select 'dt', text: /Title/
     assert_select 'dt', { text: /Price/, count: 0 }            # crud_record narrowed to the pick
+  end
+
+  # ── custom column headers + header actions (issue #4) ─────────────────────────
+  test 'a dynamic column renders a custom header link in its <th>' do
+    get '/column_headers'
+    assert_response :success
+    # The header block is a link_to, so the Shelf column header is an <a>, not
+    # plain text (and not a sort link — these columns are display-only).
+    assert_select 'thead th a', text: /Shelf/
+  end
+
+  test 'a :post header action renders as a POST form (button_to), not a GET link' do
+    get '/column_headers'
+    assert_response :success
+    # button_to → a form posting to the action path with the column key.
+    assert_select "form[action='#{touch_all_column_headers_path(key: 'shelf')}'][method=post]"
+    assert_select "form[action='#{touch_all_column_headers_path(key: 'shelf')}'] button[type=submit]"
+    # …and never a GET link to that path.
+    assert_select "a[href='#{touch_all_column_headers_path(key: 'shelf')}']", count: 0
+  end
+
+  test 'a render: cell block can read the preload:-ed value (passed as the 2nd arg)' do
+    get '/column_headers'
+    assert_response :success
+    # The render: block built `tag:<value>` from the value it now receives.
+    assert_select 'span.shelf-tag', text: 'tag:A1'
+    assert_select 'span.shelf-tag', text: 'tag:B2'
   end
 
   test 'dynamic columns batch-load: a fixed number of value queries, independent of row count' do
