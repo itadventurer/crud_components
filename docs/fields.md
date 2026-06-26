@@ -336,12 +336,13 @@ end
 `where_like(spec, value)` is available on every scope handed to a filter/search block.
 Raw SQL in a block is possible — and then explicitly your responsibility.
 
-## Identity: `label`, `identify_by`, `search_in`
+## Identity: `label`, `identify_by`, `search_in`, `icon`
 
 ```ruby
 label :title              # method or block; default: name → title → first string column → "Book #42"
 identify_by :slug         # default: :id
 search_in :title, :subtitle, :publisher   # default: own string/text columns
+icon 'book'               # default: guessed from the model name (config.model_icons), else none
 ```
 
 - **`label`** — the record's display name: links, select options, record headings.
@@ -355,6 +356,13 @@ search_in :title, :subtitle, :publisher   # default: own string/text columns
   `Publisher.where(slug: …)`.
 - **`search_in`** — the model's text identity: what `?q=` searches, what the belongs_to
   text-filter fallback matches, and what delegated specs (`filter :publisher`) expand to.
+- **`icon`** — a Bootstrap-icon name (no `bi-` prefix — paired with `config.css.icon_prefix`,
+  swap the whole library there) that badges the model wherever it appears: column-picker
+  groups, association links, path-column cells. Undeclared, it's guessed from the model name
+  via `config.model_icons` (`User → person`, `Publisher → building`, …); an unmapped model
+  with no declaration shows no icon (set `config.model_fallback_icon` to badge every model).
+  Reach it in your own views with `crud_model_icon(record_or_class)` (the `<i>` tag) or
+  `crud_model_icon_name(…)` (just the name).
 
 ### Identity composes through associations
 

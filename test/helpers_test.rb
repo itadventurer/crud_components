@@ -3,6 +3,32 @@ require 'test_helper'
 class HelpersTest < ActiveSupport::TestCase
   def view = @view ||= Class.new { include CrudComponents::Helpers }.new
 
+  def tag_view
+    @tag_view ||= Class.new do
+      include ActionView::Helpers::TagHelper
+      include CrudComponents::Helpers
+    end.new
+  end
+
+  test 'crud_model_icon_name resolves a model from a record, class or relation' do
+    pub = Publisher.create!(name: 'Tor', slug: 'tor-icon')
+    assert_equal 'building', view.crud_model_icon_name(pub)           # record (explicit icon)
+    assert_equal 'building', view.crud_model_icon_name(Publisher)     # class
+    assert_equal 'building', view.crud_model_icon_name(Publisher.all) # relation
+    assert_equal 'book', view.crud_model_icon_name(Book)              # name-based guess
+    assert_nil view.crud_model_icon_name(Manual)                      # unmapped, undeclared → nil
+  ensure
+    pub&.destroy
+  end
+
+  test 'crud_model_icon builds the <i> tag (prefix + name), nil when no icon' do
+    html = tag_view.crud_model_icon(Publisher, class: 'me-1')
+    assert_includes html, 'bi bi-building'
+    assert_includes html, 'me-1'
+    assert_includes html, 'aria-hidden="true"'
+    assert_nil tag_view.crud_model_icon(Manual)   # no icon → no markup
+  end
+
   # #3: an association column can re-title the associated record per context.
   test 'crud_association_label uses a per-column label: callable, else the default label' do
     pub = Publisher.create!(name: 'Tor', slug: 'tor-assoc-label')
