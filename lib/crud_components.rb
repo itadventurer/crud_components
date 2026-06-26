@@ -62,6 +62,23 @@ module CrudComponents
       Structure.for(model)
     end
 
+    # Safe case-insensitive contains-match on any relation, using the same
+    # escaped-ILIKE machinery as `filter like:` / `search_in` — so you never
+    # hand-write `where("col LIKE ?", "%#{value}%")` (which forgets to escape the
+    # user's `%`/`_`). The scope handed to a filter/search block already carries
+    # `#where_like`; this module function is for the relations you build yourself,
+    # e.g. a subquery on another model:
+    #
+    #   filter: ->(scope, value) {
+    #     ids = CrudComponents.where_like(PropertyValue.where(definition: prop), :value, value)
+    #     scope.where(id: ids.select(:subject_id))
+    #   }
+    #
+    # `spec` is a {LikeSpec} spec (`:value`, `%i[a b]`, `{ assoc: :col }`).
+    def where_like(relation, spec, value)
+      LikeSpec.apply(relation, spec, value)
+    end
+
     # The column-picker selection from a request's params: the ordered list of
     # column names the user ticked, or nil when the picker wasn't submitted.
     # Honors `param_prefix:` (match it to the picker's). Persist it however you

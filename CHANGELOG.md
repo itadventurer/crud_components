@@ -8,6 +8,12 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- **`CrudComponents.where_like(relation, spec, value)`** — the safe escaped-ILIKE builder
+  (`filter like:` / `search_in`) as a module function, for relations you build yourself (e.g. a
+  subquery on another model in a `DynamicColumn` `filter:` block). The scope handed to a
+  filter/search block already carries `#where_like`; this is for the others, so you never
+  hand-write `where("col LIKE ?", "%#{value}%")`. See `docs/fields.md`.
+
 - **Custom column headers + column actions** — a column can carry a `header:` (an HTML-safe
   String or a view-context block, e.g. `-> { link_to mail.name, mail }`) and `header_actions:`
   (a list of `CrudComponents::Action`s rendered in the `<th>`). A header action's `on:` decides
