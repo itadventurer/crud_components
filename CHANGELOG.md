@@ -8,6 +8,24 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- **Path columns delegate to the target model's field.** A single-valued path
+  (`publisher.founded_on`, `publisher.price`, `publisher.status`) now renders, filters and
+  sorts like the target's own column — a date-range filter, a unit/digits number, an enum
+  select with humanized badges — instead of always a text contains-match. Precedence is
+  **override > target field > default**: `as:` / a `render`/`filter`/`sort` facet / the path's
+  own options win, then the target field, then the inferred default. Collection paths
+  (`authors.email`) keep the joined-list + contains-match behaviour.
+- **Path columns to a label field link to the record.** When a single-valued path's leaf is
+  the target's label field (`publisher.name`), the cell renders the model's icon + a link to
+  that record's show page (opt out with `as:`/a render facet).
+
+### Changed
+
+- The name-gated email/url renderer (a column named `email`/`url`/… auto-links) moved from
+  the standalone `CrudComponents::SemanticRenderer` module onto `StringField#smart_renderer`.
+  Behaviour is unchanged; the module is gone. (Internal — only affects code that referenced
+  `SemanticRenderer` directly.)
+
 - **Per-model icons** — declare `icon 'building'` in a model's `crud_structure`, or let the
   gem guess one from the model name (`config.model_icons`, e.g. `User → person`,
   `Publisher → building`). Reach it with `crud_model_icon(record_or_class)` (the `<i>` tag,
