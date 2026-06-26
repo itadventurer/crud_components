@@ -18,7 +18,7 @@ module CrudComponents
   class Builder
     attr_reader :model, :declarations, :actions, :fieldsets,
                 :label_decl, :identify_by_decl, :search_decl,
-                :label_preload_decl, :preload_decl
+                :label_preload_decl, :preload_decl, :icon_decl
 
     # @param model [Class] the ActiveRecord model being described.
     # @yield the `crud_structure` block, evaluated against this Builder.
@@ -65,6 +65,17 @@ module CrudComponents
       raise DefinitionError, "#{model}: identify_by declared twice" if @identify_by_decl
 
       @identify_by_decl = column.to_sym
+    end
+
+    # The icon (no library prefix — paired with `css.icon_prefix`) that badges
+    # this model wherever it appears: column-picker groups, association links,
+    # path-column cells. Overrides the name-based guess in `config.model_icons`.
+    # @param name [String, Symbol] a Bootstrap-icon name, e.g. `'building'`.
+    # @return [void]
+    def icon(name)
+      raise DefinitionError, "#{model}: icon declared twice" if @icon_decl
+
+      @icon_decl = name.to_s
     end
 
     # The columns/associations full-text search (`?q=`) spans, in the same

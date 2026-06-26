@@ -8,6 +8,14 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- **Per-model icons** — declare `icon 'building'` in a model's `crud_structure`, or let the
+  gem guess one from the model name (`config.model_icons`, e.g. `User → person`,
+  `Publisher → building`). Reach it with `crud_model_icon(record_or_class)` (the `<i>` tag,
+  paired with `config.css.icon_prefix`) or `crud_model_icon_name(…)` (the bare name); the gem
+  uses it to badge column-picker groups, association links and path-column cells. An unmapped,
+  undeclared model shows no icon unless you set `config.model_fallback_icon`. See
+  `docs/fields.md#identity-label-identify_by-search_in-icon`.
+
 - **`CrudComponents.where_like(relation, spec, value)`** — the safe escaped-ILIKE builder
   (`filter like:` / `search_in`) as a module function, for relations you build yourself (e.g. a
   subquery on another model in a `DynamicColumn` `filter:` block). The scope handed to a

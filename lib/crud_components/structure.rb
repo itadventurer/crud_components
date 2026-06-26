@@ -49,6 +49,7 @@ module CrudComponents
       @declarations = builder&.declarations || {}
       @label_decl = builder&.label_decl
       @identify_by = builder&.identify_by_decl || :id
+      @icon_decl = builder&.icon_decl
       @search_decl = builder&.search_decl
       @identity_preloads = ((builder&.label_preload_decl || []) + (builder&.preload_decl || [])).uniq
       @declared_actions = builder&.actions || {}
@@ -169,6 +170,15 @@ module CrudComponents
     # The field whose cell carries the record link (nil for block labels).
     def label_field_name
       label_source.is_a?(Symbol) ? label_source : nil
+    end
+
+    # The icon name (no library prefix) badging this model: the declared `icon`,
+    # else the name-based guess in `config.model_icons` (keyed by the singular
+    # underscored model name), else `config.model_fallback_icon` (nil = none).
+    # Resolved per call so a host's config changes apply without rebuilding.
+    def icon
+      @icon_decl || CrudComponents.config.model_icons[model.model_name.element] ||
+        CrudComponents.config.model_fallback_icon
     end
 
     # ── search ───────────────────────────────────────────────────────────────

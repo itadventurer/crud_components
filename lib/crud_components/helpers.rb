@@ -175,6 +175,36 @@ module CrudComponents
       callable.respond_to?(:call) ? callable.call(record) : crud_label(record)
     end
 
+    # The icon markup badging a model — an `<i>` tag (paired with
+    # `css.icon_prefix`) for the model's {Structure#icon}, or nil when the model
+    # has no icon (undeclared and unmapped, with no `model_fallback_icon`). Pass a
+    # record, a model class or a relation. Extra html options merge onto the tag;
+    # `class:` adds to the icon classes.
+    #
+    #   <%= crud_model_icon(@book) %>                  # <i class="bi bi-book" aria-hidden="true">
+    #   <%= crud_model_icon(Publisher, class: 'me-1') %>
+    #
+    # @param subject [ActiveRecord::Base, Class, ActiveRecord::Relation]
+    # @return [ActiveSupport::SafeBuffer, nil]
+    def crud_model_icon(subject, **html_options)
+      name = crud_model_icon_name(subject)
+      return nil unless name
+
+      extra = Array(html_options.delete(:class))
+      classes = ["#{CrudComponents.config.css.icon_prefix}#{name}", *extra].join(' ')
+      tag.i('', class: classes, aria: { hidden: true }, **html_options)
+    end
+
+    # The bare icon name (no library prefix) for a model — {Structure#icon} for
+    # the model behind a record / class / relation, or nil. Use when you need the
+    # name rather than the `<i>` tag {#crud_model_icon} builds.
+    # @param subject [ActiveRecord::Base, Class, ActiveRecord::Relation]
+    # @return [String, nil]
+    def crud_model_icon_name(subject)
+      model = subject.respond_to?(:klass) ? subject.klass : subject.is_a?(Class) ? subject : subject.class
+      Structure.for(model).icon
+    end
+
     # A Bootstrap-icon name (no library prefix — pair with css.icon_prefix) for a
     # filename, by extension: config.file_icons[ext], else config.file_fallback_icon.
     # Used by the attachment renderer's icon fallback; override that partial to

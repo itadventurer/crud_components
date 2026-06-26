@@ -16,6 +16,13 @@ CrudComponents.configure do |config|
   # config.file_icons['zip'] = 'file-earmark-zip'
   # config.file_fallback_icon = 'file-earmark-text'
 
+  # Per-model icon (column-picker groups, association links, path-column cells),
+  # guessed from the model name unless a model declares `icon '…'`. Add your own
+  # mapping (key = singular underscored model name) or badge every model with a
+  # fallback. Full key list: Config::DEFAULT_MODEL_ICONS.
+  # config.model_icons['widget'] = 'box-seam'
+  # config.model_fallback_icon = 'box'   # default nil = no icon when unmapped
+
   # CSS class map (Bootstrap 5 defaults). The full key list:
   # CrudComponents::Config::DEFAULT_CSS  
   # config.css.table = 'table align-middle'
