@@ -189,6 +189,29 @@ class DynamicColumnsTest < ActiveSupport::TestCase
     assert_equal :collection, actions.kind                     # acts on the column, not a row
     assert_nil col.column_header_actions(without_field)        # header but no actions
   end
+
+  test 'header:/header_actions: work on a declared attribute too, not just a DynamicColumn' do
+    action = CrudComponents::Action.new(:bulk, on: :selection, method: :post) { '/bulk' }
+    field  = CrudComponents::Fields::StringField.new(:title, Book, { header: 'Catalog', header_actions: [action] })
+
+    assert field.custom_header?
+    assert_equal 'Catalog', field.header
+    assert_equal [action], field.header_actions
+    assert_not_includes field.renderer_options.keys, :header   # header keys don't leak into cell rendering
+    assert_not_includes field.renderer_options.keys, :header_actions
+  end
+
+  test 'a column with an on: :selection header action makes the collection selectable' do
+    sel = CrudComponents::DynamicColumn.new(:m, header_actions: [
+      CrudComponents::Action.new(:tag, on: :selection, method: :post) { '/tag' }
+    ]) { |_r| 1 }
+    plain = CrudComponents::DynamicColumn.new(:n, header_actions: [
+      CrudComponents::Action.new(:ping, on: :collection, method: :post) { '/ping' }
+    ]) { |_r| 1 }
+
+    assert collection(extra_columns: [sel]).column_selection_actions?       # :selection → checkboxes
+    assert_not collection(extra_columns: [plain]).column_selection_actions? # :collection → none
+  end
 end
 
 # End-to-end through the dummy app's playground pages, JavaScript-free.
@@ -266,14 +289,32 @@ class DynamicColumnsIntegrationTest < ActionDispatch::IntegrationTest
     assert_select 'thead th a', text: /Shelf/
   end
 
-  test 'a :post header action renders as a POST form (button_to), not a GET link' do
+  test 'an on: :selection header action submits the shared select-form (not its own form, not a GET link)' do
     get '/column_headers'
     assert_response :success
-    # button_to → a form posting to the action path with the column key.
-    assert_select "form[action='#{touch_all_column_headers_path(key: 'shelf')}'][method=post]"
-    assert_select "form[action='#{touch_all_column_headers_path(key: 'shelf')}'] button[type=submit]"
-    # …and never a GET link to that path.
-    assert_select "a[href='#{touch_all_column_headers_path(key: 'shelf')}']", count: 0
+    path = tag_column_headers_path(key: 'shelf')
+    # A submit button bound to the shared select-form (form=) posting to the
+    # column path (formaction=) — so the ticked rows ride along.
+    assert_select "button[type=submit][form=crud_select_books][formaction='#{path}']"
+    # …not its own button_to form, and never a GET link to that path.
+    assert_select "form[action='#{path}']", count: 0
+    assert_select "a[href='#{path}']", count: 0
+  end
+
+  test 'a column-level :selection action makes the table selectable (checkboxes render)' do
+    get '/column_headers'
+    assert_response :success
+    assert_select 'form#crud_select_books'                      # the shared select-form
+    assert_select 'th.crud-select-cell input[type=checkbox]'    # select-all in the header
+    assert_select 'td.crud-select-cell input[type=checkbox]'    # a per-row checkbox
+  end
+
+  test 'the header :selection action receives the ticked rows (selected[])' do
+    a = Book.create!(title: 'Sel A', slug: 'ch-sel-a', price: 1)
+    b = Book.create!(title: 'Sel B', slug: 'ch-sel-b', price: 1)
+    post tag_column_headers_path(key: 'shelf'), params: { selected: [a.slug, b.slug] }
+    follow_redirect!
+    assert_select '.alert-success', text: /Tagged 2 book\(s\) for 'shelf'/
   end
 
   test 'a render: cell block can read the preload:-ed value (passed as the 2nd arg)' do

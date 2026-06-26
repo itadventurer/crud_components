@@ -150,7 +150,9 @@ an API) become extra columns without touching the model — build a `DynamicColu
 request and pass `extra_columns:`. A `preload:` lambda batch-loads the page (no N+1); add
 `filter:`/`sort:` to make it query like a real column. A column that *is* a domain object
 (a mail, a resource) can carry its own header link and bulk actions right in the `<th>` via
-`header:` / `header_actions:` — a `:post` action becomes a CSRF-safe `button_to` form.
+`header:` / `header_actions:`. A header action declared `on: :selection` acts on the **ticked
+rows** × that column's object (it submits the shared select-form and makes the table
+selectable); `on: :collection` is a plain "for all rows" button.
 
 ```erb
 <%= crud_collection @books, extra_columns: current_account.custom_property_columns %>
@@ -159,7 +161,7 @@ request and pass `extra_columns:`. A `preload:` lambda batch-loads the page (no 
 ```ruby
 CrudComponents::DynamicColumn.new(:mail_42, label: 'Welcome mail',
   header: -> { link_to mail.name, mail },
-  header_actions: [CrudComponents::Action.new(:send_all, icon: 'send', method: :post) { send_all_path(mail) }],
+  header_actions: [CrudComponents::Action.new(:send, on: :selection, icon: 'send', method: :post) { send_path(mail) }],
   preload: ->(records) { … }) { |record, loaded| loaded[record.id] }
 ```
 

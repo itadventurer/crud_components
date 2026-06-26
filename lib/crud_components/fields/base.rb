@@ -23,6 +23,21 @@ module CrudComponents
         model.human_attribute_name(name)
       end
 
+      # ── column header (issue #4) ───────────────────────────────────────────
+      # A column may own its `<th>`: a custom `header:` (a String rendered as-is —
+      # mark it html_safe for markup — or a view-context block, e.g. a link), and
+      # `header_actions:` — plain Action objects rendered in the header. A
+      # `:selection` action there acts on the ticked rows (it submits the shared
+      # select-form); any other action renders as a link/button. Available on every
+      # field flavor: a DynamicColumn passes them through its options, a declared
+      # `attribute` takes them as options too.
+      def header = options[:header]
+      def header_actions = Array(options[:header_actions])
+
+      # Whether this column brings its own header markup or header actions — the
+      # layout falls back to the plain human_name + sort link when it doesn't.
+      def custom_header? = !header.nil? || header_actions.any?
+
       # Column-picker grouping: the heading this column sits under (a path
       # column groups under the association(s) it reaches through), or nil for an
       # own column. `picker_label` is the label shown within that group.
@@ -64,7 +79,7 @@ module CrudComponents
       end
 
       def renderer_options
-        options.except(:as, :if, :form_as, :label)
+        options.except(:as, :if, :form_as, :label, :header, :header_actions)
       end
 
       # ── permissions ──────────────────────────────────────────────────────

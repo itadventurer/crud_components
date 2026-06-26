@@ -1,0 +1,11 @@
+<%# One action rendered as a button: a GET action is a turbo link, anything else
+    a CSRF-safe button_to form. Locals: action (CrudComponents::Action), path, css. %>
+<% content = action.icon ? tag.i('', class: "#{css.icon_prefix}#{action.icon}", aria: { hidden: true }) : action.title %>
+<% if action.http_method == :get %>
+  <%= link_to content, path, class: action.css_class, title: action.title,
+              data: { turbo_action: 'advance' } %>
+<% else %>
+  <%= button_to content, path, method: action.http_method, class: action.css_class,
+                title: action.title,
+                form: { class: 'd-inline', data: { turbo_confirm: action.confirm_message }.compact } %>
+<% end %>

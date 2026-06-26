@@ -1,9 +1,12 @@
 class ColumnHeadersController < ApplicationController
-  # Custom column headers + per-column actions on a DynamicColumn. Each
-  # PropertyDefinition becomes a column whose `<th>` carries a link (to a fake
-  # "definition" page) and a POST "touch all" bulk action — the kind of
-  # per-column controls a matrix view (mails × participants) needs. The header
-  # block and the action's path block both close over the definition.
+  # Custom column headers + per-column actions on a DynamicColumn — the matrix
+  # shape (books × properties) where every column *is* a domain object. Each
+  # PropertyDefinition becomes a column whose `<th>` carries:
+  #   - a link (to a fake "definition" page), and
+  #   - an `on: :selection` bulk action: it submits the shared select-form, so it
+  #     acts on the *ticked* rows × this column's object. Declaring it makes the
+  #     collection selectable (checkboxes appear) with no extra wiring.
+  # The header block and both action path blocks close over the definition.
   def index
     @books = Book.all
     @columns = PropertyDefinition.order(:id).map do |defn|
@@ -13,8 +16,8 @@ class ColumnHeadersController < ApplicationController
         as: defn.renderer,
         header: -> { link_to defn.label, columns_path(anchor: defn.key) },
         header_actions: [
-          CrudComponents::Action.new(:touch_all, icon: 'arrow-repeat', method: :post) do
-            touch_all_column_headers_path(key: defn.key)
+          CrudComponents::Action.new(:tag_selected, on: :selection, icon: 'tag', method: :post) do
+            tag_column_headers_path(key: defn.key)
           end
         ],
         preload: ->(records) { defn.values_by_subject(Book, records) }
@@ -33,9 +36,14 @@ class ColumnHeadersController < ApplicationController
     end
   end
 
-  # The header action target — just bounces back; the test asserts the form, not
-  # the side effect.
-  def touch_all
-    redirect_to column_headers_path
+  # The header selection action's target: the row checkboxes submit the shared
+  # select-form, so `selected[]` arrives here. The gem resolves it back to the
+  # ticked books; this column's object is the `key` query param. Just reports the
+  # count + a few titles so the effect is visible (and assertable).
+  def tag
+    books = CrudComponents.selected(Book, params)
+    titles = books.limit(3).pluck(:title)
+    redirect_to column_headers_path,
+                notice: "Tagged #{books.count} book(s) for '#{params[:key]}': #{titles.join(', ')}"
   end
 end

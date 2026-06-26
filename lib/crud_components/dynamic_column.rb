@@ -36,22 +36,25 @@ module CrudComponents
   # `header:` replaces the plain `human_name` text (a String is rendered as-is —
   # mark it `html_safe` if it carries markup; a block is `instance_exec`ed in the
   # view, so it may call `link_to` and friends). `header_actions:` renders after
-  # the header; a non-GET action (`method: :post`) becomes a `button_to` form,
-  # not a link, exactly like a collection/row action.
+  # the header; an `on: :selection` action acts on the ticked rows (it submits the
+  # shared select-form, so its path closes over the column's object × the
+  # selection), while any other action renders as a plain link/button.
+  #
+  # header:/header_actions: are not consumed here — they ride along in `options`
+  # and are read off the field by Fields::Base, exactly like a declared
+  # attribute's `attribute :x, header_actions: […]`.
   class DynamicColumn
-    attr_reader :name, :options, :facets, :preload_block, :value_block,
-                :header, :header_actions
+    attr_reader :name, :options, :facets, :preload_block, :value_block
 
-    # Keys consumed here; everything else (as:, if:, label:, unit:, digits:, …)
-    # flows into `options` just like a declared attribute's options.
+    # Keys consumed here; everything else (as:, if:, label:, header:,
+    # header_actions:, unit:, digits:, …) flows into `options` just like a
+    # declared attribute's options.
     FACET_KEYS = %i[filter sort render].freeze
 
-    def initialize(name, preload: nil, header: nil, header_actions: nil, **opts, &value_block)
+    def initialize(name, preload: nil, **opts, &value_block)
       @name = name.to_sym
       @value_block = value_block
       @preload_block = preload
-      @header = header
-      @header_actions = Array(header_actions)
       @facets = opts.slice(*FACET_KEYS).compact
       @options = opts.except(*FACET_KEYS)
     end

@@ -1,0 +1,26 @@
+<%# A column's own <th> content (issue #4): a custom header and/or its actions.
+    An explicit header: (a link/text) replaces the title; with only header_actions:
+    the normal title (sortable link or plain name) is kept and the actions are
+    appended. An `on: :selection` action submits the shared select-form (acting on
+    the ticked rows × this column's object); any other action renders as a plain
+    link/button. Locals: collection, field. %>
+<% css = collection.css %>
+<span class="crud-column-header d-inline-flex align-items-center gap-1">
+  <% if (header = collection.column_header(field)) %>
+    <%= header %>
+  <% elsif collection.sortable_field?(field) %>
+    <%= render 'crud_components/sort_link', collection: collection, field: field, css: css %>
+  <% else %>
+    <%= field.human_name %>
+  <% end %>
+  <% if (actions = collection.column_header_actions(field)) %>
+    <% actions.items.each do |item| %>
+      <% if item.action.selection? %>
+        <%= render 'crud_components/selection_action', action: item.action, path: item.path,
+                   form_id: collection.select_form_id, css: css %>
+      <% else %>
+        <%= render 'crud_components/action_button', action: item.action, path: item.path, css: css %>
+      <% end %>
+    <% end %>
+  <% end %>
+</span>

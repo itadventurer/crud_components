@@ -1,0 +1,14 @@
+<%# One bulk action bound to the shared select-form: submitting it carries the
+    ticked `selected[]` slugs to `path`. A GET action submits as GET (filter-like);
+    others POST with a `_method` override. The crud-select controller disables it
+    while nothing is ticked; without JS it stays enabled and acts on whatever is
+    ticked. Shared by the toolbar's selection cluster and a column header.
+    Locals: action (CrudComponents::Action), path, form_id, css. %>
+<% get = action.http_method == :get %>
+<%= button_tag type: 'submit', form: form_id, formaction: path,
+               formmethod: get ? 'get' : 'post',
+               name: get ? nil : '_method', value: get ? nil : action.http_method,
+               class: action.css_class, title: action.title,
+               data: { turbo_confirm: action.confirm_message, crud_select_target: 'button' }.compact do %>
+  <% if action.icon %><i class="<%= css.icon_prefix %><%= action.icon %>" aria-hidden="true"></i> <% end %><%= action.title %>
+<% end %>

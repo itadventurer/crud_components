@@ -210,16 +210,16 @@ rows on a detail view — batch-loaded on the single record.
 ### Custom headers and column actions
 
 A dynamic column often *is* a domain object — a mail, a resource, a property — so its
-header naturally wants a **link** to that object and its own **bulk actions** ("Send all",
-"Activate for all"). Two keyword arguments put those right in the `<th>`:
+header naturally wants a **link** to that object and its own **bulk actions** ("Send to
+selected", "Activate for all"). Two keyword arguments put those right in the `<th>`:
 
 ```ruby
 CrudComponents::DynamicColumn.new(:mail_42,
   label:  'Welcome mail',
   header: -> { link_to mail.name, mail },              # an HTML-safe String, or a view-context block
   header_actions: [                                    # the same Action API as row/collection actions
-    CrudComponents::Action.new(:send_all,       icon: 'send',         method: :post) { send_all_path(mail) },
-    CrudComponents::Action.new(:unschedule_all, icon: 'calendar-x',   method: :post) { unschedule_all_path(mail) }
+    CrudComponents::Action.new(:send_selected, on: :selection, icon: 'send', method: :post) { send_path(mail) },
+    CrudComponents::Action.new(:send_all,       on: :collection, icon: 'send-fill', method: :post) { send_all_path(mail) }
   ],
   preload: ->(records) { … }) { |record, loaded| loaded[record.id] }
 ```
@@ -228,18 +228,32 @@ CrudComponents::DynamicColumn.new(:mail_42,
   rendered as-is — mark it `html_safe` if it carries markup. A **block** is `instance_exec`ed
   in the view, so it may call `link_to` and any URL helper. When you set a header the column's
   sort link is dropped (a column with its own header is usually display-only anyway); omit
-  `header:` to keep the default `human_name` + sort behavior.
-* **`header_actions:`** is a list of plain `CrudComponents::Action`s, rendered after the
-  header with the same icons/titles/`confirm:` as everywhere else. Each action's path block
-  closes over the column's object (`mail` above). A non-GET action (`method: :post`) renders
-  as a `button_to` **POST form**, not a GET link — so "Send all" is a real, CSRF-protected
-  submit, no JavaScript required.
+  `header:` to keep the default `human_name` + sort behavior. With `header_actions:` but no
+  `header:`, the normal title (sortable link or plain name) is kept and the actions appended.
+* **`header_actions:`** is a list of plain `CrudComponents::Action`s, rendered in the header
+  with the same icons/titles/`confirm:` as everywhere else. Each action's path block closes
+  over the column's object (`mail` above). The action's **`on:`** decides how it acts and renders:
+  * **`on: :selection`** — acts on the **ticked rows** × this column's object. It submits the
+    same shared select-form the toolbar's bulk actions use, so the checked `selected[]` slugs
+    ride along to your endpoint. Declaring one **makes the collection selectable** (the checkbox
+    column appears) automatically — no extra wiring. Resolve them server-side with
+    `CrudComponents.selected(scope, params)`, exactly like a toolbar selection action.
+  * **`on: :collection`** (or `:row`) — a plain, selection-independent link/button (a non-GET
+    method renders as a CSRF-safe `button_to` form). Use it for "do this for *all* rows of this
+    column", where the selection is irrelevant.
 
-Both work in the non-grouped and grouped (`group_by:`) layouts, and play with the column
-picker (a hidden column simply renders no header). The `/column_headers` page in `test/dummy`
-is a full worked example. This is what lets a participants × mails / × resources **matrix**
-live entirely in `crud_collection` — one `DynamicColumn` per mail/resource, its controls in
-its own header — instead of a hand-built controls strip above the table.
+Permissions here can only **show or hide** a header action (via `if:` — which also closes over
+`mail`, e.g. `if: -> { can?(:send, mail) }`); *which* rows a `:selection` action ultimately
+touches is chosen in the browser, so enforce per-record authorization in your controller when
+the request arrives.
+
+These are not specific to `DynamicColumn` — a declared `attribute :status, header_actions: […]`
+takes the same options. Everything works in the non-grouped and grouped (`group_by:`) layouts,
+and plays with the column picker (a hidden column simply renders no header). The
+`/column_headers` page in `test/dummy` is a full worked example. This is what lets a
+participants × mails / × resources **matrix** live entirely in `crud_collection` — one
+`DynamicColumn` per mail/resource, its controls in its own header — instead of a hand-built
+controls strip above the table.
 
 ## Path columns
 

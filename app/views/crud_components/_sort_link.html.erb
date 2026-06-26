@@ -1,0 +1,16 @@
+<%# The sortable column title: a link that toggles ?sort=/?dir= with a tri-state
+    glyph (unsorted / asc / desc), picking a numeric vs alphabetic icon. Used by
+    the plain header and by a column header that has actions but no custom header:.
+    Locals: collection, field, css. %>
+<%= link_to collection.sort_url(field),
+            class: "#{css.sort_link} d-inline-flex align-items-center gap-1",
+            title: t('crud_components.sort', default: 'Sort'),
+            data: { turbo_action: 'advance' } do %>
+  <%= field.human_name %>
+  <% if (dir = collection.sort_direction(field)) %>
+    <% family = collection.sort_numeric?(field) ? 'sort-numeric' : 'sort-alpha' %>
+    <i class="<%= css.icon_prefix %><%= family %>-<%= dir == :desc ? 'up' : 'down' %>"></i>
+  <% else %>
+    <i class="<%= css.icon_prefix %>arrow-down-up text-muted opacity-25"></i>
+  <% end %>
+<% end %>
