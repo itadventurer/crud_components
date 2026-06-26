@@ -33,9 +33,10 @@ attribute :slug,           editable: false      # shown read-only in the form, n
 Both `if:` and `editable:` accept the same three forms:
 
 ```ruby
-if: :manage                       # Symbol — sugar for can?(:manage, record)
-if: -> { can?(:publish, Book) }   # zero-arity lambda — run where can? is available
-if: ->(record) { record.draft? }  # one-arity lambda — receives the record (nil for column-level checks)
+if: :manage                                       # Symbol — sugar for can?(:manage, record)
+if: -> { can?(:publish, Book) }                   # zero-arity lambda — ability only
+if: ->(book) { book.draft? }                      # one-arity lambda — receives the record
+if: ->(book) { can?(:edit, book) && book.draft? } # …and can? is in scope too — depend on both
 ```
 
 - **Symbol** → `can?(symbol, record)` — the record being decided about (so it matches the
@@ -43,8 +44,11 @@ if: ->(record) { record.draft? }  # one-arity lambda — receives the record (ni
   decision, where there is no record.
 - **Zero-arity lambda** runs in a context where `can?` works (the view when rendering, a
   thin ability wrapper when querying); it receives no record.
-- **One-arity lambda** receives the record — or `nil` for a column-level decision, which by
-  nature can't depend on a single row (e.g. whether the *column* shows at all).
+- **One-arity lambda** receives the record **and** runs where `can?` works — so a condition
+  can depend on the ability, the record, or both. Where there is no record — a column-level
+  or strong-params check that can't depend on a single row — the lambda is **not run**; it
+  defers to a safe default: visibility (`if:`) shows the column, editability (`editable:`)
+  withholds the field (a class-level permit list can't grant per-record write access).
 
 ### The `can?` dependency (there isn't one)
 

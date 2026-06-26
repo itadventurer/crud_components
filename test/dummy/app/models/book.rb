@@ -29,6 +29,7 @@ class Book < ApplicationRecord
     attributes :purchase_price, :shop_margin, if: :manage   # visible only to managers
     attribute :slug, editable: false                        # shown in forms, but read-only
     attribute :active, editable: :manage                    # everyone sees it; only managers edit it
+    attribute :internal_token, if: ->(book) { book.active } # record-dependent visibility: only on active books
 
     attribute :author_names, preload: %i[authors] do   # render block reaches :authors → preload it
       render { |book| book.authors.map(&:name).to_sentence }

@@ -14,13 +14,23 @@ module CrudComponents
     end
   end
 
-  # Shared evaluation of `if:` options on attributes and actions.
-  # The callable receives the record (`it`) — or nil for column-level
-  # decisions — and runs in a context where `can?` works.
+  # Shared evaluation of `if:`/`editable:` options on attributes and actions. A
+  # callable may depend on the **ability** (`can?` is available in its context),
+  # the **record** (a one-arity lambda / `it`-proc receives it), or both:
+  #   if: ->(book) { can?(:edit, book) && book.published? }
+  #
+  # `recordless:` is what a *record-dependent* condition evaluates to when there
+  # is no record to decide about — a column-level / strong-params check, where
+  # the lambda can't run (it would hit `nil`). It is `true` for visibility
+  # (`if:` — show the column; the record/form surfaces still apply the
+  # per-record decision) and `false` for editability (`editable:` — a
+  # class-level permit list must not grant per-record write access, so stay
+  # safe). Ability-only conditions (Symbol, zero-arity lambda) don't need a
+  # record and are evaluated regardless.
   module Permission
     module_function
 
-    def permitted?(condition, model, context, record = nil)
+    def permitted?(condition, model, context, record = nil, recordless: true)
       return true if condition.nil?
 
       case condition
@@ -32,12 +42,20 @@ module CrudComponents
         context.can?(condition, record || model)
       when Proc
         if condition.lambda? && condition.arity.zero?
-          context.instance_exec(&condition)
+          context.instance_exec(&condition)          # ability-only — no record needed
+        elsif record.nil?
+          recordless                                 # record-dependent, but nothing to decide on
         else
-          context.instance_exec(record, &condition)
+          context.instance_exec(record, &condition)  # receives the record; can? still in scope
         end
       else
-        condition.respond_to?(:call) ? condition.call(record) : !!condition
+        if !condition.respond_to?(:call)
+          !!condition
+        elsif record.nil?
+          recordless
+        else
+          condition.call(record)
+        end
       end
     end
   end

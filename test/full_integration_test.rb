@@ -635,6 +635,19 @@ class FullIntegrationTest < ActionDispatch::IntegrationTest
     assert books_q <= 3, "reviews' books should be preloaded (reviews: [:book]); saw #{books_q} books queries"
   end
 
+  # ── record-dependent if: ──────────────────────────────────────────────────
+  # Book declares `attribute :internal_token, if: ->(book) { book.active }`.
+  # (The collection / column-level path — record nil → recordless — is covered
+  # by structure_test; here we prove the per-record decision end to end.)
+  test 'a record-dependent if: shows/hides the field per record' do
+    get book_path(@hobbit)          # active → field shown
+    assert_response :success
+    assert_select 'dt', text: /Internal token/
+    get book_path(@dispossessed)    # inactive → field hidden on its own page
+    assert_response :success
+    assert_select 'dt', { text: /Internal token/, count: 0 }
+  end
+
   private
 
   def count_sql(pattern)
