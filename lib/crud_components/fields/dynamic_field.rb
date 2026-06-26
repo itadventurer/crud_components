@@ -12,6 +12,9 @@ module CrudComponents
     # sorting work only through the column's `filter:`/`sort:` facets; without
     # them the column never reaches SQL, which keeps the query whitelist intact.
     class DynamicField < ComputedField
+      # header:/header_actions: arrive via the column's options and are read by
+      # Fields::Base#header / #header_actions / #custom_header? — the layout picks
+      # them up through the Collection presenter, same as a declared attribute's.
       def initialize(column, model)
         super(column.name, model, column.options, column.facets)
         @value_block = column.value_block

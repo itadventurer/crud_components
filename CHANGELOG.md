@@ -4,6 +4,30 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres
 to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- **Custom column headers + column actions** — a column can carry a `header:` (an HTML-safe
+  String or a view-context block, e.g. `-> { link_to mail.name, mail }`) and `header_actions:`
+  (a list of `CrudComponents::Action`s rendered in the `<th>`). A header action's `on:` decides
+  how it acts: **`on: :selection`** acts on the **ticked rows** × that column's object — it
+  submits the shared select-form (so `selected[]` rides along, resolved with
+  `CrudComponents.selected`) and **makes the table selectable automatically**; `on: :collection`
+  is a plain selection-independent button (`:post` → a CSRF-safe `button_to` form). Available on a
+  `DynamicColumn` *and* on a declared `attribute :x, header_actions: […]`. Lets a column that *is*
+  a domain object (a mail, a resource) own its header link and bulk controls, so a participants ×
+  mails / × resources matrix lives entirely in `crud_collection`. Works in the grouped and
+  non-grouped layouts and with the column picker. See
+  `docs/fields.md#custom-headers-and-column-actions`.
+
+### Changed
+
+- `render:` cell blocks now receive the field **value** as a second argument
+  (`->(record, value) { … }`), so a block on a `preload:`-ed dynamic column can format its
+  loaded value without an `as:` partial. Backward-compatible — existing one-arg blocks ignore
+  the extra argument.
+
 ## [0.2.0]
 
 ### Added

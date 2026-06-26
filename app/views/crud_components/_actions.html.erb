@@ -1,20 +1,12 @@
 <%# A group of action buttons. Local: `actions`
     (CrudComponents::Presenters::Actions). Joined (btn-group) only when every
     action is a GET link; a destroy form would break the group's edges, so
-    those render as evenly-spaced buttons instead. %>
+    those render as evenly-spaced buttons instead. Each item is rendered by the
+    shared _action_button partial. %>
 <% if actions.any? %>
   <div class="<%= actions.joinable? ? actions.css.button_group : 'd-inline-flex gap-1' %>" role="group">
     <% actions.items.each do |item| %>
-      <% action = item.action %>
-      <% content = action.icon ? tag.i('', class: "#{actions.css.icon_prefix}#{action.icon}", aria: { hidden: true }) : action.title %>
-      <% if action.http_method == :get %>
-        <%= link_to content, item.path, class: action.css_class, title: action.title,
-                    data: { turbo_action: 'advance' } %>
-      <% else %>
-        <%= button_to content, item.path, method: action.http_method, class: action.css_class,
-                      title: action.title,
-                      form: { class: 'd-inline', data: { turbo_confirm: action.confirm_message }.compact } %>
-      <% end %>
+      <%= render 'crud_components/action_button', action: item.action, path: item.path, css: actions.css %>
     <% end %>
   </div>
 <% end %>

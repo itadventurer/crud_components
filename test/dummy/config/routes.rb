@@ -22,6 +22,8 @@ Rails.application.routes.draw do
   get 'groups', to: 'groups#index'           # collapsible groups via group_by:
   get 'custom_fields', to: 'custom_fields#index'  # dynamic columns from a custom-property store
   get 'columns', to: 'columns#index'              # per-user column picker (?cols=)
+  get 'column_headers', to: 'column_headers#index'  # dynamic-column custom headers + header actions
+  post 'column_headers/tag', to: 'column_headers#tag', as: :tag_column_headers  # a :selection header action target
   get 'live', to: 'live#index'
   post 'live/poke', to: 'live#poke'
   post 'toggle_admin', to: 'application#toggle_admin'

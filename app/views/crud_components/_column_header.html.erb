@@ -1,0 +1,24 @@
+<%# Every column's <th> content. The title is collection.column_header(field) — a
+    custom header: replaces only the human_name; the column is still wrapped in a
+    sort link when sortable. Then any header actions: an `on: :selection` action
+    submits the shared select-form (acting on the ticked rows × this column's
+    object); any other renders as a plain link/button. Locals: collection, field. %>
+<% css = collection.css %>
+<span class="crud-column-header d-inline-flex align-items-center gap-1">
+  <% if collection.sortable_field?(field) %>
+    <%= render 'crud_components/sort_link', collection: collection, field: field, css: css,
+               label: collection.column_header(field) %>
+  <% else %>
+    <%= collection.column_header(field) %>
+  <% end %>
+  <% if (actions = collection.column_header_actions(field)) %>
+    <% actions.items.each do |item| %>
+      <% if item.action.selection? %>
+        <%= render 'crud_components/selection_action', action: item.action, path: item.path,
+                   form_id: collection.select_form_id, css: css %>
+      <% else %>
+        <%= render 'crud_components/action_button', action: item.action, path: item.path, css: css %>
+      <% end %>
+    <% end %>
+  <% end %>
+</span>

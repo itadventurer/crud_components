@@ -148,13 +148,25 @@ An association name alone *delegates* to that model's `search_in`. →
 User-defined properties that live in a separate store (a definitions/values pair, JSONB,
 an API) become extra columns without touching the model — build a `DynamicColumn` per
 request and pass `extra_columns:`. A `preload:` lambda batch-loads the page (no N+1); add
-`filter:`/`sort:` to make it query like a real column.
+`filter:`/`sort:` to make it query like a real column. A column that *is* a domain object
+(a mail, a resource) can carry its own header link and bulk actions right in the `<th>` via
+`header:` / `header_actions:`. A header action declared `on: :selection` acts on the **ticked
+rows** × that column's object (it submits the shared select-form and makes the table
+selectable); `on: :collection` is a plain "for all rows" button.
 
 ```erb
 <%= crud_collection @books, extra_columns: current_account.custom_property_columns %>
 ```
 
-→ [Fields → dynamic columns](docs/fields.md#dynamic-columns)
+```ruby
+CrudComponents::DynamicColumn.new(:mail_42, label: 'Welcome mail',
+  header: -> { link_to mail.name, mail },
+  header_actions: [CrudComponents::Action.new(:send, on: :selection, icon: 'send', method: :post) { send_path(mail) }],
+  preload: ->(records) { … }) { |record, loaded| loaded[record.id] }
+```
+
+→ [Fields → dynamic columns](docs/fields.md#dynamic-columns) ·
+[custom headers & column actions](docs/fields.md#custom-headers-and-column-actions)
 
 ### Let users pick their columns
 

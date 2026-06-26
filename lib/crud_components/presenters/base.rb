@@ -43,7 +43,10 @@ module CrudComponents
       # (a CellContext or nil) lets value renderers build click-to-filter links;
       # it is nil on surfaces without a query.
       def render_cell(field, record, surface:, cell_context: nil)
-        return view.instance_exec(record, &field.render_block) if field.render_block
+        # The render block gets the record *and* the field's value — so a block on
+        # a DynamicColumn can read its `preload:`-ed value without an `as:` partial.
+        # Extra arg is harmless for one-arg blocks/procs (Proc ignores surplus args).
+        return view.instance_exec(record, field.value(record), &field.render_block) if field.render_block
 
         renderer = field.renderer(record) || :string
         locals = { value: field.value(record), record: record, field: field,

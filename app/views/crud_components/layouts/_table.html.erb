@@ -45,24 +45,7 @@
             </th>
           <% end %>
           <% collection.fields.each do |field| %>
-            <th scope="col">
-              <% if collection.sortable_field?(field) %>
-                <%= link_to collection.sort_url(field),
-                            class: "#{css.sort_link} d-inline-flex align-items-center gap-1",
-                            title: t('crud_components.sort', default: 'Sort'),
-                            data: { turbo_action: 'advance' } do %>
-                  <%= field.human_name %>
-                  <% if (dir = collection.sort_direction(field)) %>
-                    <% family = collection.sort_numeric?(field) ? 'sort-numeric' : 'sort-alpha' %>
-                    <i class="<%= css.icon_prefix %><%= family %>-<%= dir == :desc ? 'up' : 'down' %>"></i>
-                  <% else %>
-                    <i class="<%= css.icon_prefix %>arrow-down-up text-muted opacity-25"></i>
-                  <% end %>
-                <% end %>
-              <% else %>
-                <%= field.human_name %>
-              <% end %>
-            </th>
+            <th scope="col"><%= render 'crud_components/column_header', collection: collection, field: field %></th>
           <% end %>
           <% if collection.trailing_column? %>
             <th scope="col" class="<%= css.actions_cell %>">

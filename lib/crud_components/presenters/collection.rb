@@ -113,6 +113,45 @@ module CrudComponents
         field.name == structure.label_field_name
       end
 
+      # ── column headers ─────────────────────────────────────────────────────
+      # A column may carry custom `<th>` content: a header (String or a
+      # view-context block) and/or its own actions — declared on a DynamicColumn
+      # or on a plain `attribute`. The layout renders these *instead of* the plain
+      # human_name + sort link; for every other field these return nil/[] and the
+      # layout keeps its default behavior.
+
+      # Whether `field` brings its own header markup or header actions.
+      def custom_header?(field)
+        field.custom_header?
+      end
+
+      # The `<th>` title for `field`: a custom `header:` (a String — html_safe to
+      # carry markup — or a view-context block, e.g. a link) replaces the plain
+      # `human_name`; otherwise the `human_name` itself. `header:` substitutes only
+      # the name — the layout still wraps this in a sort link when the column is
+      # sortable, and appends any header actions.
+      def column_header(field)
+        header = field.header
+        case header
+        when nil then field.human_name
+        when Proc then view.instance_exec(&header)
+        else header
+        end
+      end
+
+      # The header actions for `field` as an Actions presenter (collection-kind:
+      # they act on the column's object × — for a :selection action — the ticked
+      # rows, not a single row), or nil. Each action's path block closes over that
+      # object; the layout renders a :selection action as a select-form submitter
+      # and any other as a link/button.
+      def column_header_actions(field)
+        return nil unless field.header_actions.any?
+
+        (@column_header_actions ||= {})[field] ||=
+          Actions.new(view: view, subject: model, structure: structure,
+                      actions: field.header_actions, owner: owner)
+      end
+
       def record_link(record)
         @record_links ||= {}
         return @record_links[record.id] if @record_links.key?(record.id)
@@ -163,7 +202,7 @@ module CrudComponents
       # Whether the toolbar (search + collection actions) has anything to show —
       # lets a layout skip an empty header row.
       def show_toolbar?
-        searchable? || collection_actions&.any?
+        searchable? || collection_actions&.any? || selection_actions&.any?
       end
 
       # Reset clears *this* collection's filter/search/sort/page params and
@@ -347,7 +386,19 @@ module CrudComponents
       end
 
       def selectable?
-        @actions_enabled && selection_actions.any?
+        return @selectable if defined?(@selectable)
+
+        @selectable = @actions_enabled && (selection_actions.any? || column_selection_actions?)
+      end
+
+      # A visible column may host an `on: :selection` action in its header (acting
+      # on the ticked rows × that column's object). Like a toolbar selection
+      # action, it submits the shared select-form — so it needs the checkbox
+      # column + select-form and thus makes the collection selectable.
+      def column_selection_actions?
+        fields.any? do |field|
+          column_header_actions(field)&.items&.any? { |item| item.action.selection? }
+        end
       end
 
       def select_form_id

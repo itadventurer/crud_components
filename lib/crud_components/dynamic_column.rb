@@ -20,11 +20,35 @@ module CrudComponents
   # a computed field. `filter:`/`sort:` are the same facet blocks the DSL takes;
   # supply them only when the data is reachable in SQL, otherwise the column is
   # display-only and never reaches the query layer.
+  #
+  # A dynamic column often *is* a domain object (a mail, a resource), so its
+  # header can carry a link and its own bulk actions, rendered in the `<th>`:
+  #
+  #   CrudComponents::DynamicColumn.new(:mail_42,
+  #     label:  'Welcome mail',
+  #     header: -> { link_to mail.name, mail },             # HTML-safe String or a view-context block
+  #     header_actions: [                                   # the same Action API as row/collection actions
+  #       CrudComponents::Action.new(:send_all, icon: 'send', method: :post) { send_all_path(mail) },
+  #       CrudComponents::Action.new(:unschedule_all, method: :post) { unschedule_all_path(mail) }
+  #     ],
+  #     preload: ->(records) { ... }) { |record, loaded| loaded[record.id] }
+  #
+  # `header:` replaces the plain `human_name` text (a String is rendered as-is —
+  # mark it `html_safe` if it carries markup; a block is `instance_exec`ed in the
+  # view, so it may call `link_to` and friends). `header_actions:` renders after
+  # the header; an `on: :selection` action acts on the ticked rows (it submits the
+  # shared select-form, so its path closes over the column's object × the
+  # selection), while any other action renders as a plain link/button.
+  #
+  # header:/header_actions: are not consumed here — they ride along in `options`
+  # and are read off the field by Fields::Base, exactly like a declared
+  # attribute's `attribute :x, header_actions: […]`.
   class DynamicColumn
     attr_reader :name, :options, :facets, :preload_block, :value_block
 
-    # Keys consumed here; everything else (as:, if:, label:, unit:, digits:, …)
-    # flows into `options` just like a declared attribute's options.
+    # Keys consumed here; everything else (as:, if:, label:, header:,
+    # header_actions:, unit:, digits:, …) flows into `options` just like a
+    # declared attribute's options.
     FACET_KEYS = %i[filter sort render].freeze
 
     def initialize(name, preload: nil, **opts, &value_block)
