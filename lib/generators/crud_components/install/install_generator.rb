@@ -17,6 +17,12 @@ module CrudComponents
         copy_file 'crud_columns_controller.js', 'app/javascript/controllers/crud_columns_controller.js'
         say <<~NOTE
 
+          Load the gem's stylesheet (it makes the column picker float; everything
+          else is plain Bootstrap). Either is fine:
+            - layout <head>:           <%= crud_components_styles %>   (works under any
+              asset setup — cssbundling/sass, importmap, sprockets, propshaft)
+            - or, asset-pipeline hosts: <%= stylesheet_link_tag "crud_components" %>
+
           The Stimulus controllers are optional — everything works without them.
           - crud-filter: strip empty params on submit + auto-submit inline selects.
           - crud-multiselect: turn a habtm `<select multiple>` into a chips + add picker.

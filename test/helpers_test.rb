@@ -36,4 +36,20 @@ class HelpersTest < ActiveSupport::TestCase
     cfg.file_icons = icons
     cfg.file_fallback_icon = fallback
   end
+
+  test 'bundled_css ships the column-picker float styles' do
+    css = CrudComponents.bundled_css
+    assert_includes css, '.crud-column-picker-menu'
+    assert_includes css, 'position: absolute'
+  end
+
+  test 'crud_components_styles inlines the stylesheet as a <style> tag' do
+    v = Class.new do
+      include ActionView::Helpers::TagHelper
+      include CrudComponents::Helpers
+    end.new
+    html = v.crud_components_styles
+    assert_includes html, '<style'
+    assert_includes html, 'crud-column-picker-menu'
+  end
 end

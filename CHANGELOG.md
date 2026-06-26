@@ -37,6 +37,14 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   (overridable partials); `as:` overrides. See `docs/fields.md#renderers`.
 - **`config.max_path_depth`** — caps how deep a path column may chain (default 3).
 
+- **Bundled stylesheet + `crud_components_styles` helper** — the gem now ships the one
+  bit of CSS it needs the host to load (the column-picker float) as
+  `app/assets/stylesheets/crud_components.css`. Load it pipeline-agnostically by
+  inlining `<%= crud_components_styles %>` in the layout `<head>` (no compilation —
+  works the same under cssbundling/sass, importmap, sprockets or propshaft), or link
+  the same file with `stylesheet_link_tag "crud_components"` where the asset pipeline
+  serves engine assets. `CrudComponents.bundled_css` exposes the raw CSS.
+
 ### Fixed
 
 - A column's `label:` is now honoured as the table header and picker label for every
