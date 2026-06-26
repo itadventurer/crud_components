@@ -108,17 +108,24 @@ arrangement (`layout:`) are orthogonal: the same fieldset feeds any layout. (`cr
 ## Column picker
 
 A fieldset is the app's default set of columns. A column picker lets each user choose
-which of those columns they want to see, and in what order. Turn it on with
-`column_picker: true` and a **gear** appears in the header row's actions cell; it opens a
-checklist of every column the user may see — declared columns,
-[dynamic columns](fields.md#dynamic-columns) and [path columns](fields.md#path-columns)
-(`authors.email` & co.) alike — each a checkbox, draggable to reorder. Own columns sit at
-the top; path columns group under their association (a "Authors" heading with **Name**,
-**Email** beneath), so the list reads cleanly however many you expose:
+which of those columns they want to see, and in what order. It's one knob —
+**`visible_columns:`**:
 
 ```erb
-<%= crud_collection @books, fieldset: :index, column_picker: true %>
+<%= crud_collection @books, fieldset: :index, visible_columns: true %>
 ```
+
+`visible_columns: true` renders a **gear** in the header row's actions cell and applies the
+`?cols=` selection it submits. It opens a checklist of every column the user may see —
+declared columns, [dynamic columns](fields.md#dynamic-columns) and
+[path columns](fields.md#path-columns) (`authors.email` & co.) alike — each a checkbox,
+draggable to reorder.
+
+**Columns are grouped by their source model**, Pipedrive-style: this model's own columns
+first (under a "Book" heading), then each associated model — `publisher`, `publisher.name`
+and `publisher.founded_on` cluster under **Publisher** (with its [icon](fields.md#identity-label-identify_by-search_in-icon)),
+`authors.name`/`authors.email` under **Author** — and every row also tags its model on the
+right, so a long list stays scannable.
 
 The picker is **just another query param**. Its form submits `?cols[]=` to the same URL —
 exactly like the sort links and filter row — so it composes with filters, search, sort and
@@ -126,49 +133,56 @@ exactly like the sort links and filter row — so it composes with filters, sear
 
 **No JavaScript required.** The gear is a native `<details>`/`<summary>` disclosure, so it
 opens and closes without JS; ticking columns is plain HTML, and Apply/Reset are a plain GET.
-The optional `crud-columns` Stimulus controller only adds drag-to-reorder.
+The optional `crud-columns` Stimulus controller adds drag-to-reorder and collapses the
+`?cols[]=a&cols[]=b` array into a tidier `?cols=a,b` (the server reads both forms).
+
+### A server-side default (a saved preference)
+
+Pass an **Array** instead of `true` and it becomes the default selection — a live `?cols=`
+pick still wins over it. So the backend decides: hand it a persisted preference, or pass
+`true` and let the param drive.
+
+```erb
+<%= crud_collection @books, visible_columns: current_user.book_columns || true %>
+```
+
+| `visible_columns:` | Picker gear | Shows |
+| --- | --- | --- |
+| `true` | yes | `?cols=` if present, else all columns |
+| `%i[…]` (Array) | yes | `?cols=` if present, else this default |
+| `nil` (default) | no | all columns (a `?cols=` from a picker elsewhere still narrows) |
+
+The chosen names are always **intersected with the permitted set**: a forged or stale
+`?cols=` (or a `visible_columns:` Array naming a column the user lost access to) can only
+hide or reorder columns, never reveal one the `if:` gate forbids. See [security](security.md).
 
 ### Reuse anywhere with `crud_column_picker`
 
 ![A record detail view (a definition list) with the column-picker gear open above it, narrowing which fields the dl shows](screenshots/record-picker.png)
 
 The gear is also a standalone helper, so you can place it outside a table — e.g. above a
-`crud_record` detail view, which reads the same `?cols=` via `visible:`:
+`crud_record` detail view, which reads the same `?cols=` via `visible_columns:`:
 
 ```erb
-<%= crud_column_picker @book, fieldset: :show %>   <%# the gear, submits ?cols= to this page %>
-<%= crud_record @book, visible: @visible %>         <%# narrows/orders the dl to match %>
+<%= crud_column_picker @book, fieldset: :show %>      <%# the gear, submits ?cols= to this page %>
+<%= crud_record @book, visible_columns: @visible %>   <%# narrows/orders the dl to match %>
 ```
 
 `crud_column_picker` takes a relation, a model class or a record. Match its `param_prefix:`
 to the consuming `crud_collection`/`crud_record` so they read the same param.
 
-Two ways to set the visible set:
-
-| Source | Wins | Use for |
-| --- | --- | --- |
-| `?cols[]=` param | highest | a live pick from the picker (or a hand-built URL) |
-| `visible: %i[…]` | fallback | a server-supplied default — e.g. a preference you loaded |
-
-```erb
-<%= crud_collection @books, column_picker: true, visible: current_user.book_columns %>
-```
-
-The chosen names are always **intersected with the permitted set**: a forged or stale
-`?cols=` (or a `visible:` naming a column the user lost access to) can only hide or reorder
-columns, never reveal one the `if:` gate forbids. See [security](security.md).
-
 **Persistence is yours, and optional.** The gem reads the param; it doesn't store it. Use
 `CrudComponents.selected_columns(params)` to pull the ordered selection out of a request
-(it honors `param_prefix:`), save it wherever you keep per-user state, and pass it back via
-`visible:`. The block form runs only when the picker was actually submitted:
+(it honors `param_prefix:` and accepts both the `cols[]` and `cols=a,b` forms), save it
+wherever you keep per-user state, and pass it back via `visible_columns:`. The block form
+runs only when the picker was actually submitted:
 
 ```ruby
 def index
   CrudComponents.selected_columns(params) { |cols| current_user.update!(book_columns: cols) }
   @books = Book.all
 end
-# view: crud_collection @books, column_picker: true, visible: current_user.book_columns
+# view: crud_collection @books, visible_columns: current_user.book_columns || true
 ```
 
 The `/columns` page in `test/dummy` is a runnable example.

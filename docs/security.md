@@ -107,7 +107,7 @@ The guarantees, each backed by a test:
   `?sort=title;DROP TABLE books` yields *no* `ORDER BY`, not an escaped one. `dir` is
   validated to `asc`/`desc`.
 - **`?cols=` can only narrow, never widen.** The column-picker selection is intersected
-  with the permitted column set, so a forged or stale `cols` (or a `visible:` default
+  with the permitted column set, so a forged or stale `cols` (or a `visible_columns:` default
   naming a now-gated column) can hide or reorder columns but never surface one the `if:`
   gate forbids.
 - **Escaped LIKE.** Wildcards (`%`, `_`) and the backslash escape itself are escaped
