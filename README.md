@@ -141,6 +141,37 @@ parameterized, wildcard-escaped ILIKE from column/association names, nothing to 
 An association name alone *delegates* to that model's `search_in`. →
 [Fields → the search spec](docs/fields.md#the-search-spec)
 
+### Columns the model doesn't know about
+
+![A table with the declared columns (title, price) followed by four user-defined columns — Shelf (string), Weight (number with a unit), Signed (a boolean check) and Acquired (date) — each sortable and with its own filter input](docs/screenshots/custom-fields.png)
+
+User-defined properties that live in a separate store (a definitions/values pair, JSONB,
+an API) become extra columns without touching the model — build a `DynamicColumn` per
+request and pass `extra_columns:`. A `preload:` lambda batch-loads the page (no N+1); add
+`filter:`/`sort:` to make it query like a real column.
+
+```erb
+<%= crud_collection @books, extra_columns: current_account.custom_property_columns %>
+```
+
+→ [Fields → dynamic columns](docs/fields.md#dynamic-columns)
+
+### Let users pick their columns
+
+![The same table with the column-picker gear open in the header — a checklist of every column the user may see (declared and dynamic), each toggleable, with Apply and Reset](docs/screenshots/column-picker.png)
+
+Add `column_picker: true` and a **gear** appears in the header row: users hide and reorder
+the columns they may see. It submits `?cols[]=` to the same URL — like sort and filter — so
+it needs no endpoint, opens and works without JavaScript (native `<details>`), and is always
+intersected with the permitted set (a forged param can't reveal a gated column). It's also a
+standalone helper (`crud_column_picker`) you can drop above a `crud_record` detail view.
+
+```erb
+<%= crud_collection @books, column_picker: true, visible: current_user.book_columns %>
+```
+
+→ [Views → column picker](docs/views.md#column-picker)
+
 ### Global search, slugs, display names
 
 ```ruby

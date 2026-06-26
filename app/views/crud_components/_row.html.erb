@@ -12,12 +12,14 @@
   <% collection.fields.each do |field| %>
     <td><%= collection.cell(field, record) %></td>
   <% end %>
-  <% if collection.actions_column? %>
+  <% if collection.trailing_column? %>
     <td class="<%= css.actions_cell %>">
-      <% if collection.custom_actions_partial %>
-        <%= render collection.custom_actions_partial, record: record %>
-      <% else %>
-        <%= render 'crud_components/actions', actions: collection.row_actions(record) %>
+      <% if collection.actions_column? %>
+        <% if collection.custom_actions_partial %>
+          <%= render collection.custom_actions_partial, record: record %>
+        <% else %>
+          <%= render 'crud_components/actions', actions: collection.row_actions(record) %>
+        <% end %>
       <% end %>
     </td>
   <% end %>

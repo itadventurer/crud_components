@@ -1,0 +1,58 @@
+<%# The column picker: a gear that opens a checklist of the columns this user may
+    see. Native <details> disclosure — opening needs no JavaScript; the optional
+    crud-columns controller only adds drag-to-reorder. The form is a plain GET that
+    submits `cols[]` to `url` (this page by default), exactly like the sort links
+    and filter row, so it composes with every other param and works no-JS.
+    Locals: `collection` (a Collection presenter), `url`. %>
+<% css = collection.css %>
+<details class="crud-column-picker dropdown" data-controller="crud-columns">
+  <summary class="crud-column-picker-toggle" role="button"
+           title="<%= t('crud_components.columns.edit', default: 'Columns') %>"
+           aria-label="<%= t('crud_components.columns.edit', default: 'Columns') %>">
+    <i class="<%= css.icon_prefix %>gear" aria-hidden="true"></i>
+  </summary>
+  <div class="crud-column-picker-menu">
+    <%= form_with url: url, method: :get, data: { turbo_action: 'advance' } do %>
+      <% collection.picker_preserved_params.each do |name, value| %>
+        <%= hidden_field_tag name, value, id: nil %>
+      <% end %>
+      <fieldset>
+        <legend class="<%= css.muted %> small"><%= t('crud_components.columns.legend', default: 'Show columns') %></legend>
+        <ul class="crud-column-picker-list list-unstyled" data-crud-columns-target="list">
+          <%# Own columns sit at the top (no heading); columns that reach through
+              an association are grouped under that association's name — so a path
+              column reads as "Email" under "Authors", not "Authors › Email". %>
+          <% collection.available_fields.group_by(&:group_label).each do |group, fields| %>
+            <% if group.present? %>
+              <li class="crud-column-picker-group"><%= group %></li>
+            <% end %>
+            <% fields.each do |field| %>
+              <%# Pure-HTML behaviour: a ticked checkbox submits cols[]=<name> in DOM
+                  order, an unticked one submits nothing. crud-columns reorders these
+                  <li>s on drag, which reorders the submitted columns. %>
+              <li class="crud-column-picker-item" draggable="true" data-crud-columns-target="item">
+                <span class="crud-column-picker-handle" aria-hidden="true" data-crud-columns-target="handle">
+                  <i class="<%= css.icon_prefix %>grip-vertical"></i>
+                </span>
+                <label class="d-inline-flex align-items-center gap-2">
+                  <input type="checkbox" class="form-check-input" name="<%= collection.column_param_name %>"
+                         value="<%= field.name %>" <%= 'checked' if collection.column_visible?(field) %>
+                         data-action="change->crud-columns#toggle">
+                  <span><%= field.picker_label %></span>
+                </label>
+              </li>
+            <% end %>
+          <% end %>
+        </ul>
+      </fieldset>
+      <div class="<%= css.button_group %>">
+        <button type="submit" class="<%= css.button %>">
+          <%= t('crud_components.columns.apply', default: 'Apply') %>
+        </button>
+        <%= link_to t('crud_components.columns.reset', default: 'Reset'),
+                    collection.picker_preserved_params.any? ? "#{url}?#{collection.picker_preserved_params.to_query}" : url,
+                    class: css.button, data: { turbo_action: 'advance' } %>
+      </div>
+    <% end %>
+  </div>
+</details>

@@ -20,6 +20,8 @@ Rails.application.routes.draw do
   get 'dashboard', to: 'dashboard#show'
   get 'pagination', to: 'pagination#index'   # how to paginate a big table (bring your own pager)
   get 'groups', to: 'groups#index'           # collapsible groups via group_by:
+  get 'custom_fields', to: 'custom_fields#index'  # dynamic columns from a custom-property store
+  get 'columns', to: 'columns#index'              # per-user column picker (?cols=)
   get 'live', to: 'live#index'
   post 'live/poke', to: 'live#poke'
   post 'toggle_admin', to: 'application#toggle_admin'

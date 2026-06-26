@@ -1,0 +1,27 @@
+<h1 class="mb-3">Column picker</h1>
+
+<%= docs_panel(
+      intro: "Add <code>column_picker: true</code> and a <strong>gear</strong> appears in the header row: the user " \
+             "ticks which columns are shown and (with the optional <code>crud-columns</code> Stimulus controller) " \
+             "drags to reorder them. It submits <code>?cols[]=</code> to this same URL — like the sort links and " \
+             "filter row — so it opens and works without JavaScript. Everything the user may see is pickable: declared " \
+             "columns, <a href='/custom_fields' class='link-secondary'>dynamic columns</a>, and " \
+             "<strong>path columns</strong> that reach through associations — <code>publisher.founded_on</code> " \
+             "(a single belongs_to → a date) and <code>authors.email</code> (a habtm → a list). The selection is " \
+             "always intersected with the permitted set, so a forged <code>?cols=</code> can only hide or reorder, " \
+             "never reveal one.".html_safe,
+      docs: { 'Column picker' => 'docs/views.md#column-picker', 'Path columns' => 'docs/fields.md#path-columns' }) do %>
+<%= code_file('app/models/book.rb') do %>
+fieldset :picker, %i[title genre price publisher
+                     publisher.founded_on authors.name authors.email active]   # path columns: assoc.attr
+<% end %>
+<%= code_file('app/views/columns/index.html.erb', :erb) do %>
+&lt;%= crud_collection @books, fieldset: :picker,
+                     extra_columns: @columns,   &lt;%# declared + path + dynamic — all pickable %&gt;
+                     column_picker: true %&gt;
+<% end %>
+<% end %>
+
+<div class="card"><div class="card-body">
+  <%= crud_collection @books, fieldset: :picker, extra_columns: @columns, column_picker: true %>
+</div></div>

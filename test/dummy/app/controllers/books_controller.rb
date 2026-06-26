@@ -9,6 +9,9 @@ class BooksController < ApplicationController
 
   def show
     @book = find_book
+    # The standalone column picker on this page submits ?cols= here; extract it
+    # so crud_record can honor it (and persist it per user if you want to).
+    @visible = CrudComponents.selected_columns(params)
   end
 
   def new

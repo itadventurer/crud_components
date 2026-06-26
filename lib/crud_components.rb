@@ -11,7 +11,7 @@ module CrudComponents
   # The query params the gem owns (filters are top-level params named after the
   # field, so a field can't share these names). Declaring such an attribute
   # raises in the Builder rather than silently colliding with sort/pagination.
-  RESERVED_PARAMS = %w[q sort dir page per].freeze
+  RESERVED_PARAMS = %w[q sort dir page per cols].freeze
 
   # Sentinel filter value meaning "the column is NULL" (boolean/enum filters on
   # nullable columns offer it as a "not set" choice). Improbable as a real
@@ -25,6 +25,7 @@ require_relative 'crud_components/config'
 require_relative 'crud_components/permission_context'
 require_relative 'crud_components/like_spec'
 require_relative 'crud_components/where_like'
+require_relative 'crud_components/semantic_renderer'
 require_relative 'crud_components/fields/base'
 require_relative 'crud_components/fields/string_field'
 require_relative 'crud_components/fields/text_field'
@@ -37,6 +38,9 @@ require_relative 'crud_components/fields/attachment_field'
 require_relative 'crud_components/fields/belongs_to_field'
 require_relative 'crud_components/fields/has_many_field'
 require_relative 'crud_components/fields/computed_field'
+require_relative 'crud_components/fields/path_field'
+require_relative 'crud_components/fields/dynamic_field'
+require_relative 'crud_components/dynamic_column'
 require_relative 'crud_components/action'
 require_relative 'crud_components/fieldset'
 require_relative 'crud_components/builder'
@@ -56,6 +60,26 @@ module CrudComponents
 
     def structure_for(model)
       Structure.for(model)
+    end
+
+    # The column-picker selection from a request's params: the ordered list of
+    # column names the user ticked, or nil when the picker wasn't submitted.
+    # Honors `param_prefix:` (match it to the picker's). Persist it however you
+    # like, then feed it back via `visible:`.
+    #
+    #   cols = CrudComponents.selected_columns(params)
+    #   current_user.update!(book_columns: cols) if cols
+    #
+    # A block runs only when a selection was submitted, and receives the list:
+    #
+    #   CrudComponents.selected_columns(params) { |cols| current_user.update!(book_columns: cols) }
+    def selected_columns(params, param_prefix: nil)
+      key = param_prefix ? "#{param_prefix}_cols" : 'cols'
+      raw = params[key] || params[key.to_sym]
+      names = raw.is_a?(Array) ? raw.map(&:to_s).reject(&:blank?) : nil
+      names = nil if names && names.empty?
+      yield names if block_given? && names
+      names
     end
 
     # Whether non-image attachment previews (e.g. a PDF's first page) can

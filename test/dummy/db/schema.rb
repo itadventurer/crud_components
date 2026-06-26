@@ -59,6 +59,29 @@ ActiveRecord::Schema[7.1].define(version: 1) do
     t.timestamps
   end
 
+  # User-defined custom properties living *outside* the subject's own table — the
+  # store behind the dynamic-columns demo. A definition is the column ("Shelf",
+  # a string); a value is one cell (this book's shelf). Mirrors a typical
+  # PropertyDefinition + Property(Value) pair, but the same DynamicColumn API
+  # works just as well over JSONB or a remote API.
+  create_table :property_definitions, force: :cascade do |t|
+    t.string :key, null: false      # the column's stable name (→ ?cols=, ?key=)
+    t.string :label                 # the human header
+    t.string :flavor, default: 'string' # string | number | boolean | date
+    t.string :unit                  # for number flavor (e.g. "g")
+    t.timestamps
+    t.index [:key], unique: true
+  end
+
+  create_table :property_values, force: :cascade do |t|
+    t.references :property_definition, null: false
+    t.references :subject, polymorphic: true, null: false
+    t.string :value                 # stored as text; cast per flavor on read
+    t.timestamps
+    t.index %i[property_definition_id subject_type subject_id], unique: true,
+            name: 'index_property_values_uniqueness'
+  end
+
   # Active Storage (for attachment fields)
   create_table :active_storage_blobs, force: :cascade do |t|
     t.string :key, null: false

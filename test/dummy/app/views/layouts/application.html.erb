@@ -12,6 +12,26 @@
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
   <%# Syntax highlighting for the "how this page is built" code panels. %>
   <link href="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/styles/github.min.css" rel="stylesheet">
+  <style>
+    /* Column picker: a gear that opens a <details> dropdown — no JS to open it. */
+    .crud-column-picker { position: relative; display: inline-block; }
+    .crud-column-picker-toggle { list-style: none; cursor: pointer; color: var(--bs-secondary); padding: .15rem .3rem; border-radius: .25rem; }
+    .crud-column-picker-toggle::-webkit-details-marker { display: none; }
+    .crud-column-picker-toggle:hover { color: var(--bs-body-color); background: var(--bs-secondary-bg); }
+    .crud-column-picker[open] .crud-column-picker-toggle { color: var(--bs-body-color); }
+    .crud-column-picker-menu {
+      position: absolute; right: 0; z-index: 1050; margin-top: .25rem; min-width: 14rem;
+      background: #fff; border: 1px solid var(--bs-border-color); border-radius: .375rem;
+      box-shadow: 0 .5rem 1rem rgba(0,0,0,.15); padding: .75rem;
+    }
+    .crud-column-picker-list { margin: .25rem 0 .5rem; max-height: 28rem; overflow-y: auto; }
+    .crud-column-picker-item { display: flex; align-items: center; gap: .5rem; padding: .15rem .25rem; border-radius: .25rem; }
+    .crud-column-picker-item.is-dragging { opacity: .5; background: var(--bs-secondary-bg); }
+    .crud-column-picker-handle { cursor: grab; color: var(--bs-secondary); }
+    .crud-column-picker-group { margin: .5rem 0 .15rem; padding: 0 .25rem; font-size: .7rem; font-weight: 600;
+      text-transform: uppercase; letter-spacing: .03em; color: var(--bs-secondary); }
+    .crud-column-picker-group:first-child { margin-top: 0; }
+  </style>
   <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/highlight.min.js"></script>
   <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/languages/erb.min.js"></script>
   <script>
@@ -99,10 +119,32 @@
       }
     }
 
+    // column picker: drag-to-reorder the columns (ticking works without it).
+    class CrudColumnsController extends Controller {
+      static targets = ["list", "item"]
+      connect() { this.dragging = null }
+      itemTargetConnected(item) {
+        item.addEventListener("dragstart", (e) => this.start(e, item))
+        item.addEventListener("dragover", (e) => this.over(e, item))
+        item.addEventListener("dragend", () => this.end(item))
+      }
+      start(event, item) { this.dragging = item; item.classList.add("is-dragging"); event.dataTransfer.effectAllowed = "move" }
+      over(event, item) {
+        event.preventDefault()
+        if (!this.dragging || this.dragging === item) return
+        const rect = item.getBoundingClientRect()
+        const after = event.clientY - rect.top > rect.height / 2
+        item.parentNode.insertBefore(this.dragging, after ? item.nextSibling : item)
+      }
+      end(item) { item.classList.remove("is-dragging"); this.dragging = null }
+      toggle() {}
+    }
+
     const application = Application.start()
     application.register("crud-filter", CrudFilterController)
     application.register("crud-multiselect", CrudMultiselectController)
     application.register("crud-select", CrudSelectController)
+    application.register("crud-columns", CrudColumnsController)
   </script>
 </head>
 <body class="bg-light">
@@ -117,6 +159,8 @@
         <%= link_to 'Dashboard (two collections)', dashboard_path, class: 'nav-link' %>
         <%= link_to 'Pagination', pagination_path, class: 'nav-link' %>
         <%= link_to 'Groups', groups_path, class: 'nav-link' %>
+        <%= link_to 'Custom fields', custom_fields_path, class: 'nav-link' %>
+        <%= link_to 'Column picker', columns_path, class: 'nav-link' %>
         <%= link_to 'Live (auto-update)', live_path, class: 'nav-link' %>
       </div>
       <%= button_to admin? ? 'Admin ✓ (click to drop)' : 'Become admin', toggle_admin_path,

@@ -75,6 +75,15 @@ Built-in renderers:
 * `:json` — pretty-printed `<pre>`, syntax-highlighted when [rouge](https://github.com/rouge-ruby/rouge) is present (optional — no rouge, no colors, no error).
 * `:markdown` — needs one of [commonmarker](https://github.com/gjtorikian/commonmarker), [redcarpet](https://github.com/vmg/redcarpet) or [kramdown](https://github.com/gettalong/kramdown) in your bundle; **raises at boot** if none is present.
 * `:asciidoc` — needs [asciidoctor](https://github.com/asciidoctor/asciidoctor); **raises at boot** if absent.
+* `:email` — a `mailto:` link.
+* `:url` — an http(s) value as a link (a non-URL stays plain text).
+
+**Smart links by name.** A string column named `email` (or `*_email`) renders as `:email`,
+and one named `url`, `website`, `link` or `homepage` renders as `:url`, with no
+configuration. The trigger is the *column name*, never the value — a `description` that
+happens to contain a URL is left alone — so it stays predictable and safe. `as:` overrides
+either way. [Path columns](#path-columns) apply the same rule to their target name, so
+`authors.email` shows a list of `mailto:` links.
 
 **Renderers are surface-aware.** Each receives `surface:` (`:collection` or `:record`)
 and adapts: `:text` truncates in a collection but keeps line breaks on a record,
@@ -142,6 +151,95 @@ meaning until a facet tells the gem how to express it.
 > **Query-block contract.** `filter`/`sort`/`search_in` blocks receive `(scope, value)`
 > (or `(scope, dir)` for sort) and return a relation. There is no view context at query
 > time; the scope arrives extended with `where_like` (below).
+
+## Dynamic columns
+
+Some columns aren't part of the model at all — user-defined properties kept in a
+separate store (a definitions + values pair, a JSONB blob, a remote API). They are
+per-account, per-request data, so they don't belong in the model's `crud_structure`
+(which is built once per class and shared by every request). Instead you build a
+`CrudComponents::DynamicColumn` per request and pass the set to `crud_collection` via
+`extra_columns:` — the model stays untouched, the column rides alongside the declared
+ones:
+
+```ruby
+# however your custom properties are stored, you adapt them to columns:
+columns = current_account.custom_properties.map do |prop|
+  CrudComponents::DynamicColumn.new(
+    prop.key,                                  # the column name (→ ?sort=, ?cols=)
+    label: prop.label, as: prop.renderer,      # any built-in renderer: :number, :date, …
+    if:      -> { can?(:read, prop) },         # same gate as a field's if:
+    preload: ->(records) {                     # one batch-load per page — no N+1
+      PropertyValue.where(definition: prop, subject: records).index_by(&:subject_id)
+    }
+  ) { |record, loaded| loaded[record.id]&.value }  # the value resolver
+end
+
+crud_collection @books, extra_columns: columns
+```
+
+The block is the **value resolver**: `|record|` or `|record, loaded|`, where `loaded`
+is whatever `preload:` returned. It returns a plain value that the `as:` renderer (or,
+with no `as:`, the value's type, exactly like a [computed field](#computed-fields))
+displays. `preload:` runs once over the page's rows so a whole table costs one fetch,
+not one per row.
+
+A dynamic column is **display-only** until you give it the query facets — the same
+`filter:`/`sort:` blocks the DSL takes, supplied as keyword arguments. Give them only
+when the data is reachable in SQL; without them the column never reaches the query
+layer, which keeps the [whitelist](security.md) tight:
+
+```ruby
+CrudComponents::DynamicColumn.new(:priority, as: :number,
+  preload: ->(records) { … },
+  filter:  ->(scope, value) { scope.where(id: PropertyValue.where(definition: prop)
+                                            .where('value LIKE ?', "%#{value}%").select(:subject_id)) },
+  sort:    ->(scope, dir)   { scope.order(Arel.sql("(#{subquery_for(prop)}) #{dir}")) }
+) { |record, loaded| loaded[record.id]&.value }
+```
+
+`if:` follows the same rules as a declared field's: a denied column is absent from the
+table, the filter row, sorting and `?cols=` — everywhere. See the column picker in
+[views.md](views.md#column-picker) for letting users choose which of these they see, and
+the `/custom_fields` page in `test/dummy` for a full worked example (string, number,
+boolean and date flavors, all filtering and sorting).
+
+`crud_record` takes `extra_columns:` too, so the same user-defined properties show as extra
+rows on a detail view — batch-loaded on the single record.
+
+## Path columns
+
+A field name with a **dot** reaches through associations: `publisher.name`,
+`publisher.founded_on`, `authors.email`. The leading segments are associations on the
+model; the last is an attribute (or method) on the target. Use them anywhere a field name
+goes — a fieldset, `visible:`, `?cols=` — so they show up in the [column picker](views.md#column-picker)
+like any other column. No block needed; it's the declarative shortcut for what you'd
+otherwise write as a computed field with a `render` + `filter` + `sort`:
+
+```ruby
+fieldset :index, %i[title publisher.name authors.email]
+```
+
+- A **single-valued** path (belongs_to / has_one) renders like the target column —
+  `publisher.founded_on` formats as a date — and is **sortable** (a LEFT JOIN + ORDER BY).
+- A **list** path (has_many / habtm) renders the values joined — `authors.email` shows
+  every author's email — and is **filterable** (a contains-match through the join, via the
+  [search spec](#the-search-spec)) but not sortable by default (no single value to order by;
+  add a `sort` facet if you have a meaningful aggregate).
+
+The association is eager-loaded automatically, so a path column costs one query per page,
+not one per row.
+
+**Two limits.** The chain may be at most `config.max_path_depth` associations deep (default
+3 — a guard rail against runaway joins; raise it if you need deeper). And it may cross **at
+most one to-many** association: chain belongs_to/has_one freely, but a second has_many/habtm
+would fan the list out into a meaningless list-of-lists. So `authors.publisher.name`
+(habtm → one) is fine; `authors.books.title` (habtm → many) raises at resolve time. Both
+limits report a clear `DefinitionError`.
+
+`if:`, `label:` and facet overrides work as on any field — declare the path with
+`attribute(:"authors.email", if: :manage)` to gate it, or give it a block to override how it
+renders, filters or sorts.
 
 ## The search spec
 

@@ -21,12 +21,26 @@ module CrudComponents
     #   them yourself with {#crud_actions}).
     # @param group_by [Symbol, nil] a column, belongs_to or enum to group rows
     #   under collapsible headers.
+    # @param extra_columns [Array<CrudComponents::DynamicColumn>, nil] user-defined
+    #   columns whose data lives outside the model's table (custom properties from
+    #   a separate store, JSONB, an API). Appended after the declared columns and
+    #   subject to the same `if:` permission gate; filter/sort only when the column
+    #   supplies those facets.
+    # @param visible [Array<Symbol>, nil] the default ordered subset of columns to
+    #   show (e.g. a persisted per-user preference). The `?cols=` param a column
+    #   picker submits takes precedence over it.
+    # @param column_picker [Boolean] render the column-picker control in the toolbar
+    #   (lets a user hide/reorder the columns they may see; submits `?cols=` to the
+    #   same URL, like sort/filter).
     # @return [ActiveSupport::SafeBuffer] the rendered HTML.
     def crud_collection(records, fieldset: nil, layout: :table, query: nil, param_prefix: nil,
-                        actions: true, group_by: nil)
+                        actions: true, group_by: nil, extra_columns: nil, visible: nil,
+                        column_picker: false)
       presenter = Presenters::Collection.new(view: self, records: records, fieldset: fieldset,
                                              query: query, layout: layout, param_prefix: param_prefix,
-                                             actions: actions, group_by: group_by)
+                                             actions: actions, group_by: group_by,
+                                             extra_columns: extra_columns, visible: visible,
+                                             column_picker: column_picker)
       render "crud_components/layouts/#{presenter.layout}", collection: presenter
     end
 
@@ -39,10 +53,45 @@ module CrudComponents
     # @param actions [Boolean] render the row actions (false to place them with
     #   {#crud_actions}).
     # @param layout [Symbol] the partial under `crud_components/` (`:record` ships).
+    # @param visible [Array<Symbol>, nil] narrow/order the shown fields (e.g. from a
+    #   column picker placed on the page); the `?cols=` param overrides it.
+    # @param param_prefix [Symbol, nil] namespaces the `?cols=` param this view reads
+    #   (match it to the picker's `param_prefix:`).
+    # @param extra_columns [Array<CrudComponents::DynamicColumn>, nil] user-defined
+    #   columns whose data lives outside the model's table, shown as extra rows
+    #   (same as {#crud_collection}'s `extra_columns:`, for a detail view).
     # @return [ActiveSupport::SafeBuffer] the rendered HTML.
-    def crud_record(record, fieldset: nil, actions: true, layout: :record)
-      presenter = Presenters::Record.new(view: self, record: record, fieldset: fieldset, actions: actions)
+    def crud_record(record, fieldset: nil, actions: true, layout: :record, visible: nil, param_prefix: nil,
+                    extra_columns: nil)
+      presenter = Presenters::Record.new(view: self, record: record, fieldset: fieldset, actions: actions,
+                                         visible: visible, param_prefix: param_prefix, extra_columns: extra_columns)
       render "crud_components/#{layout}", record_presenter: presenter
+    end
+
+    # A standalone column picker — the same gear-and-checklist the table renders in
+    # its header, but placed wherever you like (e.g. above a `crud_record` detail
+    # view). It submits `?cols[]=` to `url` (the current page by default), so a
+    # `crud_collection`/`crud_record` on the target page picks it up via `visible:`
+    # or the param directly. Persist the choice with {CrudComponents.selected_columns}.
+    #
+    # @param subject [ActiveRecord::Relation, Class, ActiveRecord::Base] anything the
+    #   columns belong to — a scope, the model class, or a record.
+    # @param fieldset [Symbol, nil] which fieldset's fields to offer (e.g. `:show`).
+    # @param extra_columns [Array<CrudComponents::DynamicColumn>, nil] dynamic columns
+    #   to include in the choices.
+    # @param visible [Array<Symbol>, nil] the current selection (pre-ticks the boxes).
+    # @param url [String, nil] where the picker form submits; defaults to the current path.
+    # @param param_prefix [Symbol, nil] namespaces the `?cols=` param.
+    # @return [ActiveSupport::SafeBuffer] the rendered HTML.
+    def crud_column_picker(subject, fieldset: nil, extra_columns: nil, visible: nil, url: nil, param_prefix: nil)
+      relation = if subject.respond_to?(:klass) then subject
+                 elsif subject.is_a?(Class) then subject.all
+                 else subject.class.all
+                 end
+      presenter = Presenters::Collection.new(view: self, records: relation, fieldset: fieldset, query: nil,
+                                             extra_columns: extra_columns, visible: visible,
+                                             param_prefix: param_prefix, actions: false, column_picker: true)
+      render 'crud_components/column_picker', collection: presenter, url: (url || request.path)
     end
 
     # A standalone labelled filter form (modal / sidebar) — separate from the

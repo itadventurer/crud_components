@@ -8,6 +8,11 @@ de:
     more: "+%{count} weitere"
     sort: "Sortieren"
     filter_by: "Nach %{name} filtern"
+    columns:
+      edit: "Spalten"
+      apply: "Anwenden"
+      reset: "Zurücksetzen"
+      legend: "Spalten anzeigen"
     attachment:
       keep: "Behalten"
       remove: "Entfernen"
