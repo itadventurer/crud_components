@@ -54,11 +54,35 @@ class DynamicColumnsTest < ActiveSupport::TestCase
     assert rich.sortable?
   end
 
+  # A Proc sort facet must override a prior order (e.g. a search backend's
+  # relevance rank), not append to it — so an explicit ?sort= wins (issue #23).
+  test 'a Proc sort facet overrides a prior order instead of appending' do
+    field = CrudComponents::DynamicColumn.new(:t, sort: ->(scope, dir) { scope.order(title: dir) }).to_field(Book)
+    prior = Book.order(:price)   # stands in for the rank order a search_in block set
+    order_clause = field.apply_sort(prior, :asc).to_sql.split(/order by/i).last
+
+    assert_includes order_clause, 'title'
+    assert_not_includes order_clause, 'price'   # the prior order was cleared, not kept as primary
+  end
+
   # ── the presenter: selection + ordering ──────────────────────────────────────
   test 'dynamic columns are appended to the permitted column set' do
     names = collection(extra_columns: [color]).available_fields.map(&:name)
     assert_includes names, :color
     assert_equal :color, names.last
+  end
+
+  # A prebuilt Query carries its own DynamicField instances; the collection builds
+  # its own from extra_columns. They must still light up the inline filter/sort —
+  # matched by name, not object identity (issue #21).
+  test 'dynamic columns keep inline filter/sort when a prebuilt Query is passed' do
+    rich = CrudComponents::DynamicColumn.new(:weight, filter: ->(s, _v) { s }, sort: ->(s, _d) { s }) { |_r| 1 }
+    query = CrudComponents::Query.new(Book, {}, fieldset: :index, extra_fields: [rich.to_field(Book)])
+    c = collection(query: query, extra_columns: [rich])
+    field = c.fields.find { |f| f.name == :weight }
+
+    assert c.filterable_field?(field), 'a prebuilt query should keep the dynamic filter control'
+    assert c.sortable_field?(field), 'a prebuilt query should keep the dynamic sort link'
   end
 
   test 'picked_columns: :auto reads ?cols= to limit and order the visible columns' do
