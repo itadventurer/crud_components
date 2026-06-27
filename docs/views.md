@@ -1,5 +1,7 @@
 # Views: rendering, fieldsets, actions
 
+> See it running: **[live demo](https://crud-components.zelenin.de)** — every feature has a page with the DSL behind it.
+
 The render-side reference: the four helpers, how a collection's query is built, fieldsets
 (which fields/actions appear where), actions and route resolution, and rendering several
 collections on one page. For pagination and the manual `Query` object see the bottom of
