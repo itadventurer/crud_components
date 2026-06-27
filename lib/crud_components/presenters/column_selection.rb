@@ -1,11 +1,19 @@
 module CrudComponents
   module Presenters
     # Shared "which columns are shown" logic for any presenter that exposes
-    # `available_fields` (the permitted universe) and a `param_prefix`. The
-    # picker submits `?cols[]=` (or `?cols=a,b`); this reads it, falls back to the
-    # `visible_columns:` default, and **always intersects with `available_fields`** — so a forged
-    # or stale selection can only hide or reorder columns, never reveal one the
-    # `if:` gate forbids. Mixed into both the collection and the record
+    # `available_fields` (the permitted universe) and a `param_prefix`. Two knobs
+    # drive it (set as `@picker` and `@picked_columns` by the including presenter):
+    #
+    #   @picker         false → no picking (the fieldset governs); true → the view
+    #                   participates (a collection also renders the gear).
+    #   @picked_columns :auto → read the `?cols=` submit; an Array → that exact
+    #                   selection, **without ever reading the param** (the backend
+    #                   already resolved it — from a persisted pref, or from the
+    #                   param via {CrudComponents.selected_columns}).
+    #
+    # The chosen selection is **always intersected with `available_fields`** — so a
+    # forged or stale selection can only hide or reorder columns, never reveal one
+    # the `if:` gate forbids. Mixed into both the collection and the record
     # presenter, so a column picker drives a table and a detail view alike.
     module ColumnSelection
       # The columns actually rendered: the permitted set, narrowed and ordered
@@ -31,15 +39,32 @@ module CrudComponents
       def group_heading(group_model) = group_model.model_name.human
       def group_icon(group_model) = Structure.for(group_model).icon
 
-      # The ordered column names the user selected, or nil for "all permitted".
-      # `?cols=` (a picker submit) wins over the `visible_columns:` server default.
+      # The ordered column names to show, or nil for "all permitted". Picking off
+      # → nil. A resolved Array → verbatim (no param read). `:auto` → the `?cols=`
+      # submit (nil when absent, i.e. show all until the user picks).
       def visible_columns
         return @visible_columns if defined?(@visible_columns)
 
-        @visible_columns = cols_param || @visible_override
+        @visible_columns =
+          if !@picker then nil
+          elsif @picked_columns.is_a?(Array) then @picked_columns
+          else cols_param
+          end
       end
 
       private
+
+      # Normalize the `picked_columns:` knob: `:auto`/nil → `:auto`; an Array →
+      # its symbols. Anything else is a mistake worth catching at the call site.
+      def normalize_picked_columns(value)
+        case value
+        when :auto, nil then :auto
+        when Array then value.map(&:to_sym)
+        else
+          raise ArgumentError,
+                "picked_columns: expects :auto or an Array of column names, got #{value.inspect}"
+        end
+      end
 
       def select_visible(list)
         names = visible_columns
