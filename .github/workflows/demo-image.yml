@@ -5,21 +5,18 @@ name: Demo image
 # current, and on demand. No secrets needed — auth is the workflow's GITHUB_TOKEN.
 #
 # Deploy it with deploy/k8s.yaml (set `image:` to the tag below), or run locally:
-#   docker run --rm -p 8080:8080 ghcr.io/itadventurer/crud-components-demo:latest
+#   docker run --rm -p 8080:8080 ghcr.io/itadventurer/crud-components/demo:latest
 on:
   push:
     branches: [main]
   workflow_dispatch:
-
-env:
-  IMAGE: ghcr.io/${{ github.repository_owner }}/crud-components-demo
 
 jobs:
   build-push:
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      packages: write   # push to ghcr.io
+      packages: write # push to ghcr.io
     steps:
       - uses: actions/checkout@v4
 
@@ -32,21 +29,27 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Tags & labels
-        id: meta
-        uses: docker/metadata-action@v5
-        with:
-          images: ${{ env.IMAGE }}
-          tags: |
-            type=raw,value=latest
-            type=sha
-
       - name: Build and push
         uses: docker/build-push-action@v6
         with:
           context: .
           push: true
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
+          tags: |
+            ghcr.io/${{ github.repository }}/demo:${{ github.sha }}
+            ghcr.io/${{ github.repository }}/demo:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+      ### Restart deployments
+      - name: Install kubectl
+        uses: azure/setup-kubectl@v3
+
+      - name: Set Kubernetes Context
+        run: |
+          mkdir -p ${HOME}/.kube
+          echo "${{ secrets.REDEPLOYER_KUBECONFIG }}" > ${HOME}/.kube/config
+          chmod 600 ${HOME}/.kube/config
+
+      - name: Restart Deployment
+        run: |
+          kubectl rollout restart deployment/crud-components-zelenin-de -n crud-components-zelenin-de
