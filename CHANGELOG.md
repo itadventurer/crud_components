@@ -8,6 +8,40 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- **Column picker groups columns by source model** (Pipedrive-style): the collection's own
+  columns first, then each associated model — `publisher`, `publisher.name` and
+  `publisher.founded_on` cluster under "Publisher" (with its model icon), `authors.*` under
+  "Author". Each row also tags its model on the right.
+- **The `crud-columns` controller collapses `?cols[]=a&cols[]=b` into `?cols=a,b`** on submit
+  (a tidier, shareable URL). The server reads both forms — `selected_columns` and the picker
+  accept the comma-joined string too. No-JS keeps the `cols[]` array.
+
+### Changed
+
+- **One column-picker knob: `visible_columns:`** replaces `column_picker:` + `visible:` on
+  `crud_collection`/`crud_record` (and `crud_column_picker`'s `visible:`). `true` renders the
+  gear and applies `?cols=`; an `Array` is a server-side default a live `?cols=` overrides;
+  `nil` shows all columns with no gear. **Breaking:** rename `column_picker: true` →
+  `visible_columns: true` and `visible: cols` → `visible_columns: cols`.
+
+- **Path columns delegate to the target model's field.** A single-valued path
+  (`publisher.founded_on`, `publisher.price`, `publisher.status`) now renders, filters and
+  sorts like the target's own column — a date-range filter, a unit/digits number, an enum
+  select with humanized badges — instead of always a text contains-match. Precedence is
+  **override > target field > default**: `as:` / a `render`/`filter`/`sort` facet / the path's
+  own options win, then the target field, then the inferred default. Collection paths
+  (`authors.email`) keep the joined-list + contains-match behaviour.
+- **Path columns to a label field link to the record.** When a single-valued path's leaf is
+  the target's label field (`publisher.name`), the cell renders the model's icon + a link to
+  that record's show page (opt out with `as:`/a render facet).
+
+### Changed
+
+- The name-gated email/url renderer (a column named `email`/`url`/… auto-links) moved from
+  the standalone `CrudComponents::SemanticRenderer` module onto `StringField#smart_renderer`.
+  Behaviour is unchanged; the module is gone. (Internal — only affects code that referenced
+  `SemanticRenderer` directly.)
+
 - **Per-model icons** — declare `icon 'building'` in a model's `crud_structure`, or let the
   gem guess one from the model name (`config.model_icons`, e.g. `User → person`,
   `Publisher → building`). Reach it with `crud_model_icon(record_or_class)` (the `<i>` tag,

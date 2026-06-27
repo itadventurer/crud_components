@@ -31,3 +31,5 @@
   text-transform: uppercase; letter-spacing: .03em; color: var(--bs-secondary);
 }
 .crud-column-picker-group:first-child { margin-top: 0; }
+/* the model tag at the right of each picker row (Pipedrive-style) */
+.crud-column-picker-model { margin-left: auto; font-size: .7rem; white-space: nowrap; }

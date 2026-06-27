@@ -13,6 +13,10 @@ module CrudComponents
         reflection.klass
       end
 
+      # Picker grouping: a has_many/habtm column anchors its target's group, so
+      # `authors`, `authors.name` and `authors.email` all sit under "Author".
+      def group_model = target
+
       # Load the association, nesting each target's identity_preloads (+ this
       # column's `preload:`) so rendering the list's labels never N+1s.
       def eager_load
