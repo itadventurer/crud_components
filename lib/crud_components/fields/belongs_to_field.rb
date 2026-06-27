@@ -55,7 +55,12 @@ module CrudComponents
       # Load the association, nesting the target's identity_preloads (its label's
       # own association deps) plus any per-column `preload:` so the target's
       # label never N+1s. e.g. { order: %i[customer training] }.
+      # A polymorphic belongs_to has no single target class, so we can't nest its
+      # label's preloads — just preload the association itself (Rails groups it by
+      # type); the cell still renders each record's label and links it at runtime.
       def eager_load
+        return [name] if reflection.polymorphic?
+
         nested = (target_structure.identity_preloads + declared_preloads).uniq
         [nested.empty? ? name : { name => nested }]
       end

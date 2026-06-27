@@ -15,6 +15,30 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - **The `crud-columns` controller collapses `?cols[]=a&cols[]=b` into `?cols=a,b`** on submit
   (a tidier, shareable URL). The server reads both forms — `selected_columns` and the picker
   accept the comma-joined string too. No-JS keeps the `cols[]` array.
+- **Per-model icons** — declare `icon 'building'` in a model's `crud_structure`, or let the
+  gem guess one from the model name (`config.model_icons`, e.g. `User → person`,
+  `Publisher → building`). Reach it with `crud_model_icon(record_or_class)` (the `<i>` tag,
+  paired with `config.css.icon_prefix`) or `crud_model_icon_name(…)` (the bare name); the gem
+  uses it to badge column-picker groups, association links and path-column cells. An unmapped,
+  undeclared model shows no icon unless you set `config.model_fallback_icon`. See
+  `docs/fields.md#identity-label-identify_by-search_in-icon`.
+- **`CrudComponents.where_like(relation, spec, value)`** — the safe escaped-ILIKE builder
+  (`filter like:` / `search_in`) as a module function, for relations you build yourself (e.g. a
+  subquery on another model in a `DynamicColumn` `filter:` block). The scope handed to a
+  filter/search block already carries `#where_like`; this is for the others, so you never
+  hand-write `where("col LIKE ?", "%#{value}%")`. See `docs/fields.md`.
+- **Custom column headers + column actions** — a column can carry a `header:` (an HTML-safe
+  String or a view-context block, e.g. `-> { link_to mail.name, mail }`) and `header_actions:`
+  (a list of `CrudComponents::Action`s rendered in the `<th>`). A header action's `on:` decides
+  how it acts: **`on: :selection`** acts on the **ticked rows** × that column's object — it
+  submits the shared select-form (so `selected[]` rides along, resolved with
+  `CrudComponents.selected`) and **makes the table selectable automatically**; `on: :collection`
+  is a plain selection-independent button (`:post` → a CSRF-safe `button_to` form). Available on a
+  `DynamicColumn` *and* on a declared `attribute :x, header_actions: […]`. Lets a column that *is*
+  a domain object (a mail, a resource) own its header link and bulk controls, so a participants ×
+  mails / × resources matrix lives entirely in `crud_collection`. Works in the grouped and
+  non-grouped layouts and with the column picker. See
+  `docs/fields.md#custom-headers-and-column-actions`.
 
 ### Fixed
 
@@ -24,6 +48,9 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   stops rendering a stale full `<select>`.
 - **Path columns honor the reserved-param guard** (`q`/`sort`/`dir`/`page`/`per`/`cols`) in
   `filterable?`/`sortable?`, matching every other field type.
+- **Polymorphic `belongs_to` columns render** instead of raising "Polymorphic associations do
+  not support computing the class". Eager-loading a polymorphic association no longer tries to
+  resolve a single target class; the cell renders each record's label and links it at runtime.
 
 ### Changed
 
@@ -45,47 +72,14 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - **Path columns to a label field link to the record.** When a single-valued path's leaf is
   the target's label field (`publisher.name`), the cell renders the model's icon + a link to
   that record's show page (opt out with `as:`/a render facet).
-
-### Changed
-
-- The name-gated email/url renderer (a column named `email`/`url`/… auto-links) moved from
-  the standalone `CrudComponents::SemanticRenderer` module onto `StringField#smart_renderer`.
-  Behaviour is unchanged; the module is gone. (Internal — only affects code that referenced
-  `SemanticRenderer` directly.)
-
-- **Per-model icons** — declare `icon 'building'` in a model's `crud_structure`, or let the
-  gem guess one from the model name (`config.model_icons`, e.g. `User → person`,
-  `Publisher → building`). Reach it with `crud_model_icon(record_or_class)` (the `<i>` tag,
-  paired with `config.css.icon_prefix`) or `crud_model_icon_name(…)` (the bare name); the gem
-  uses it to badge column-picker groups, association links and path-column cells. An unmapped,
-  undeclared model shows no icon unless you set `config.model_fallback_icon`. See
-  `docs/fields.md#identity-label-identify_by-search_in-icon`.
-
-- **`CrudComponents.where_like(relation, spec, value)`** — the safe escaped-ILIKE builder
-  (`filter like:` / `search_in`) as a module function, for relations you build yourself (e.g. a
-  subquery on another model in a `DynamicColumn` `filter:` block). The scope handed to a
-  filter/search block already carries `#where_like`; this is for the others, so you never
-  hand-write `where("col LIKE ?", "%#{value}%")`. See `docs/fields.md`.
-
-- **Custom column headers + column actions** — a column can carry a `header:` (an HTML-safe
-  String or a view-context block, e.g. `-> { link_to mail.name, mail }`) and `header_actions:`
-  (a list of `CrudComponents::Action`s rendered in the `<th>`). A header action's `on:` decides
-  how it acts: **`on: :selection`** acts on the **ticked rows** × that column's object — it
-  submits the shared select-form (so `selected[]` rides along, resolved with
-  `CrudComponents.selected`) and **makes the table selectable automatically**; `on: :collection`
-  is a plain selection-independent button (`:post` → a CSRF-safe `button_to` form). Available on a
-  `DynamicColumn` *and* on a declared `attribute :x, header_actions: […]`. Lets a column that *is*
-  a domain object (a mail, a resource) own its header link and bulk controls, so a participants ×
-  mails / × resources matrix lives entirely in `crud_collection`. Works in the grouped and
-  non-grouped layouts and with the column picker. See
-  `docs/fields.md#custom-headers-and-column-actions`.
-
-### Changed
-
 - `render:` cell blocks now receive the field **value** as a second argument
   (`->(record, value) { … }`), so a block on a `preload:`-ed dynamic column can format its
   loaded value without an `as:` partial. Backward-compatible — existing one-arg blocks ignore
   the extra argument.
+- The name-gated email/url renderer (a column named `email`/`url`/… auto-links) moved from
+  the standalone `CrudComponents::SemanticRenderer` module onto `StringField#smart_renderer`.
+  Behaviour is unchanged; the module is gone. (Internal — only affects code that referenced
+  `SemanticRenderer` directly.)
 
 ## [0.2.0]
 

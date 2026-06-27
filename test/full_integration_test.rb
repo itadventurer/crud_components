@@ -16,6 +16,43 @@ class FullIntegrationTest < ActionDispatch::IntegrationTest
     @review = Review.create!(book: @hobbit, rating: 4, reviewer_name: 'Ada', body: 'A classic.')
   end
 
+  # ── living-documentation landing page ─────────────────────────────────────
+  test 'the home page is a feature index linking to the demos' do
+    get root_path
+    assert_response :success
+    assert_select 'h1', text: /living documentation/i
+    # the feature grid links to the real demo routes
+    assert_select "a[href=?]", columns_path
+    assert_select "a[href=?]", groups_path
+    assert_select "a[href=?]", authors_path
+    assert_select "a[href=?]", custom_fields_path
+    assert_select "a[href=?]", renderers_path
+    assert_select "a[href=?]", documents_path
+  end
+
+  # ── soft-dependency renderers + manual actions ────────────────────────────
+  test 'the renderers page renders markdown and a JSON cell' do
+    @hobbit.update!(blurb: "**bold** blurb", metadata: { isbn: '978-1' })
+    get renderers_path
+    assert_response :success
+    assert_select 'strong', text: 'bold'          # markdown → <strong>
+    assert_select 'dd', text: /isbn/              # JSON cell shows the keys
+  end
+
+  # ── STI, asciidoc, polymorphic ────────────────────────────────────────────
+  test 'the documents page shows STI rows, an asciidoc body and polymorphic comments' do
+    doc = Document.create!(title: 'Guide', body: "== Heading\n\nbody text")
+    Manual.create!(title: 'Shipping', body: "== Ship\n\npack flat")
+    Comment.create!(commentable: @hobbit, body: 'on a book')
+    Comment.create!(commentable: doc, body: 'on a document')
+
+    get documents_path
+    assert_response :success
+    assert_select 'td', text: /Manual/            # STI type column
+    assert_select 'h2', text: /Ship/              # @manual (first Manual) asciidoc body → <h2>
+    assert_select 'td', text: /on a document/     # polymorphic comment body
+  end
+
   # ── zero config ───────────────────────────────────────────────────────────
   test 'a zero-config model renders a usable table' do
     get authors_path

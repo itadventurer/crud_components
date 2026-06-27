@@ -188,11 +188,12 @@ same markup in place via Stimulus controllers attached with `data-controller`. T
 lives in the [class map](#styling), not in template variants. A controller that isn't
 loaded simply leaves the baseline as-is.
 
-The gem ships **two** optional controllers, copied in by the install generator (you
-register them with Stimulus; the gem depends on neither):
+The gem ships **four** optional controllers, copied in by the install generator (you
+register them with Stimulus; the gem depends on none):
 
 ```sh
-bin/rails generate crud_components:install   # initializer + crud-filter + crud-multiselect
+bin/rails generate crud_components:install
+# initializer + crud-filter + crud-multiselect + crud-columns + crud-select
 ```
 
 - **`crud-filter`** strips empty params on submit (clean URLs) and auto-submits selects in
@@ -202,8 +203,14 @@ bin/rails generate crud_components:install   # initializer + crud-filter + crud-
   + an "add" dropdown. The select stays the hidden source of truth, so the form submits
   identically with or without JS. Good up to a few hundred options; for thousands, render
   an autocomplete against your own endpoint instead (see [forms.md](forms.md)).
+- **`crud-columns`** lets the user drag the column-picker rows to reorder, and collapses
+  the submitted `?cols[]=a&cols[]=b` into a tidier `?cols=a,b`. Without it the picker still
+  works (tick + Apply is a plain GET); you just lose drag-reorder and the prettier URL.
+- **`crud-select`** adds a "select all visible" / per-group master checkbox and a live
+  "N selected" count to selectable tables (bulk/selection actions). Without it the row
+  checkboxes still submit; you just tick them individually.
 
-Both follow the same recipe, which is the whole pattern for any enhancement (a belongs_to
+Each follows the same recipe, which is the whole pattern for any enhancement (a belongs_to
 text input into an autocomplete, a date field into a range picker, …):
 
 1. The gem's partial renders the accessible baseline and, where useful, carries a

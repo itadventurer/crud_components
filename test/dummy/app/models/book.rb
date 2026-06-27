@@ -3,6 +3,7 @@ class Book < ApplicationRecord
 
   belongs_to :publisher, optional: true
   has_many :reviews, dependent: :destroy
+  has_many :comments, as: :commentable   # polymorphic — the comments demo links back here
   has_and_belongs_to_many :authors
   has_one_attached :cover
   has_one_attached :manual   # a PDF — exercises the previewable / icon-fallback display
@@ -26,6 +27,8 @@ class Book < ApplicationRecord
     search_in :title, :subtitle, :publisher, :authors   # :authors delegates to Author's spec
 
     attribute :price, as: :number, unit: '€', digits: 2
+    attribute :blurb, as: :markdown      # soft-dependency renderer (commonmarker/redcarpet/kramdown)
+    attribute :metadata, as: :json       # pretty-printed + syntax-highlighted (rouge) JSON cell
     attributes :purchase_price, :shop_margin, if: :manage   # visible only to managers
     attribute :slug, editable: false                        # shown in forms, but read-only
     attribute :active, editable: :manage                    # everyone sees it; only managers edit it
@@ -53,6 +56,8 @@ class Book < ApplicationRecord
                           shop_margin pages published_on publisher reviews active manual created_at],
              filters: %i[blurb]
     fieldset :compact, %i[title price]
+    # Soft-dependency renderers side by side: markdown prose, a highlighted JSON cell.
+    fieldset :renderers, %i[title blurb metadata]
     # Path columns reach through associations: `publisher.name` (the target's
     # label → a link to the publisher), `publisher.founded_on` (a single
     # belongs_to → a date), `authors.name` / `authors.email` (a habtm → a list).

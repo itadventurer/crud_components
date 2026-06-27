@@ -1,0 +1,42 @@
+<h1 class="mb-3">STI, asciidoc &amp; polymorphic associations</h1>
+
+<%= docs_panel(
+      intro: "<code>Document</code> and <code>Manual</code> share one table via <strong>single-table " \
+             "inheritance</strong>; the derived <code>type</code> column shows which is which, and " \
+             "<code>Manual</code> inherits <code>Document</code>'s <code>crud_structure</code> (the gem walks the " \
+             "superclass). The <code>body</code> renders with <code>as: :asciidoc</code>. <code>Comment</code> has " \
+             "a <strong>polymorphic</strong> <code>belongs_to :commentable</code> — the cell links back to whichever " \
+             "model (a Book or a Document) owns the comment.",
+      docs: { 'Fields & rendering' => 'docs/fields.md', 'Views' => 'docs/views.md' }) do %>
+<%= code_file('app/models/document.rb') do %>
+class Document < ApplicationRecord            # Manual < Document (STI)
+  include CrudComponents::Model
+  crud_structure do
+    attribute :body, as: :asciidoc
+    fieldset :index, %i[type title created_at]   # `type` = STI discriminator
+    fieldset :show,  %i[type title body created_at]
+  end
+end
+<% end %>
+<%= code_file('app/models/comment.rb') do %>
+belongs_to :commentable, polymorphic: true
+fieldset :index, %i[commentable body created_at]   # commentable → nil-safe link to Book or Document
+<% end %>
+<% end %>
+
+<h2 class="h5">Documents &amp; Manuals <span class="text-muted">(STI — see the <code>type</code> column)</span></h2>
+<div class="card mb-4"><div class="card-body">
+  <%= crud_collection @documents, query: :static %>
+</div></div>
+
+<% if @manual %>
+  <h2 class="h5">A manual, <code>body</code> rendered as asciidoc</h2>
+  <div class="card mb-4"><div class="card-body">
+    <%= crud_record @manual, fieldset: :show %>
+  </div></div>
+<% end %>
+
+<h2 class="h5">Comments <span class="text-muted">(polymorphic <code>commentable</code>)</span></h2>
+<div class="card"><div class="card-body">
+  <%= crud_collection @comments, query: :static %>
+</div></div>

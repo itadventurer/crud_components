@@ -237,7 +237,7 @@ end
 private
 
 def book_params
-  params.require(:book).permit(*CrudComponents.permitted_attributes(Book, action: action_name.to_sym, ability: self))
+  params.require(:book).permit(*CrudComponents.permitted_attributes(Book, action: action_name.to_sym, ability: current_ability))
 end
 ```
 

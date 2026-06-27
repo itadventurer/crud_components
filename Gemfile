@@ -10,6 +10,11 @@ group :development, :test do
   gem 'image_processing' # playground only: lets the attachment renderer preview PDFs (with poppler)
   gem 'ruby-vips'        # playground only: the libvips backend image_processing uses to make previews
   gem 'kaminari' # playground only: the gem ships no pager; the demo brings one
+  # playground only: soft-dependency renderers (as: :markdown / :asciidoc / :json highlight).
+  # crud_components feature-detects these — it never requires them itself.
+  gem 'commonmarker' # as: :markdown
+  gem 'asciidoctor'  # as: :asciidoc
+  gem 'rouge'        # :json cell syntax highlighting
   gem 'minitest'
   gem 'puma'
   gem 'rails', rails_version ? "~> #{rails_version}.0" : '>= 7.1'
