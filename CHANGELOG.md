@@ -16,6 +16,15 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   (a tidier, shareable URL). The server reads both forms — `selected_columns` and the picker
   accept the comma-joined string too. No-JS keeps the `cols[]` array.
 
+### Fixed
+
+- **`belongs_to` filter control no longer freezes at its boot-time row count.** The
+  select-vs-text decision (`config.select_limit`) is recomputed per render instead of
+  memoized on the process-cached field, so a table that grows past the limit after boot
+  stops rendering a stale full `<select>`.
+- **Path columns honor the reserved-param guard** (`q`/`sort`/`dir`/`page`/`per`/`cols`) in
+  `filterable?`/`sortable?`, matching every other field type.
+
 ### Changed
 
 - **Symbolic `query:` mode** on `crud_collection`: `:auto` (default, build from params),
