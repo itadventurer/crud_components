@@ -268,7 +268,7 @@ controls strip above the table.
 A field name with a **dot** reaches through associations: `publisher.name`,
 `publisher.founded_on`, `authors.email`. The leading segments are associations on the
 model; the last is an attribute (or method) on the target. Use them anywhere a field name
-goes — a fieldset, `visible_columns:`, `?cols=` — so they show up in the [column picker](views.md#column-picker)
+goes — a fieldset, `picked_columns:`, `?cols=` — so they show up in the [column picker](views.md#column-picker)
 like any other column. No block needed; it's the declarative shortcut for what you'd
 otherwise write as a computed field with a `render` + `filter` + `sort`:
 

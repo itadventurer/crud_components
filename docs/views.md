@@ -10,9 +10,9 @@ this doc.
 ![A collection table derived from the schema — cover thumbnails, genre badge, currency, publisher links and a boolean icon, with header search, an inline filter row, sortable columns, row actions and a standalone filter sidebar](screenshots/table.png)
 
 ```ruby
-crud_collection(records, fieldset: nil, layout: :table, query: nil,
-                param_prefix: nil, actions: true, group_by: nil)
-crud_record(record, fieldset: nil, actions: true, layout: :record)
+crud_collection(records, fieldset: nil, layout: :table, query: :auto, param_prefix: nil,
+                actions: true, group_by: nil, extra_columns: nil, picker: false, picked_columns: :auto)
+crud_record(record, fieldset: nil, actions: true, layout: :record, picker: false, picked_columns: :auto)
 crud_filter(model, fieldset: nil, query: nil, param_prefix: nil, layout: :filter)
 crud_form(record, fieldset: nil, action: nil, url: nil, method: nil, layout: :form)   # see forms.md
 crud_actions(record_or_model, fieldset: nil)   # a record → row actions; a model class → collection actions
@@ -42,7 +42,7 @@ a filter form, not a set of records.)
 
 > **One auto collection per page.** Auto mode reads the shared, flat request params, so
 > two auto collections would both answer to `?sort=…` / `?q=`. Use `param_prefix:` or
-> `query: false` for the second — see [Several collections on one page](#several-collections-on-one-page).
+> `query: :static` for the second — see [Several collections on one page](#several-collections-on-one-page).
 
 ## Fieldsets
 
@@ -108,15 +108,16 @@ arrangement (`layout:`) are orthogonal: the same fieldset feeds any layout. (`cr
 ## Column picker
 
 A fieldset is the app's default set of columns. A column picker lets each user choose
-which of those columns they want to see, and in what order. It's one knob —
-**`visible_columns:`**:
+which of those columns they want to see, and in what order. It's **two knobs**: `picker:`
+turns the gear on, `picked_columns:` decides what it's seeded with.
 
 ```erb
-<%= crud_collection @books, fieldset: :index, visible_columns: true %>
+<%= crud_collection @books, fieldset: :index, picker: true %>
 ```
 
-`visible_columns: true` renders a **gear** in the header row's actions cell and applies the
-`?cols=` selection it submits. It opens a checklist of every column the user may see —
+`picker: true` renders a **gear** in the header row's actions cell. With the default
+`picked_columns: :auto` the gem reads the `?cols=` selection the gear submits — ephemeral,
+nothing stored. It opens a checklist of every column the user may see —
 declared columns, [dynamic columns](fields.md#dynamic-columns) and
 [path columns](fields.md#path-columns) (`authors.email` & co.) alike — each a checkbox,
 draggable to reorder.
@@ -136,24 +137,29 @@ opens and closes without JS; ticking columns is plain HTML, and Apply/Reset are 
 The optional `crud-columns` Stimulus controller adds drag-to-reorder and collapses the
 `?cols[]=a&cols[]=b` array into a tidier `?cols=a,b` (the server reads both forms).
 
-### A server-side default (a saved preference)
+### A persisted selection
 
-Pass an **Array** instead of `true` and it becomes the default selection — a live `?cols=`
-pick still wins over it. So the backend decides: hand it a persisted preference, or pass
-`true` and let the param drive.
+For an ephemeral picker you're done — leave `picked_columns: :auto` and the gem reads the
+param. To make a choice **stick across visits**, your controller resolves it (from the
+param, from storage) and passes the result as an **Array**. The gem then shows exactly that
+and **never re-reads `?cols=`** — one place owns the selection, no split-brain.
 
 ```erb
-<%= crud_collection @books, visible_columns: current_user.book_columns || true %>
+<%# nil → :auto until the first pick is stored, then an Array %>
+<%= crud_collection @books, picker: true, picked_columns: current_user.book_columns %>
 ```
 
-| `visible_columns:` | Picker gear | Shows |
-| --- | --- | --- |
-| `true` | yes | `?cols=` if present, else all columns |
-| `%i[…]` (Array) | yes | `?cols=` if present, else this default |
-| `nil` (default) | no | all columns (a `?cols=` from a picker elsewhere still narrows) |
+The gear stays put either way — that's why `picker:` is its own knob: an ephemeral `:auto`
+selection and a persisted Array both keep the picker on the page.
+
+| `picker:` | `picked_columns:` | Gear | Shows |
+| --- | --- | --- | --- |
+| `false` (default) | — | no | the fieldset's columns (a `?cols=` from elsewhere is ignored) |
+| `true` | `:auto` (default) | yes | `?cols=` if present, else all columns |
+| `true` | `%i[…]` (Array) | yes | exactly this selection (the param is **not** read) |
 
 The chosen names are always **intersected with the permitted set**: a forged or stale
-`?cols=` (or a `visible_columns:` Array naming a column the user lost access to) can only
+`?cols=` (or a `picked_columns:` Array naming a column the user lost access to) can only
 hide or reorder columns, never reveal one the `if:` gate forbids. See [security](security.md).
 
 ### Reuse anywhere with `crud_column_picker`
@@ -161,11 +167,12 @@ hide or reorder columns, never reveal one the `if:` gate forbids. See [security]
 ![A record detail view (a definition list) with the column-picker gear open above it, narrowing which fields the dl shows](screenshots/record-picker.png)
 
 The gear is also a standalone helper, so you can place it outside a table — e.g. above a
-`crud_record` detail view, which reads the same `?cols=` via `visible_columns:`:
+`crud_record` detail view. A detail view has no inline gear of its own, so set `picker: true`
+on it to honor the standalone picker:
 
 ```erb
-<%= crud_column_picker @book, fieldset: :show %>      <%# the gear, submits ?cols= to this page %>
-<%= crud_record @book, visible_columns: @visible %>   <%# narrows/orders the dl to match %>
+<%= crud_column_picker @book, fieldset: :show %>             <%# the gear, submits ?cols= to this page %>
+<%= crud_record @book, picker: true, picked_columns: @visible %>  <%# narrows/orders the dl to match %>
 ```
 
 `crud_column_picker` takes a relation, a model class or a record. Match its `param_prefix:`
@@ -174,7 +181,7 @@ to the consuming `crud_collection`/`crud_record` so they read the same param.
 **Persistence is yours, and optional.** The gem reads the param; it doesn't store it. Use
 `CrudComponents.selected_columns(params)` to pull the ordered selection out of a request
 (it honors `param_prefix:` and accepts both the `cols[]` and `cols=a,b` forms), save it
-wherever you keep per-user state, and pass it back via `visible_columns:`. The block form
+wherever you keep per-user state, and pass it back via `picked_columns:`. The block form
 runs only when the picker was actually submitted:
 
 ```ruby
@@ -182,7 +189,7 @@ def index
   CrudComponents.selected_columns(params) { |cols| current_user.update!(book_columns: cols) }
   @books = Book.all
 end
-# view: crud_collection @books, visible_columns: current_user.book_columns || true
+# view: crud_collection @books, picker: true, picked_columns: current_user.book_columns
 ```
 
 The `/columns` page in `test/dummy` is a runnable example.
@@ -373,7 +380,7 @@ read it in the controller (`.page(params[:books_page])`).
 
 ![Two independent collections (Books and Reviews) side by side on one page, each with its own search, filters and sort, isolated by param_prefix](screenshots/dashboard.png)
 
-- **`query: false`** — a static collection (no filter row, no sort links, params ignored).
+- **`query: :static`** — a static collection (no filter row, no sort links, params ignored).
   Usually right for a secondary table ("books by this publisher", embedded on the
   publisher page).
 - **`param_prefix:`** — a flat param namespace of its own:

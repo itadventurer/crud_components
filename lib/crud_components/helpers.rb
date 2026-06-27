@@ -12,9 +12,10 @@ module CrudComponents
     #   `:index` (or every column when the model declares nothing).
     # @param layout [Symbol] the layout partial under `crud_components/layouts/`
     #   — `:table` ships; add your own (e.g. `:cards`) and pass its name.
-    # @param query [CrudComponents::Query, false, nil] query mode: nil = auto
-    #   (reads request params), a {Query} = manual (records already filtered),
-    #   false = static (no filter row / sort links). See {Presenters::Collection}.
+    # @param query [Symbol, CrudComponents::Query] query mode: `:auto` (default)
+    #   reads the request params and filters/sorts; `:static` renders no filter row
+    #   or sort links (params ignored); a {Query} is manual mode (records already
+    #   filtered). See {Presenters::Collection}.
     # @param param_prefix [Symbol, nil] namespaces this collection's params so two
     #   auto collections can share one page.
     # @param actions [Boolean] render the actions column + toolbar (false to place
@@ -26,20 +27,22 @@ module CrudComponents
     #   a separate store, JSONB, an API). Appended after the declared columns and
     #   subject to the same `if:` permission gate; filter/sort only when the column
     #   supplies those facets.
-    # @param visible_columns [Array<Symbol>, true, nil] the one knob for the column
-    #   picker: `true` renders the picker gear and applies the `?cols=` selection;
-    #   an `Array` does the same with that array as the server-side default (a
-    #   persisted preference) — a live `?cols=` pick always wins over it. `nil`
-    #   (default) shows every column with no gear. Resolve persisted-vs-param in
-    #   your controller and pass the result, or pass `true` and let the gem read
-    #   the param. See {CrudComponents.selected_columns}.
+    # @param picker [Boolean] render the column-picker gear in the header row
+    #   (default false). The gear stays put regardless of `picked_columns:`, so it
+    #   survives across ephemeral and persisted selections alike.
+    # @param picked_columns [Symbol, Array<Symbol>] which columns to show when the
+    #   picker is on: `:auto` (default) reads the `?cols=` submit; an `Array` shows
+    #   exactly those columns and **never reads the param** — the backend resolved
+    #   it (from a persisted preference, or from the param via
+    #   {CrudComponents.selected_columns}). A forged/stale name can only hide or
+    #   reorder, never reveal a column the `if:` gate forbids.
     # @return [ActiveSupport::SafeBuffer] the rendered HTML.
-    def crud_collection(records, fieldset: nil, layout: :table, query: nil, param_prefix: nil,
-                        actions: true, group_by: nil, extra_columns: nil, visible_columns: nil)
+    def crud_collection(records, fieldset: nil, layout: :table, query: :auto, param_prefix: nil,
+                        actions: true, group_by: nil, extra_columns: nil, picker: false, picked_columns: :auto)
       presenter = Presenters::Collection.new(view: self, records: records, fieldset: fieldset,
                                              query: query, layout: layout, param_prefix: param_prefix,
-                                             actions: actions, group_by: group_by,
-                                             extra_columns: extra_columns, visible_columns: visible_columns)
+                                             actions: actions, group_by: group_by, extra_columns: extra_columns,
+                                             picker: picker, picked_columns: picked_columns)
       render "crud_components/layouts/#{presenter.layout}", collection: presenter
     end
 
@@ -52,20 +55,22 @@ module CrudComponents
     # @param actions [Boolean] render the row actions (false to place them with
     #   {#crud_actions}).
     # @param layout [Symbol] the partial under `crud_components/` (`:record` ships).
-    # @param visible_columns [Array<Symbol>, true, nil] narrow/order the shown fields
-    #   (e.g. from a column picker placed on the page); a live `?cols=` param wins
-    #   over an `Array` default. A detail view has no inline gear, so `true` just
-    #   means "apply `?cols=`".
+    # @param picker [Boolean] honor a column picker on this page (default false). A
+    #   detail view has no inline gear of its own — place a standalone
+    #   {#crud_column_picker} and set this so the dl narrows to match.
+    # @param picked_columns [Symbol, Array<Symbol>] which fields to show when the
+    #   picker is on: `:auto` (default) reads `?cols=`; an `Array` shows exactly
+    #   those (no param read). Same semantics as {#crud_collection}.
     # @param param_prefix [Symbol, nil] namespaces the `?cols=` param this view reads
     #   (match it to the picker's `param_prefix:`).
     # @param extra_columns [Array<CrudComponents::DynamicColumn>, nil] user-defined
     #   columns whose data lives outside the model's table, shown as extra rows
     #   (same as {#crud_collection}'s `extra_columns:`, for a detail view).
     # @return [ActiveSupport::SafeBuffer] the rendered HTML.
-    def crud_record(record, fieldset: nil, actions: true, layout: :record, visible_columns: nil, param_prefix: nil,
-                    extra_columns: nil)
+    def crud_record(record, fieldset: nil, actions: true, layout: :record, picker: false, picked_columns: :auto,
+                    param_prefix: nil, extra_columns: nil)
       presenter = Presenters::Record.new(view: self, record: record, fieldset: fieldset, actions: actions,
-                                         visible_columns: visible_columns, param_prefix: param_prefix,
+                                         picker: picker, picked_columns: picked_columns, param_prefix: param_prefix,
                                          extra_columns: extra_columns)
       render "crud_components/#{layout}", record_presenter: presenter
     end
@@ -73,26 +78,28 @@ module CrudComponents
     # A standalone column picker — the same gear-and-checklist the table renders in
     # its header, but placed wherever you like (e.g. above a `crud_record` detail
     # view). It submits `?cols[]=` to `url` (the current page by default), so a
-    # `crud_collection`/`crud_record` on the target page picks it up via `visible:`
-    # or the param directly. Persist the choice with {CrudComponents.selected_columns}.
+    # `crud_collection`/`crud_record` on the target page picks it up via
+    # `picked_columns:` or the param directly. Persist the choice with
+    # {CrudComponents.selected_columns}.
     #
     # @param subject [ActiveRecord::Relation, Class, ActiveRecord::Base] anything the
     #   columns belong to — a scope, the model class, or a record.
     # @param fieldset [Symbol, nil] which fieldset's fields to offer (e.g. `:show`).
     # @param extra_columns [Array<CrudComponents::DynamicColumn>, nil] dynamic columns
     #   to include in the choices.
-    # @param visible_columns [Array<Symbol>, nil] the current selection (pre-ticks the boxes);
-    #   a live `?cols=` param wins over it.
+    # @param picked_columns [Symbol, Array<Symbol>] which boxes are pre-ticked:
+    #   `:auto` (default) reflects the current `?cols=`; an `Array` pre-ticks that
+    #   exact selection (no param read).
     # @param url [String, nil] where the picker form submits; defaults to the current path.
     # @param param_prefix [Symbol, nil] namespaces the `?cols=` param.
     # @return [ActiveSupport::SafeBuffer] the rendered HTML.
-    def crud_column_picker(subject, fieldset: nil, extra_columns: nil, visible_columns: nil, url: nil, param_prefix: nil)
+    def crud_column_picker(subject, fieldset: nil, extra_columns: nil, picked_columns: :auto, url: nil, param_prefix: nil)
       relation = if subject.respond_to?(:klass) then subject
                  elsif subject.is_a?(Class) then subject.all
                  else subject.class.all
                  end
-      presenter = Presenters::Collection.new(view: self, records: relation, fieldset: fieldset, query: nil,
-                                             extra_columns: extra_columns, visible_columns: visible_columns || true,
+      presenter = Presenters::Collection.new(view: self, records: relation, fieldset: fieldset, query: :static,
+                                             extra_columns: extra_columns, picker: true, picked_columns: picked_columns,
                                              param_prefix: param_prefix, actions: false)
       render 'crud_components/column_picker', collection: presenter, url: (url || request.path)
     end

@@ -2,17 +2,21 @@ module CrudComponents
   module Presenters
     # The single `collection` local every layout partial receives.
     #
-    # query: nil    → auto mode (build from request params and apply)
-    # query: Query  → manual mode (records arrive already filtered)
-    # query: false  → static (no filter row, no sort links)
+    # query: :auto (default) → build a Query from the request params and apply it
+    # query: :static         → no filter row, no sort links, params ignored
+    # query: <Query>         → manual mode (records arrive already filtered)
+    #
+    # picker:         false (default) → no column picker; true → render the gear
+    # picked_columns: :auto (default) → read ?cols=; an Array → that exact
+    #                 selection (no param read — the backend resolved it)
     class Collection < Base
       include ColumnSelection
 
       attr_reader :model, :structure, :fieldset, :query, :layout, :param_prefix, :owner
 
-      def initialize(view:, records:, fieldset: nil, query: nil, layout: :table,
+      def initialize(view:, records:, fieldset: nil, query: :auto, layout: :table,
                      param_prefix: nil, actions: true, group_by: nil,
-                     extra_columns: nil, visible_columns: nil)
+                     extra_columns: nil, picker: false, picked_columns: :auto)
         super(view: view)
         unless records.respond_to?(:klass)
           raise ArgumentError,
@@ -27,29 +31,32 @@ module CrudComponents
         @layout = layout
         @param_prefix = param_prefix
         @actions_enabled = actions
-        # `visible_columns:` is the single picker knob: truthy → render the gear;
-        # an Array is the server-side default selection (a `?cols=` pick wins over
-        # it), `true` is "render + read the param", nil/false is "no picker".
-        @column_picker = !!visible_columns
+        # Two orthogonal column-picker knobs (see ColumnSelection): the gear is on
+        # iff `picker`; the selection comes from the param (`:auto`) or verbatim
+        # from the resolved Array — they never both read the param.
+        @picker = picker
+        @picked_columns = normalize_picked_columns(picked_columns)
         # User-defined columns whose data lives outside the model's table. Built
         # fresh per request (never on the immutable Structure), so they may carry
         # the per-page value cache.
         @dynamic_fields = Array(extra_columns).map { |c| c.to_field(@model) }
-        @visible_override = visible_columns.is_a?(Array) ? visible_columns.map(&:to_sym) : nil
 
         case query
-        when false
+        when :static
           @static = true
           @fieldset = @structure.fieldset(fieldset || :index)
-        when nil
+        when :auto, nil
           @fieldset = @structure.fieldset(fieldset || :index)
           @query = Query.new(@model, view.request.query_parameters, fieldset: @fieldset,
                              ability: ability, param_prefix: param_prefix, extra_fields: @dynamic_fields)
           relation = @query.apply(relation)
-        else
+        when Query
           @query = query
           @fieldset = fieldset ? @structure.fieldset(fieldset) : query.fieldset
           @param_prefix = query.param_prefix
+        else
+          raise ArgumentError,
+                "crud_collection query: expects :auto, :static or a CrudComponents::Query, got #{query.inspect}"
         end
 
         @relation = eager_load(relation)
@@ -72,14 +79,14 @@ module CrudComponents
       # Every column this user is allowed to see — declared fieldset fields plus
       # the dynamic columns — regardless of the current visibility selection.
       # This is what a column picker offers as the universe to choose from.
-      # (`fields`, `column_visible?` and `visible_columns` come from ColumnSelection.)
+      # (`fields`, `column_visible?` and the picker knobs come from ColumnSelection.)
       def available_fields
         @available_fields ||=
           (structure.fieldset_fields(fieldset) + @dynamic_fields).select { |f| f.permitted?(permission_context) }
       end
 
       # Whether to offer the column picker UI for this collection.
-      def column_picker? = @column_picker && available_fields.any?
+      def column_picker? = @picker && available_fields.any?
 
       # The checkbox param name the picker submits (respects param_prefix).
       def column_param_name = "#{pn('cols')}[]"

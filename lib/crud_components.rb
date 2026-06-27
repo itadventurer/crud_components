@@ -81,7 +81,7 @@ module CrudComponents
     # The column-picker selection from a request's params: the ordered list of
     # column names the user ticked, or nil when the picker wasn't submitted.
     # Honors `param_prefix:` (match it to the picker's). Persist it however you
-    # like, then feed it back via `visible_columns:`.
+    # like, then feed it back via `picked_columns:`.
     #
     #   cols = CrudComponents.selected_columns(params)
     #   current_user.update!(book_columns: cols) if cols
