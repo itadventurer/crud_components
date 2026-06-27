@@ -112,6 +112,10 @@ module CrudComponents
 
       def picker_label = target_model.human_attribute_name(attribute_name)
 
+      # Picker grouping: a path column sits under its target model's group, next
+      # to the association column that anchors it.
+      def group_model = target_model
+
       # Eager-load the association chain so a whole page costs one query, not one
       # per row (e.g. `publisher.founded_on` → includes(:publisher)).
       def eager_load

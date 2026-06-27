@@ -8,6 +8,22 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- **Column picker groups columns by source model** (Pipedrive-style): the collection's own
+  columns first, then each associated model — `publisher`, `publisher.name` and
+  `publisher.founded_on` cluster under "Publisher" (with its model icon), `authors.*` under
+  "Author". Each row also tags its model on the right.
+- **The `crud-columns` controller collapses `?cols[]=a&cols[]=b` into `?cols=a,b`** on submit
+  (a tidier, shareable URL). The server reads both forms — `selected_columns` and the picker
+  accept the comma-joined string too. No-JS keeps the `cols[]` array.
+
+### Changed
+
+- **One column-picker knob: `visible_columns:`** replaces `column_picker:` + `visible:` on
+  `crud_collection`/`crud_record` (and `crud_column_picker`'s `visible:`). `true` renders the
+  gear and applies `?cols=`; an `Array` is a server-side default a live `?cols=` overrides;
+  `nil` shows all columns with no gear. **Breaking:** rename `column_picker: true` →
+  `visible_columns: true` and `visible: cols` → `visible_columns: cols`.
+
 - **Path columns delegate to the target model's field.** A single-valued path
   (`publisher.founded_on`, `publisher.price`, `publisher.status`) now renders, filters and
   sorts like the target's own column — a date-range filter, a unit/digits number, an enum
