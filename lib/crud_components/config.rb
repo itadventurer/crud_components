@@ -62,8 +62,43 @@ module CrudComponents
       'zip'  => 'file-earmark-zip'       # no filetype- glyph exists
     ).freeze
 
+    # A guessed icon (no library prefix — paired with css.icon_prefix) per model,
+    # keyed by the model's singular underscored name (`model_name.element`, so
+    # `Admin::User` → "user"). Used wherever a model is badged: column-picker
+    # groups, association links, path-column cells. A model can override with
+    # `icon 'building'` in its `crud_structure`; an unmapped model with no
+    # declaration falls back to model_fallback_icon (nil = no icon). Extend it:
+    #   config.model_icons['widget'] = 'box-seam'
+    DEFAULT_MODEL_ICONS = {
+      'user' => 'person', 'person' => 'person', 'author' => 'person',
+      'member' => 'person', 'customer' => 'person', 'contact' => 'person-lines-fill',
+      'account' => 'person-circle', 'profile' => 'person-badge', 'admin' => 'person-gear',
+      'participant' => 'person', 'student' => 'mortarboard', 'teacher' => 'easel',
+      'team' => 'people', 'group' => 'people', 'role' => 'person-badge',
+      'organization' => 'building', 'company' => 'building', 'publisher' => 'building',
+      'department' => 'building', 'vendor' => 'shop', 'supplier' => 'shop',
+      'store' => 'shop', 'shop' => 'shop',
+      'book' => 'book', 'article' => 'file-earmark-text', 'post' => 'file-earmark-post',
+      'page' => 'file-earmark', 'document' => 'file-earmark', 'file' => 'file-earmark',
+      'attachment' => 'paperclip', 'report' => 'file-earmark-bar-graph',
+      'order' => 'cart', 'cart' => 'cart', 'product' => 'box-seam', 'item' => 'box',
+      'invoice' => 'receipt', 'receipt' => 'receipt', 'payment' => 'credit-card',
+      'transaction' => 'credit-card', 'subscription' => 'arrow-repeat',
+      'comment' => 'chat', 'message' => 'chat-dots', 'review' => 'star', 'rating' => 'star',
+      'notification' => 'bell', 'email' => 'envelope', 'mail' => 'envelope',
+      'tag' => 'tag', 'label' => 'tag', 'category' => 'collection', 'genre' => 'collection',
+      'project' => 'kanban', 'task' => 'check2-square', 'todo' => 'check2-square',
+      'ticket' => 'ticket', 'event' => 'calendar-event', 'appointment' => 'calendar-check',
+      'booking' => 'calendar-check', 'course' => 'mortarboard', 'lesson' => 'easel',
+      'address' => 'geo-alt', 'location' => 'geo-alt', 'place' => 'geo-alt',
+      'country' => 'globe', 'city' => 'geo-alt',
+      'image' => 'image', 'photo' => 'image', 'video' => 'camera-video', 'media' => 'collection-play',
+      'setting' => 'gear', 'permission' => 'shield-lock'
+    }.freeze
+
     attr_accessor :select_limit, :group_collapse_threshold, :action_icons,
-                  :file_icons, :file_fallback_icon, :fast_cells, :max_path_depth
+                  :file_icons, :file_fallback_icon, :fast_cells, :max_path_depth,
+                  :model_icons, :model_fallback_icon
     attr_reader :css
 
     def initialize
@@ -84,6 +119,10 @@ module CrudComponents
       @action_icons = DEFAULT_ACTION_ICONS.dup
       @file_icons = DEFAULT_FILE_ICONS.dup
       @file_fallback_icon = 'file-earmark-text'
+      @model_icons = DEFAULT_MODEL_ICONS.dup
+      # No generic badge for an unmapped, undeclared model — set a glyph here to
+      # icon every model (e.g. 'box') if you prefer.
+      @model_fallback_icon = nil
     end
   end
 end

@@ -15,6 +15,10 @@ module CrudComponents
         reflection.klass
       end
 
+      # Picker grouping: a belongs_to/has_one column anchors its target's group
+      # (polymorphic has no single target, so it groups under its own model).
+      def group_model = reflection.polymorphic? ? model : target
+
       def target_structure
         Structure.for(target)
       end

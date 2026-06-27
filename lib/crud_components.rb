@@ -25,7 +25,6 @@ require_relative 'crud_components/config'
 require_relative 'crud_components/permission_context'
 require_relative 'crud_components/like_spec'
 require_relative 'crud_components/where_like'
-require_relative 'crud_components/semantic_renderer'
 require_relative 'crud_components/fields/base'
 require_relative 'crud_components/fields/string_field'
 require_relative 'crud_components/fields/text_field'
@@ -82,7 +81,7 @@ module CrudComponents
     # The column-picker selection from a request's params: the ordered list of
     # column names the user ticked, or nil when the picker wasn't submitted.
     # Honors `param_prefix:` (match it to the picker's). Persist it however you
-    # like, then feed it back via `visible:`.
+    # like, then feed it back via `visible_columns:`.
     #
     #   cols = CrudComponents.selected_columns(params)
     #   current_user.update!(book_columns: cols) if cols
@@ -90,11 +89,15 @@ module CrudComponents
     # A block runs only when a selection was submitted, and receives the list:
     #
     #   CrudComponents.selected_columns(params) { |cols| current_user.update!(book_columns: cols) }
+    #
+    # Accepts both the no-JS `cols[]=a&cols[]=b` array and the comma-joined
+    # `cols=a,b` the crud-columns controller submits.
     def selected_columns(params, param_prefix: nil)
       key = param_prefix ? "#{param_prefix}_cols" : 'cols'
       raw = params[key] || params[key.to_sym]
-      names = raw.is_a?(Array) ? raw.map(&:to_s).reject(&:blank?) : nil
-      names = nil if names && names.empty?
+      list = raw.is_a?(Array) ? raw : raw.is_a?(String) ? raw.split(',') : nil
+      names = list&.map { |n| n.to_s.strip }&.reject(&:blank?)
+      names = nil if names.nil? || names.empty?
       yield names if block_given? && names
       names
     end

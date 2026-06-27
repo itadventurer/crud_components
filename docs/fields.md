@@ -268,7 +268,7 @@ controls strip above the table.
 A field name with a **dot** reaches through associations: `publisher.name`,
 `publisher.founded_on`, `authors.email`. The leading segments are associations on the
 model; the last is an attribute (or method) on the target. Use them anywhere a field name
-goes — a fieldset, `visible:`, `?cols=` — so they show up in the [column picker](views.md#column-picker)
+goes — a fieldset, `visible_columns:`, `?cols=` — so they show up in the [column picker](views.md#column-picker)
 like any other column. No block needed; it's the declarative shortcut for what you'd
 otherwise write as a computed field with a `render` + `filter` + `sort`:
 
@@ -276,15 +276,28 @@ otherwise write as a computed field with a `render` + `filter` + `sort`:
 fieldset :index, %i[title publisher.name authors.email]
 ```
 
-- A **single-valued** path (belongs_to / has_one) renders like the target column —
-  `publisher.founded_on` formats as a date — and is **sortable** (a LEFT JOIN + ORDER BY).
+- A **single-valued** path (belongs_to / has_one) **delegates to the target model's own
+  field** for that attribute — `publisher.founded_on` renders, filters and sorts exactly
+  like Publisher's `founded_on` does: a date cell, a **date-range** filter, an ORDER BY the
+  date. `publisher.price` keeps the target's `unit:`/`digits:`; a `publisher.status` enum gets
+  the target's **select** filter and humanized badge. The path needn't repeat any of it —
+  declare it once on the target model, reuse it through every association.
+- When the leaf attribute **is the target's label field** (`publisher.name`), the cell renders
+  a **link to that record** — the model's [icon](#identity-label-identify_by-search_in-icon)
+  then a link to its show page — so a path column doubles as a jump-to-the-object.
 - A **list** path (has_many / habtm) renders the values joined — `authors.email` shows
-  every author's email — and is **filterable** (a contains-match through the join, via the
-  [search spec](#the-search-spec)) but not sortable by default (no single value to order by;
-  add a `sort` facet if you have a meaningful aggregate).
+  every author's email (each linkified, since `email` is a smart-rendered name) — and is
+  **filterable** (a contains-match through the join, via the [search spec](#the-search-spec))
+  but not sortable by default (no single value to order by; add a `sort` facet if you have a
+  meaningful aggregate).
 
 The association is eager-loaded automatically, so a path column costs one query per page,
 not one per row.
+
+**Override > target field > default.** Anything the path inherits from the target field can
+be overridden on the path column itself — `as:` (or a `render`/`filter`/`sort` facet) wins,
+then the target field's behaviour, then the inferred default. So
+`attribute(:"publisher.price", unit: '$')` re-bases just the unit; `attribute(:"publisher.name", as: :string)` opts the label column out of the link.
 
 **Two limits.** The chain may be at most `config.max_path_depth` associations deep (default
 3 — a guard rail against runaway joins; raise it if you need deeper). And it may cross **at
@@ -336,12 +349,13 @@ end
 `where_like(spec, value)` is available on every scope handed to a filter/search block.
 Raw SQL in a block is possible — and then explicitly your responsibility.
 
-## Identity: `label`, `identify_by`, `search_in`
+## Identity: `label`, `identify_by`, `search_in`, `icon`
 
 ```ruby
 label :title              # method or block; default: name → title → first string column → "Book #42"
 identify_by :slug         # default: :id
 search_in :title, :subtitle, :publisher   # default: own string/text columns
+icon 'book'               # default: guessed from the model name (config.model_icons), else none
 ```
 
 - **`label`** — the record's display name: links, select options, record headings.
@@ -355,6 +369,13 @@ search_in :title, :subtitle, :publisher   # default: own string/text columns
   `Publisher.where(slug: …)`.
 - **`search_in`** — the model's text identity: what `?q=` searches, what the belongs_to
   text-filter fallback matches, and what delegated specs (`filter :publisher`) expand to.
+- **`icon`** — a Bootstrap-icon name (no `bi-` prefix — paired with `config.css.icon_prefix`,
+  swap the whole library there) that badges the model wherever it appears: column-picker
+  groups, association links, path-column cells. Undeclared, it's guessed from the model name
+  via `config.model_icons` (`User → person`, `Publisher → building`, …); an unmapped model
+  with no declaration shows no icon (set `config.model_fallback_icon` to badge every model).
+  Reach it in your own views with `crud_model_icon(record_or_class)` (the `<i>` tag) or
+  `crud_model_icon_name(…)` (just the name).
 
 ### Identity composes through associations
 

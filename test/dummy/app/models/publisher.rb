@@ -11,6 +11,7 @@ class Publisher < ApplicationRecord
   crud_structure do
     label :name
     identify_by :slug
+    icon 'building'        # explicit per-model icon (overrides the name-based guess)
     search_in :name
 
     fieldset :index, %i[name founded_on brochure books]
