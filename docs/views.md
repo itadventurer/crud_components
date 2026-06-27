@@ -12,7 +12,7 @@ this doc.
 ```ruby
 crud_collection(records, fieldset: nil, layout: :table, query: :auto, param_prefix: nil,
                 actions: true, group_by: nil, extra_columns: nil, picker: false, picked_columns: :auto)
-crud_record(record, fieldset: nil, actions: true, layout: :record, picker: false, picked_columns: :auto)
+crud_record(record, fieldset: nil, actions: true, layout: :record, picked_columns: :auto)
 crud_filter(model, fieldset: nil, query: nil, param_prefix: nil, layout: :filter)
 crud_form(record, fieldset: nil, action: nil, url: nil, method: nil, layout: :form)   # see forms.md
 crud_actions(record_or_model, fieldset: nil)   # a record → row actions; a model class → collection actions
@@ -149,12 +149,15 @@ and **never re-reads `?cols=`** — one place owns the selection, no split-brain
 <%= crud_collection @books, picker: true, picked_columns: current_user.book_columns %>
 ```
 
-The gear stays put either way — that's why `picker:` is its own knob: an ephemeral `:auto`
-selection and a persisted Array both keep the picker on the page.
+The two knobs are independent: **`picker:`** only decides whether the gear is rendered here;
+**`picked_columns:`** is the selection and applies on its own. So an `Array` narrows even with
+no gear here (the gear may be a standalone picker elsewhere), and `:auto` only reads `?cols=`
+when there *is* a gear here — otherwise a stray param is ignored.
 
 | `picker:` | `picked_columns:` | Gear | Shows |
 | --- | --- | --- | --- |
-| `false` (default) | — | no | the fieldset's columns (a `?cols=` from elsewhere is ignored) |
+| `false` (default) | `:auto` (default) | no | the fieldset's columns (a stray `?cols=` is ignored) |
+| `false` | `%i[…]` (Array) | no | exactly this selection (gear lives elsewhere; param not read) |
 | `true` | `:auto` (default) | yes | `?cols=` if present, else all columns |
 | `true` | `%i[…]` (Array) | yes | exactly this selection (the param is **not** read) |
 
@@ -167,12 +170,13 @@ hide or reorder columns, never reveal one the `if:` gate forbids. See [security]
 ![A record detail view (a definition list) with the column-picker gear open above it, narrowing which fields the dl shows](screenshots/record-picker.png)
 
 The gear is also a standalone helper, so you can place it outside a table — e.g. above a
-`crud_record` detail view. A detail view has no inline gear of its own, so set `picker: true`
-on it to honor the standalone picker:
+`crud_record` detail view. A detail view has no inline gear of its own (no `picker:` knob);
+resolve the selection in the controller and pass it as `picked_columns:`:
 
 ```erb
-<%= crud_column_picker @book, fieldset: :show %>             <%# the gear, submits ?cols= to this page %>
-<%= crud_record @book, picker: true, picked_columns: @visible %>  <%# narrows/orders the dl to match %>
+<%# controller: @visible = CrudComponents.selected_columns(params) %>
+<%= crud_column_picker @book, fieldset: :show %>          <%# the gear, submits ?cols= to this page %>
+<%= crud_record @book, picked_columns: @visible %>        <%# narrows/orders the dl to match (nil → :auto → all) %>
 ```
 
 `crud_column_picker` takes a relation, a model class or a record. Match its `param_prefix:`

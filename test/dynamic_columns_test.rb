@@ -86,14 +86,18 @@ class DynamicColumnsTest < ActiveSupport::TestCase
     assert_equal c.available_fields.map(&:name), c.fields.map(&:name)   # no selection → every field
   end
 
-  test 'picker: toggles the gear; picked_columns is ignored when the picker is off' do
+  test 'picker: only toggles the gear; picked_columns applies on its own' do
+    # the gear follows picker: alone
     assert collection(picker: true).column_picker?
     assert_not collection(picker: false).column_picker?
     assert_not collection.column_picker?                                  # picker: false is the default
     assert_not collection(picker: false, picked_columns: %i[title]).column_picker?
-    # picker off → no narrowing either: every field shows
+
+    # an Array narrows even with no gear here (the gear may live elsewhere)
+    assert_equal %i[title], collection(picker: false, picked_columns: %i[title]).fields.map(&:name)
+    # :auto with no gear here ignores a stray ?cols= (no narrowing)
     assert_equal collection.available_fields.map(&:name),
-                 collection(picked_columns: %i[title]).fields.map(&:name)
+                 collection(picker: false, params: { 'cols' => %w[title] }).fields.map(&:name)
   end
 
   test '?cols= accepts the comma-joined form the JS controller submits' do
@@ -137,20 +141,22 @@ class DynamicColumnsTest < ActiveSupport::TestCase
     CrudComponents.selected_columns({}) { |_cols| flunk 'block must not run when nothing was submitted' }
   end
 
-  test 'crud_record (the Record presenter) honors picker:/picked_columns:, intersected with permitted fields' do
+  test 'crud_record (the Record presenter) narrows by picked_columns; it has no gear of its own' do
     book = Book.create!(title: 'R', slug: 'rec-vis', price: 1)
     # an explicit Array is verbatim (and never reads ?cols=, even when present)
-    base = CrudComponents::Presenters::Record.new(view: view, record: book, picker: true, picked_columns: %i[price title])
+    base = CrudComponents::Presenters::Record.new(view: view, record: book, picked_columns: %i[price title])
     assert_equal %i[price title], base.fields.map(&:name)
 
     ignored = CrudComponents::Presenters::Record.new(view: view(params: { 'cols' => %w[title] }),
-                                                     record: book, picker: true, picked_columns: %i[price title])
+                                                     record: book, picked_columns: %i[price title])
     assert_equal %i[price title], ignored.fields.map(&:name)   # Array ignores ?cols=
 
-    # :auto reads ?cols= (the standalone picker drives the dl)
+    # :auto (the default) does NOT read ?cols= on a record — no inline gear here, so a
+    # stray param is ignored; the controller resolves and passes an Array instead.
     auto = CrudComponents::Presenters::Record.new(view: view(params: { 'cols' => %w[title] }),
-                                                  record: book, picker: true, picked_columns: :auto)
-    assert_equal %i[title], auto.fields.map(&:name)
+                                                  record: book, picked_columns: :auto)
+    assert_includes auto.fields.map(&:name), :title
+    assert auto.fields.size > 1, 'record :auto should not narrow from a stray ?cols='
   end
 
   test 'crud_record renders dynamic columns as extra rows (extra_columns:)' do
