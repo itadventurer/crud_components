@@ -16,6 +16,18 @@ class FullIntegrationTest < ActionDispatch::IntegrationTest
     @review = Review.create!(book: @hobbit, rating: 4, reviewer_name: 'Ada', body: 'A classic.')
   end
 
+  # ── living-documentation landing page ─────────────────────────────────────
+  test 'the home page is a feature index linking to the demos' do
+    get root_path
+    assert_response :success
+    assert_select 'h1', text: /living documentation/i
+    # the feature grid links to the real demo routes
+    assert_select "a[href=?]", columns_path
+    assert_select "a[href=?]", groups_path
+    assert_select "a[href=?]", authors_path
+    assert_select "a[href=?]", custom_fields_path
+  end
+
   # ── zero config ───────────────────────────────────────────────────────────
   test 'a zero-config model renders a usable table' do
     get authors_path

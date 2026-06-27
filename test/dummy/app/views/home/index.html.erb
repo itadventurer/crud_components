@@ -1,0 +1,80 @@
+<% sections = [
+  ["Basics", "The four everyday helpers — each renders from one line.", [
+    { icon: "table", title: "Table", path: books_path, code: "crud_collection @books",
+      desc: "Type-aware cells, an inline filter row, sort links and derived row/collection actions." },
+    { icon: "card-list", title: "Detail view", path: (@sample_book ? book_path(@sample_book) : books_path),
+      code: "crud_record @book",
+      desc: "The record as a definition list — the same cells as the table. The picker drives it too." },
+    { icon: "pencil-square", title: "Forms", path: new_book_path, code: "crud_form @book",
+      desc: "A derived simple_form create/edit form; its permit-list comes from the same fieldset." },
+    { icon: "magic", title: "Zero config", path: authors_path, code: "crud_collection Author.all",
+      desc: "Author declares nothing — every column, filter and action is derived from the schema." },
+  ]],
+  ["Identity & associations", "How records are titled, linked and searched.", [
+    { icon: "building", title: "Icons & labels", path: publishers_path, code: "label :name; icon 'building'",
+      desc: "A per-model icon and display label, plus an embedded static collection of the publisher's books." },
+    { icon: "star", title: "Custom renderer", path: reviews_path, code: "attribute(:rating, as: :stars)",
+      desc: "A custom cell partial (:stars), with search delegated through the :book association." },
+  ]],
+  ["Power features", "The reasons you'd reach for this gem over scaffolding.", [
+    { icon: "gear", title: "Column picker", path: columns_path, code: "crud_collection @books, picker: true",
+      desc: "A per-user gear to hide and reorder columns, grouped by source model. Opens without JS." },
+    { icon: "plus-square-dotted", title: "Dynamic columns", path: custom_fields_path, code: "extra_columns: @columns",
+      desc: "Columns whose data lives outside the table (an EAV store) — filterable/sortable like any other." },
+    { icon: "type-h1", title: "Headers & column actions", path: column_headers_path, code: "header_actions: [...]",
+      desc: "A column that is a domain object owns its <th> link and per-column bulk controls." },
+    { icon: "collection", title: "Grouping", path: groups_path, code: "group_by: :publisher",
+      desc: "Collapsible group headers by a column, belongs_to or enum." },
+  ]],
+  ["Integration", "Plays with the rest of your Rails app.", [
+    { icon: "files", title: "Pagination", path: pagination_path, code: "query: @query   # kaminari / pagy",
+      desc: "Bring your own pager; the gem renders the rows and reflects the query state." },
+    { icon: "broadcast", title: "Live (Turbo)", path: live_path, code: "broadcasts_refreshes",
+      desc: "Morph-friendly markup: only the changed rows update in place over Turbo Streams." },
+    { icon: "layout-split", title: "Two collections", path: dashboard_path, code: "param_prefix: :books",
+      desc: "Two independent auto collections on one page, each with isolated filter/sort/search params." },
+    { icon: "shield-lock", title: "Permissions", path: books_path, code: "attribute :price, if: :manage",
+      desc: "if:/editable: gate columns and actions by can?. Toggle “Become admin” to watch gated fields appear." },
+  ]],
+] %>
+
+<div class="p-4 mb-4 bg-white rounded-3 border">
+  <h1 class="display-6 mb-2">CrudComponents — living documentation</h1>
+  <p class="lead mb-3 text-secondary">
+    Every page below is a real, running demo with a “How this page is built” panel showing the
+    exact DSL and ERB. <strong>Rule zero:</strong> a bare model already renders — declaring
+    things only refines it.
+  </p>
+  <pre class="bg-dark text-light rounded p-3 mb-3"><code class="language-erb">&lt;%= crud_collection Book.all %&gt;   &lt;%# a sortable, filterable, type-aware table — one line %&gt;</code></pre>
+  <p class="mb-0 text-secondary">
+    <i class="bi bi-shield-lock"></i>
+    Many demos gate columns or actions by permission. Use
+    <strong>“Become admin”</strong> (top-right) to flip <code>can?</code> and watch manager-only
+    fields and buttons appear or disappear.
+  </p>
+</div>
+
+<% sections.each do |title, blurb, cards| %>
+  <div class="d-flex align-items-baseline gap-2 mb-2">
+    <h2 class="h4 mb-0"><%= title %></h2>
+    <span class="text-secondary small"><%= blurb %></span>
+  </div>
+  <div class="row row-cols-1 row-cols-md-2 row-cols-xl-4 g-3 mb-4">
+    <% cards.each do |card| %>
+      <div class="col">
+        <%= link_to card[:path], class: "card h-100 text-decoration-none text-reset shadow-sm" do %>
+          <div class="card-body d-flex flex-column">
+            <h3 class="h6 card-title d-flex align-items-center gap-2 mb-2">
+              <i class="bi bi-<%= card[:icon] %> text-primary"></i><%= card[:title] %>
+            </h3>
+            <p class="card-text small text-secondary flex-grow-1"><%= card[:desc] %></p>
+            <code class="d-block small text-body-secondary bg-light rounded px-2 py-1 mt-2 text-truncate"><%= card[:code] %></code>
+          </div>
+          <div class="card-footer bg-transparent border-0 pt-0 pb-3 px-3">
+            <span class="small text-primary">Open demo <i class="bi bi-arrow-right"></i></span>
+          </div>
+        <% end %>
+      </div>
+    <% end %>
+  </div>
+<% end %>

@@ -150,13 +150,14 @@
 <body class="bg-light">
   <nav class="navbar navbar-expand bg-dark navbar-dark mb-4">
     <div class="container-fluid">
-      <span class="navbar-brand">CrudComponents</span>
+      <%= link_to 'CrudComponents', root_path, class: 'navbar-brand' %>
       <div class="navbar-nav me-auto">
+        <%= link_to 'Home', root_path, class: 'nav-link' %>
         <%= link_to 'Books', books_path, class: 'nav-link' %>
         <%= link_to 'Publishers', publishers_path, class: 'nav-link' %>
         <%= link_to 'Authors (zero config)', authors_path, class: 'nav-link' %>
         <%= link_to 'Reviews', reviews_path, class: 'nav-link' %>
-        <%= link_to 'Dashboard (two collections)', dashboard_path, class: 'nav-link' %>
+        <%= link_to 'Two collections', dashboard_path, class: 'nav-link' %>
         <%= link_to 'Pagination', pagination_path, class: 'nav-link' %>
         <%= link_to 'Groups', groups_path, class: 'nav-link' %>
         <%= link_to 'Custom fields', custom_fields_path, class: 'nav-link' %>

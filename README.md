@@ -35,6 +35,18 @@ and optional Stimulus (JavaScript) controllers. (progressive enhancement; everyt
 bin/rails generate crud_components:install
 ```
 
+**Styling.** The gem renders plain Bootstrap 5 utility classes (swap them in the
+[class map](docs/extending.md#styling)), plus one tiny stylesheet for the column-picker
+dropdown. Load it pipeline-agnostically by dropping the helper in your layout `<head>`:
+
+```erb
+<%= crud_components_styles %>   <%# inlines the gem's CSS as a <style> tag, CSP-nonce aware %>
+```
+
+It needs no asset compilation, so it works the same under importmap, sprockets, propshaft or
+cssbundling. Hosts whose pipeline already serves engine assets can instead
+`stylesheet_link_tag "crud_components"`.
+
 ## The running example
 
 A small bookstore, used throughout the docs:
@@ -367,8 +379,11 @@ the inline filter row binds to an external form via the HTML `form` attribute; f
 plain (simple_form) markup. Niceties layer on as **one mechanism, not a fork**: the
 markup is always the plain baseline, and Stimulus controllers enhance it *in place* via
 `data-controller` (no parallel template trees; framework choice lives in the class map).
-The gem ships two optional controllers — `crud-filter` and `crud-multiselect` (a habtm
-`<select multiple>` → chips-list + "add" picker) — and depends on no JS. →
+The gem ships four optional Stimulus controllers — `crud-filter` (strips empty inputs for
+clean URLs), `crud-multiselect` (a habtm `<select multiple>` → chips-list + "add" picker),
+`crud-columns` (drag-to-reorder + tidy `?cols=` in the column picker) and `crud-select`
+("select all" / per-group master checkbox + live count for selectable tables) — and
+depends on no JS. →
 [Extending → progressive enhancement](docs/extending.md#progressive-enhancement)
 
 ## Turbo Streams
@@ -479,6 +494,11 @@ cd test/dummy && bin/rails db:schema:load db:seed && bin/rails server   # → :3
 
 ruby script/demo.rb               # query-side walkthrough in the terminal
 ```
+
+The playground is **living documentation**: its landing page indexes every feature, and
+each demo page carries a "How this page is built" panel with the exact DSL and ERB.
+
+![The playground landing page: a feature index grouped into Basics, Identity & associations, Power features and Integration — each card links to a running demo and shows the one line of code behind it](docs/screenshots/home.png)
 
 Tests mirror the design: `dsl_validation_test.rb` for every raising combination,
 `query_security_test.rb` for the [security model](docs/security.md), `structure_test.rb`

@@ -1,5 +1,5 @@
 Rails.application.routes.draw do
-  root 'books#index'
+  root 'home#index'   # the living-documentation landing page (a feature index)
 
   resources :books do
     collection do
