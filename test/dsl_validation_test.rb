@@ -147,9 +147,13 @@ class DslValidationTest < ActiveSupport::TestCase
   end
 
   test 'as: :markdown without a markdown gem raises naming the gems' do
-    model = define_model { attribute :blurb, as: :markdown }
-    error = assert_raises(CrudComponents::DefinitionError) { structure_of(model) }
-    assert_match(/commonmarker|redcarpet|kramdown/, error.message)
+    # the playground bundles a real markdown gem, so point the renderer at gems
+    # that are genuinely absent to exercise the "missing gem" raise.
+    with_renderer_gems(markdown: %w[absent_md_gem_a absent_md_gem_b]) do
+      model = define_model { attribute :blurb, as: :markdown }
+      error = assert_raises(CrudComponents::DefinitionError) { structure_of(model) }
+      assert_match(/absent_md_gem_a, absent_md_gem_b/, error.message)
+    end
   end
 
   test 'like-spec delegation to a block-based search_in raises with a way out' do

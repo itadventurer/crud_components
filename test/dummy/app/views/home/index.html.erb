@@ -26,6 +26,12 @@
     { icon: "collection", title: "Grouping", path: groups_path, code: "group_by: :publisher",
       desc: "Collapsible group headers by a column, belongs_to or enum." },
   ]],
+  ["Rendering & data shapes", "Soft-dependency renderers and trickier model shapes.", [
+    { icon: "markdown", title: "Renderers", path: renderers_path, code: "as: :markdown / :json / :asciidoc",
+      desc: "Markdown, highlighted JSON and asciidoc cells (feature-detected gems), plus manual crud_actions." },
+    { icon: "diagram-3", title: "STI & polymorphic", path: documents_path, code: "Manual < Document; belongs_to :commentable, polymorphic: true",
+      desc: "Single-table inheritance (the type column) and a polymorphic belongs_to rendered as a nil-safe link." },
+  ]],
   ["Integration", "Plays with the rest of your Rails app.", [
     { icon: "files", title: "Pagination", path: pagination_path, code: "query: @query   # kaminari / pagy",
       desc: "Bring your own pager; the gem renders the rows and reflects the query state." },

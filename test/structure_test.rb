@@ -316,6 +316,6 @@ class StructureTest < ActiveSupport::TestCase
 
   test 'STI subclass inherits the base crud_structure' do
     assert_equal :title, structure_of(Manual).label_source
-    assert_equal %i[title body], structure_of(Manual).fieldset(:index).field_names
+    assert_equal %i[type title created_at], structure_of(Manual).fieldset(:index).field_names
   end
 end

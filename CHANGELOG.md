@@ -48,6 +48,9 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   stops rendering a stale full `<select>`.
 - **Path columns honor the reserved-param guard** (`q`/`sort`/`dir`/`page`/`per`/`cols`) in
   `filterable?`/`sortable?`, matching every other field type.
+- **Polymorphic `belongs_to` columns render** instead of raising "Polymorphic associations do
+  not support computing the class". Eager-loading a polymorphic association no longer tries to
+  resolve a single target class; the cell renders each record's label and links it at runtime.
 
 ### Changed
 

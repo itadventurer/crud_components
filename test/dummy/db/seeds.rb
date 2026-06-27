@@ -40,7 +40,7 @@ PDF
 
 puts 'Seeding the bookstore…'
 
-[Review, Book, Author, Publisher].each(&:delete_all)
+[Comment, Review, Book, Author, Publisher, Document].each(&:delete_all)
 ActiveRecord::Base.connection.execute('DELETE FROM authors_books')
 
 publishers = [
@@ -91,7 +91,8 @@ cover_colors = %w[#264653 #2a9d8f #e9c46a #f4a261 #e76f51 #6d597a #355070 #b5657
     title: title,
     subtitle: [nil, "A novel of the #{nouns.sample}"].sample,
     slug: title.parameterize,
-    blurb: "#{title} — #{adjectives.sample.downcase} tales of the #{nouns.sample.downcase}.\n\nA story in #{rand(2..5)} parts.",
+    blurb: "**#{title}** — _#{adjectives.sample.downcase}_ tales of the #{nouns.sample.downcase}.\n\n" \
+           "- A story in #{rand(2..5)} parts\n- Set in the #{nouns.sample}\n",
     price: (rand(500..4500) / 100.0).round(2),
     purchase_price: (rand(100..2000) / 100.0).round(2),
     pages: rand(120..900),
@@ -145,5 +146,28 @@ Book.find_each do |book|
                         value: (Date.today - rand(0..2000)).iso8601)
 end
 
+# ── STI documents (asciidoc body) + polymorphic comments ────────────────────
+# Document/Manual share one STI table; `type` is the discriminator. `body` is
+# rendered with `as: :asciidoc`.
+docs = [
+  Document.create!(title: 'House style guide',
+                   body: "== House style\n\nUse *active voice*. Keep sentences short.\n\n" \
+                         ". Title case headings\n. One idea per paragraph\n"),
+  Manual.create!(title: 'Shipping manual',
+                 body: "== Shipping\n\nPack books flat.\n\nTIP: Use rigid mailers for hardcovers.\n\n" \
+                       "[cols=\"1,1\"]\n|===\n|Region |SLA\n\n|EU |2 days\n|US |5 days\n|===\n"),
+  Manual.create!(title: 'Returns manual',
+                 body: "== Returns\n\nA return is accepted within *30 days*.\n\n" \
+                       "WARNING: Signed copies are final sale.\n")
+]
+
+# Polymorphic comments across Books and Documents — `commentable` links back to
+# whichever model owns the comment (a Book or a Document).
+comment_bodies = ['Great reference.', 'Needs an update for 2026.', 'Linked from onboarding.',
+                  'A customer asked about this.', 'See the shipping manual.']
+Book.order(:id).limit(5).each { |b| Comment.create!(commentable: b, body: comment_bodies.sample) }
+docs.each { |d| Comment.create!(commentable: d, body: comment_bodies.sample) }
+
 puts "  #{Publisher.count} publishers, #{Author.count} authors, #{Book.count} books, #{Review.count} reviews, " \
-     "#{PropertyDefinition.count} custom properties (#{PropertyValue.count} values)."
+     "#{PropertyDefinition.count} custom properties (#{PropertyValue.count} values), " \
+     "#{Document.count} documents, #{Comment.count} comments."

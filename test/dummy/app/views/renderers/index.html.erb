@@ -1,0 +1,41 @@
+<h1 class="mb-3">Renderers &amp; manual actions</h1>
+
+<%= docs_panel(
+      intro: "Some renderers are <strong>soft dependencies</strong>: <code>as: :markdown</code> uses a markdown " \
+             "gem (commonmarker/redcarpet/kramdown), <code>as: :asciidoc</code> uses asciidoctor, and the " \
+             "<code>:json</code> cell pretty-prints and (with rouge) syntax-highlights. The gem feature-detects " \
+             "them — it never requires them — and raises at <em>structure build</em> with a clear message if you " \
+             "declare one whose gem is missing. Below, <code>blurb</code> renders as Markdown and " \
+             "<code>metadata</code> as JSON. The second card shows <strong>manual action placement</strong>: " \
+             "render with <code>actions: false</code> and drop <code>crud_actions</code> wherever you like.",
+      docs: { 'Fields & rendering' => 'docs/fields.md#renderers', 'Views' => 'docs/views.md' }) do %>
+<%= code_file('app/models/book.rb') do %>
+attribute :blurb, as: :markdown      # commonmarker / redcarpet / kramdown
+attribute :metadata, as: :json       # pretty-printed + rouge-highlighted
+fieldset :renderers, %i[title blurb metadata]
+<% end %>
+<%= code_file('app/views/renderers/index.html.erb', :erb) do %>
+&lt;%= crud_record @book, fieldset: :renderers %&gt;
+
+&lt;%# place the buttons yourself instead of the built-in actions column %&gt;
+&lt;%= crud_record @book, fieldset: :renderers, actions: false %&gt;
+&lt;%= crud_actions @book %&gt;     &lt;%# row actions for a record %&gt;
+&lt;%= crud_actions Book %&gt;      &lt;%# collection actions for the model class %&gt;
+<% end %>
+<% end %>
+
+<div class="card mb-4"><div class="card-body">
+  <h2 class="h5">Markdown &amp; JSON cells</h2>
+  <%= crud_record @book, fieldset: :renderers %>
+</div></div>
+
+<div class="card"><div class="card-body">
+  <h2 class="h5"><code>crud_actions</code> — place the buttons yourself</h2>
+  <p class="text-secondary small mb-2">The record renders with <code>actions: false</code>; the buttons below are
+    placed by hand with <code>crud_actions</code> (row actions for the record, then collection actions for the class).</p>
+  <%= crud_record @book, fieldset: :compact, actions: false %>
+  <div class="mt-2 d-flex gap-2">
+    <%= crud_actions @book %>
+    <%= crud_actions Book %>
+  </div>
+</div></div>

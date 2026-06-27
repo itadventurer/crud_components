@@ -23,6 +23,19 @@ module CrudTestHelpers
     CrudComponents::Structure.for(model)
   end
 
+  # Run a block with RENDERER_GEMS swapped — lets the "missing gem raises" test
+  # simulate an absent renderer gem even though the playground bundles the real
+  # ones (commonmarker/asciidoctor) for its demos.
+  def with_renderer_gems(map)
+    original = CrudComponents::Structure::RENDERER_GEMS
+    CrudComponents::Structure.send(:remove_const, :RENDERER_GEMS)
+    CrudComponents::Structure.const_set(:RENDERER_GEMS, map.freeze)
+    yield
+  ensure
+    CrudComponents::Structure.send(:remove_const, :RENDERER_GEMS)
+    CrudComponents::Structure.const_set(:RENDERER_GEMS, original)
+  end
+
   # A can?-shaped ability granting everything (for permission tests).
   class AllowAll
     def can?(*) = true
