@@ -1,5 +1,6 @@
 .git
 *.gem
+Gemfile.lock
 log
 tmp
 node_modules
