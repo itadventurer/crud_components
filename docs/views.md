@@ -107,8 +107,8 @@ arrangement (`layout:`) are orthogonal: the same fieldset feeds any layout. (`cr
 
 ## Column picker
 
-A fieldset is the *author's* default set of columns. A column picker lets the *user*
-narrow and reorder it — the CRM "which columns do I want" control. Turn it on with
+A fieldset is the app's default set of columns. A column picker lets each user choose
+which of those columns they want to see, and in what order. Turn it on with
 `column_picker: true` and a **gear** appears in the header row's actions cell; it opens a
 checklist of every column the user may see — declared columns,
 [dynamic columns](fields.md#dynamic-columns) and [path columns](fields.md#path-columns)

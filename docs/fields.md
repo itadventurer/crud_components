@@ -192,8 +192,14 @@ layer, which keeps the [whitelist](security.md) tight:
 ```ruby
 CrudComponents::DynamicColumn.new(:priority, as: :number,
   preload: ->(records) { … },
-  filter:  ->(scope, value) { scope.where(id: PropertyValue.where(definition: prop)
-                                            .where('value LIKE ?', "%#{value}%").select(:subject_id)) },
+  filter:  ->(scope, value) {
+    # `where_like` escapes the user's %/_ and builds the ILIKE for you — never
+    # hand-write `where("value LIKE ?", "%#{value}%")`. The block's own `scope`
+    # already carries `#where_like`; for a subquery on another model use the
+    # module function on that relation:
+    matches = CrudComponents.where_like(PropertyValue.where(definition: prop), :value, value)
+    scope.where(id: matches.select(:subject_id))
+  },
   sort:    ->(scope, dir)   { scope.order(Arel.sql("(#{subquery_for(prop)}) #{dir}")) }
 ) { |record, loaded| loaded[record.id]&.value }
 ```

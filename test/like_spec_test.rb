@@ -47,6 +47,15 @@ class LikeSpecTest < ActiveSupport::TestCase
     assert_equal [@hobbit], scope.where_like({ publisher: :name }, 'tor').to_a
   end
 
+  test 'CrudComponents.where_like applies safe ILIKE to any relation (e.g. a subquery)' do
+    found = CrudComponents.where_like(Book.where(slug: 'hobbit'), :title, 'hob').to_a
+    assert_equal [@hobbit], found
+    # composes onto a pre-scoped relation rather than replacing it
+    assert_empty CrudComponents.where_like(Book.where(slug: 'dispossessed'), :title, 'hob').to_a
+    # and escapes wildcards like the rest of the machinery
+    assert_empty CrudComponents.where_like(Book.all, :title, '____').to_a
+  end
+
   test 'a backslash is escaped as a literal, not a LIKE escape character' do
     winpath = Book.create!(title: 'C:\\Users', slug: 'winpath')
     assert_equal [winpath], apply(Book.all, :title, '\\').to_a
