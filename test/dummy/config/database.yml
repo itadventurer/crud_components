@@ -6,9 +6,12 @@ test:
   adapter: sqlite3
   database: db/test.sqlite3
 
-# Live demo: ephemeral SQLite (an emptyDir volume in k8s). Reset on boot + by
-# the DEMO_RESET thread, so it never needs to persist.
+# Live demo: ephemeral SQLite. The file lives in storage/ (NOT db/) so a writable
+# volume can be mounted there under a read-only root filesystem — db/ stays read-only
+# image content holding schema.rb + seeds.rb (mounting a volume over db/ would hide
+# them and db:prepare would load no schema → "Could not find table 'books'").
+# storage/ is already the Active Storage mount; reset on boot + by the DEMO_RESET thread.
 production:
   adapter: sqlite3
-  database: db/production.sqlite3
+  database: storage/production.sqlite3
   timeout: 5000
