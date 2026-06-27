@@ -5,11 +5,12 @@
              "(here in a #{link_to 'property_values', 'https://github.com/itadventurer/crud_components/blob/main/test/dummy/app/models/property_definition.rb', class: 'link-secondary'} store) " \
              "shown as extra columns. The model is untouched — the controller loads each " \
              "<code>PropertyDefinition</code> and turns it into a <code>CrudComponents::DynamicColumn</code>, then " \
-             "passes the set as <code>extra_columns:</code>. Each column carries a <code>preload:</code> (one query " \
-             "per page, no N+1), a <strong>typed</strong> <code>filter:</code> and a <code>sort:</code> — so " \
-             "<strong>Shelf</strong> (text), <strong>Weight</strong> (number range, in g), <strong>Signed</strong> " \
-             "(yes/no select) and <strong>Acquired</strong> (date range) filter with the control their type wants, " \
-             "not a plain text box. Try the filter row and the sort headers.".html_safe,
+             "passes the set as <code>extra_columns:</code> — to both <code>crud_collection</code> and the standalone " \
+             "<code>crud_filter</code> form. Each column carries a <code>preload:</code> (one query per page, no N+1), a " \
+             "<strong>typed</strong> <code>filter:</code> and a <code>sort:</code> — so <strong>Shelf</strong> (text), " \
+             "<strong>Weight</strong> (number range, in g), <strong>Signed</strong> (yes/no select) and " \
+             "<strong>Acquired</strong> (date range) filter with the control their type wants, not a plain text box. " \
+             "Try the inline filter row, the sort headers, and the sidebar form.".html_safe,
       docs: { 'Dynamic columns' => 'docs/fields.md#dynamic-columns', 'Views' => 'docs/views.md' }) do %>
 <%= code_file('app/controllers/custom_fields_controller.rb') do %>
 @books   = Book.all
@@ -38,9 +39,22 @@ end
 <% end %>
 <%= code_file('app/views/custom_fields/index.html.erb', :erb) do %>
 &lt;%= crud_collection @books, fieldset: :compact, extra_columns: @columns %&gt;
+&lt;%= crud_filter   Book, fieldset: :compact, extra_columns: @columns %&gt;   &lt;%# same dynamic columns in a standalone form %&gt;
 <% end %>
 <% end %>
 
-<div class="card"><div class="card-body">
-  <%= crud_collection @books, fieldset: :compact, extra_columns: @columns %>
-</div></div>
+<div class="row">
+  <div class="col-xl-9">
+    <div class="card"><div class="card-body">
+      <%= crud_collection @books, fieldset: :compact, extra_columns: @columns %>
+    </div></div>
+  </div>
+  <div class="col-xl-3">
+    <div class="card"><div class="card-body">
+      <h5 class="card-title">Filter</h5>
+      <%# crud_filter takes the same extra_columns: as crud_collection (issue #22),
+          so the user-defined-property filters appear without hand-building a Query. %>
+      <%= crud_filter Book, fieldset: :compact, extra_columns: @columns %>
+    </div></div>
+  </div>
+</div>

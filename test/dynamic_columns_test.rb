@@ -151,6 +151,20 @@ class DynamicColumnsTest < ActiveSupport::TestCase
     assert_not field.range_filter?
   end
 
+  # ── crud_filter: extra_columns + sort picker (issue #22) ─────────────────────
+  test 'the Filter presenter takes extra_columns and an opt-in sort picker' do
+    weight = CrudComponents::DynamicColumn.new(:weight, filter: ->(s, _v) { s }, sort: ->(s, _d) { s }) { |_r| 1 }
+    f = CrudComponents::Presenters::Filter.new(view: view, model: Book, fieldset: :index,
+                                               extra_columns: [weight], sort: true)
+    assert_includes f.fields.map(&:name), :weight                  # the dynamic column's filter is in the form
+    assert f.sort_control?                                         # sort: true + there are sortable fields
+    assert_includes f.sort_field_choices.map(&:last), 'weight'     # …including the dynamic one
+  end
+
+  test 'the Filter sort picker is off by default and when nothing is sortable' do
+    assert_not CrudComponents::Presenters::Filter.new(view: view, model: Book, fieldset: :index).sort_control?
+  end
+
   # ── the presenter: selection + ordering ──────────────────────────────────────
   test 'dynamic columns are appended to the permitted column set' do
     names = collection(extra_columns: [color]).available_fields.map(&:name)
@@ -402,6 +416,14 @@ class DynamicColumnsIntegrationTest < ActionDispatch::IntegrationTest
     # and it renders a typed range control, not a text box, in the filter row
     assert_select 'input[name=weight_geq]'
     assert_select 'input[name=weight_leq]'
+  end
+
+  test 'crud_filter accepts extra_columns: so dynamic-column filters appear in the standalone form (#22)' do
+    get '/custom_fields'
+    assert_response :success
+    # The standalone filter form (not the inline table row) carries the dynamic
+    # column's control — only possible because crud_filter got extra_columns:.
+    assert_select 'form.crud-filter-form input[name=shelf]'
   end
 
   test 'the column picker limits the visible columns via ?cols=' do

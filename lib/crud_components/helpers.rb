@@ -111,11 +111,19 @@ module CrudComponents
     # @param query [CrudComponents::Query, nil] reuse an existing query's values;
     #   nil reads the request params.
     # @param param_prefix [Symbol, nil] namespaces the form's params.
+    # @param extra_columns [Array<CrudComponents::DynamicColumn>, nil] dynamic columns
+    #   (the same you'd hand {#crud_collection}) whose filters should appear in the
+    #   form — so a card/list surface gets its user-defined-property filters without
+    #   hand-building a {Query}. Ignored when you pass a prebuilt `query:` (it already
+    #   carries its own `extra_fields:`).
+    # @param sort [Boolean] also render a sort field/direction picker (default false).
+    #   For a **headerless** surface (a card grid / list with no `<th>` sort links)
+    #   this is the way to choose `?sort=&dir=`; a table carries the links itself.
     # @param layout [Symbol] the partial under `crud_components/` (`:filter` ships).
     # @return [ActiveSupport::SafeBuffer] the rendered HTML.
-    def crud_filter(model, fieldset: nil, query: nil, param_prefix: nil, layout: :filter)
-      presenter = Presenters::Filter.new(view: self, model: model, fieldset: fieldset,
-                                         query: query, param_prefix: param_prefix)
+    def crud_filter(model, fieldset: nil, query: nil, param_prefix: nil, extra_columns: nil, sort: false, layout: :filter)
+      presenter = Presenters::Filter.new(view: self, model: model, fieldset: fieldset, query: query,
+                                         param_prefix: param_prefix, extra_columns: extra_columns, sort: sort)
       render "crud_components/#{layout}", filter: presenter
     end
 

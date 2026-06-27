@@ -30,6 +30,11 @@ de:
       apply: "Anwenden"
       submit: "Filtern"
       reset: "Zurücksetzen"
+      sort_by: "Sortieren nach"
+      unsorted: "–"
+      direction: "Richtung"
+      asc: "Aufsteigend"
+      desc: "Absteigend"
     pager:
       label: "Seitennummerierung"
       summary: "Seite %{page} von %{total} · %{count} gesamt"

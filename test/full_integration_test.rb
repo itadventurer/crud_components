@@ -212,6 +212,17 @@ class FullIntegrationTest < ActionDispatch::IntegrationTest
     assert_select 'form.crud-filter-form select[data-action]', count: 0
   end
 
+  test 'crud_filter sort: renders a field/direction picker for headerless surfaces (#22)' do
+    get books_path(layout: 'cards')
+    assert_select 'form.crud-filter-form select[name=sort]'
+    assert_select 'form.crud-filter-form select[name=dir]'
+  end
+
+  test 'crud_filter omits the sort picker by default (a table carries its own header links)' do
+    get books_path
+    assert_select 'form.crud-filter-form select[name=sort]', count: 0
+  end
+
   # ── permissions ───────────────────────────────────────────────────────────
   test 'permission-gated columns are hidden and unfilterable for non-admins' do
     get books_path(view: 'catalog')

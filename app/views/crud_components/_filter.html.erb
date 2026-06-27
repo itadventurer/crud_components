@@ -23,6 +23,26 @@
         <%= filter.render_filter_control(field, filter.query) %>
       </div>
     <% end %>
+    <%# Sort picker for headerless surfaces (cards/lists) — a table carries its own
+        header sort links, so this is opt-in via `sort: true`. %>
+    <% if filter.sort_control? %>
+      <% sort_field, sort_dir = filter.sort_state %>
+      <div class="col">
+        <span class="<%= css.form_label %>"><%= t('crud_components.filter.sort_by', default: 'Sort by') %></span>
+        <div class="<%= css.input_group %>">
+          <%= select_tag filter.param_name('sort'),
+                         options_for_select([[t('crud_components.filter.unsorted', default: '—'), '']] +
+                                            filter.sort_field_choices, sort_field),
+                         class: css.select_input, id: nil,
+                         aria: { label: t('crud_components.filter.sort_by', default: 'Sort by') } %>
+          <%= select_tag filter.param_name('dir'),
+                         options_for_select([[t('crud_components.filter.asc', default: 'Ascending'), 'asc'],
+                                             [t('crud_components.filter.desc', default: 'Descending'), 'desc']], sort_dir),
+                         class: css.select_input, id: nil,
+                         aria: { label: t('crud_components.filter.direction', default: 'Direction') } %>
+        </div>
+      </div>
+    <% end %>
   </div>
   <div class="mt-3 d-flex gap-2">
     <button type="submit" class="<%= css.button_primary %>">
