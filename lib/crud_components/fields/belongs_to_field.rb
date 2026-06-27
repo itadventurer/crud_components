@@ -29,11 +29,13 @@ module CrudComponents
 
       def derived_sortable? = false
 
-      # COUNT once per field instance — it decides select-vs-text and used to
-      # run on every filter-row render.
+      # select (a dropdown of all targets) below `select_limit` rows, else free
+      # text. Counted per render, not memoized: the field instance lives on the
+      # process-cached Structure, so a memoized count would freeze at its boot-time
+      # value and render the wrong control once the table grows past the limit.
+      # One COUNT per filter-row render is negligible next to rendering the table.
       def derived_filter_control
-        @derived_filter_control ||=
-          target.count <= CrudComponents.config.select_limit ? :select : :text
+        target.count <= CrudComponents.config.select_limit ? :select : :text
       end
 
       def filter_choices(_query = nil)

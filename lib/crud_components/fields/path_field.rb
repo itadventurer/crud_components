@@ -127,7 +127,12 @@ module CrudComponents
       # Single-valued scalar paths offer the target field's own control (a date
       # range, an enum select, …) and apply it through the association; collection
       # / non-scalar paths keep the safe contains-match.
-      def filterable? = facets[:filter] != false
+      def filterable?
+        return false if facets[:filter] == false
+        return false if CrudComponents::RESERVED_PARAMS.include?(name.to_s)
+
+        true
+      end
 
       def filter_control
         return :text if filter_facet
@@ -163,7 +168,12 @@ module CrudComponents
       end
 
       # ── sorting: single-valued paths only ────────────────────────────────────
-      def sortable? = !collection? && facets[:sort] != false
+      def sortable?
+        return false if collection? || facets[:sort] == false
+        return false if CrudComponents::RESERVED_PARAMS.include?(name.to_s)
+
+        true
+      end
 
       def apply_sort(scope, dir)
         return super if sort_facet

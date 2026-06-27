@@ -74,15 +74,12 @@ module CrudComponents
       end
 
       # The picker submits `cols[]=a&cols[]=b` (no-JS) or, with the crud-columns
-      # controller, a single comma-joined `cols=a,b` (prettier URL). Accept both.
+      # controller, a single comma-joined `cols=a,b` (prettier URL). Both forms are
+      # parsed by {CrudComponents.selected_columns} (the same reader hosts use to
+      # persist a pick) — we just symbolize the result. nil when nothing was picked.
       def cols_param
-        raw = column_request_params[column_param_key]
-        list = raw.is_a?(Array) ? raw : raw.is_a?(String) ? raw.split(',') : nil
-        names = list&.map { |n| n.to_s.strip }&.reject(&:blank?)&.map(&:to_sym)
-        names if names&.any?
+        CrudComponents.selected_columns(column_request_params, param_prefix: param_prefix)&.map(&:to_sym)
       end
-
-      def column_param_key = param_prefix ? "#{param_prefix}_cols" : 'cols'
 
       def column_request_params
         view.respond_to?(:request) && view.request ? view.request.query_parameters : {}
