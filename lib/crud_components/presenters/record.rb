@@ -6,7 +6,7 @@ module CrudComponents
 
       attr_reader :record, :model, :structure, :fieldset, :param_prefix
 
-      def initialize(view:, record:, fieldset: nil, actions: true, visible: nil, param_prefix: nil,
+      def initialize(view:, record:, fieldset: nil, actions: true, visible_columns: nil, param_prefix: nil,
                      extra_columns: nil)
         super(view: view)
         @record = record
@@ -18,10 +18,11 @@ module CrudComponents
         # Dynamic columns work on a detail view too — user-defined properties
         # whose data lives outside the model's table, shown as extra rows.
         @dynamic_fields = Array(extra_columns).map { |c| c.to_field(@model).preload!([record]) }
-        # A column picker can drive a detail view too: ?cols= (or a `visible:`
-        # default) narrows/orders the dl just like a table. `fields`,
+        # A column picker can drive a detail view too: ?cols= (or a `visible_columns:`
+        # Array default) narrows/orders the dl just like a table. A detail view has
+        # no inline gear, so an Array is the only meaningful value here. `fields`,
         # `column_visible?` and `visible_columns` come from ColumnSelection.
-        @visible_override = visible&.map(&:to_sym)
+        @visible_override = visible_columns.is_a?(Array) ? visible_columns.map(&:to_sym) : nil
       end
 
       def title

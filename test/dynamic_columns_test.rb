@@ -71,10 +71,22 @@ class DynamicColumnsTest < ActiveSupport::TestCase
     assert_equal %i[title], fields.map(&:name)
   end
 
-  test 'visible: is the default selection; ?cols= overrides it' do
-    assert_equal %i[title color], collection(extra_columns: [color], visible: %i[title color]).fields.map(&:name)
+  test 'visible_columns: is the default selection; ?cols= overrides it' do
+    assert_equal %i[title color], collection(extra_columns: [color], visible_columns: %i[title color]).fields.map(&:name)
     assert_equal %i[color],
-                 collection(params: { 'cols' => %w[color] }, extra_columns: [color], visible: %i[title]).fields.map(&:name)
+                 collection(params: { 'cols' => %w[color] }, extra_columns: [color], visible_columns: %i[title]).fields.map(&:name)
+  end
+
+  test 'visible_columns: true renders the picker (gear) with no server default' do
+    assert collection(visible_columns: true).column_picker?
+    assert_not collection(visible_columns: nil).column_picker?
+    # an Array also shows the gear (the array is just its default selection)
+    assert collection(visible_columns: %i[title]).column_picker?
+  end
+
+  test '?cols= accepts the comma-joined form the JS controller submits' do
+    assert_equal %i[price title],
+                 collection(params: { 'cols' => 'price,title' }, extra_columns: [color]).fields.map(&:name)
   end
 
   test 'column_visible? reflects the current selection' do
@@ -103,6 +115,7 @@ class DynamicColumnsTest < ActiveSupport::TestCase
   test 'CrudComponents.selected_columns extracts the picker selection from params' do
     assert_nil CrudComponents.selected_columns({})
     assert_equal %w[title price], CrudComponents.selected_columns({ 'cols' => %w[title price] })
+    assert_equal %w[title price], CrudComponents.selected_columns({ 'cols' => 'title,price' })  # comma form
     assert_equal %w[title], CrudComponents.selected_columns({ 'books_cols' => %w[title] }, param_prefix: :books)
     assert_nil CrudComponents.selected_columns({ 'cols' => ['', nil] })  # empty submit → nil
 
@@ -112,13 +125,13 @@ class DynamicColumnsTest < ActiveSupport::TestCase
     CrudComponents.selected_columns({}) { |_cols| flunk 'block must not run when nothing was submitted' }
   end
 
-  test 'crud_record (the Record presenter) honors visible: and ?cols=, intersected with permitted fields' do
+  test 'crud_record (the Record presenter) honors visible_columns: and ?cols=, intersected with permitted fields' do
     book = Book.create!(title: 'R', slug: 'rec-vis', price: 1)
-    base = CrudComponents::Presenters::Record.new(view: view, record: book, visible: %i[price title])
-    assert_equal %i[price title], base.fields.map(&:name)   # visible: default, in order
+    base = CrudComponents::Presenters::Record.new(view: view, record: book, visible_columns: %i[price title])
+    assert_equal %i[price title], base.fields.map(&:name)   # visible_columns: default, in order
 
     picked = CrudComponents::Presenters::Record.new(view: view(params: { 'cols' => %w[title] }),
-                                                    record: book, visible: %i[price title])
+                                                    record: book, visible_columns: %i[price title])
     assert_equal %i[title], picked.fields.map(&:name)       # ?cols= overrides the default
   end
 

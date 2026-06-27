@@ -172,14 +172,16 @@ CrudComponents::DynamicColumn.new(:mail_42, label: 'Welcome mail',
 
 ![The same table with the column-picker gear open in the header — a checklist of every column the user may see (declared and dynamic), each toggleable, with Apply and Reset](docs/screenshots/column-picker.png)
 
-Add `column_picker: true` and a **gear** appears in the header row: users hide and reorder
-the columns they may see. It submits `?cols[]=` to the same URL — like sort and filter — so
-it needs no endpoint, opens and works without JavaScript (native `<details>`), and is always
-intersected with the permitted set (a forged param can't reveal a gated column). It's also a
-standalone helper (`crud_column_picker`) you can drop above a `crud_record` detail view.
+Pass `visible_columns: true` and a **gear** appears in the header row: users hide and reorder
+the columns they may see, grouped by source model (Pipedrive-style). It submits `?cols[]=` to
+the same URL — like sort and filter — so it needs no endpoint, opens and works without
+JavaScript (native `<details>`), and is always intersected with the permitted set (a forged
+param can't reveal a gated column). Pass an Array instead of `true` for a saved default (a
+live pick wins). It's also a standalone helper (`crud_column_picker`) you can drop above a
+`crud_record` detail view.
 
 ```erb
-<%= crud_collection @books, column_picker: true, visible: current_user.book_columns %>
+<%= crud_collection @books, visible_columns: current_user.book_columns || true %>
 ```
 
 → [Views → column picker](docs/views.md#column-picker)

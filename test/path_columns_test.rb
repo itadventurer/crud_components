@@ -149,10 +149,17 @@ class PathColumnsIntegrationTest < ActionDispatch::IntegrationTest
     assert_select 'thead th a', { text: /Genre/, count: 0 }   # narrowed away
   end
 
-  test 'the picker groups path columns under their association' do
+  test 'the picker groups every column by its source model (Pipedrive-style)' do
     get '/columns'
-    assert_select 'li.crud-column-picker-group', text: 'Authors'
-    assert_select 'li.crud-column-picker-group', text: 'Publisher'
+    # group headers are model names — own columns under Book, path/association
+    # columns under the model they reach (Publisher, Author)
+    assert_select 'li.crud-column-picker-group', text: /Book/
+    assert_select 'li.crud-column-picker-group', text: /Publisher/
+    assert_select 'li.crud-column-picker-group', text: /Author/
+    # the Publisher group header carries the model icon
+    assert_select 'li.crud-column-picker-group i.bi-building'
+    # each row also tags its model on the right
+    assert_select 'span.crud-column-picker-model', text: 'Publisher'
   end
 
   test 'a path to the target label field renders an icon + link to the record' do

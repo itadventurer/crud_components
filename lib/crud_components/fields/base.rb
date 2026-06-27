@@ -44,6 +44,12 @@ module CrudComponents
       def group_label = nil
       def picker_label = human_name
 
+      # The model the column-picker groups this column under (Pipedrive-style):
+      # its own model for a plain column, the *associated* model for an
+      # association or path column — so `publisher`, `publisher.name` and
+      # `publisher.founded_on` all sit under "Publisher".
+      def group_model = model
+
       # The DB column backing this field, if any (nil for associations and
       # computed fields).
       def column

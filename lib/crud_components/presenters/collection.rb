@@ -12,7 +12,7 @@ module CrudComponents
 
       def initialize(view:, records:, fieldset: nil, query: nil, layout: :table,
                      param_prefix: nil, actions: true, group_by: nil,
-                     extra_columns: nil, visible: nil, column_picker: false)
+                     extra_columns: nil, visible_columns: nil)
         super(view: view)
         unless records.respond_to?(:klass)
           raise ArgumentError,
@@ -27,14 +27,15 @@ module CrudComponents
         @layout = layout
         @param_prefix = param_prefix
         @actions_enabled = actions
-        @column_picker = column_picker
+        # `visible_columns:` is the single picker knob: truthy → render the gear;
+        # an Array is the server-side default selection (a `?cols=` pick wins over
+        # it), `true` is "render + read the param", nil/false is "no picker".
+        @column_picker = !!visible_columns
         # User-defined columns whose data lives outside the model's table. Built
         # fresh per request (never on the immutable Structure), so they may carry
         # the per-page value cache.
         @dynamic_fields = Array(extra_columns).map { |c| c.to_field(@model) }
-        # A server-supplied default selection (e.g. a persisted preference); the
-        # ?cols= param, when present, takes precedence over it.
-        @visible_override = visible&.map(&:to_sym)
+        @visible_override = visible_columns.is_a?(Array) ? visible_columns.map(&:to_sym) : nil
 
         case query
         when false
