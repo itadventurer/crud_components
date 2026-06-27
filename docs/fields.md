@@ -1,5 +1,7 @@
 # Fields & rendering
 
+> See it running: **[live demo](https://crud-components.zelenin.de)** — every field type and renderer has a page.
+
 Everything in a `crud_structure` is, ultimately, about fields: what they are, how they
 render, how they filter and sort. This is the reference for that. For the one-page
 summary read the [combination table](../README.md#the-combination-table) in the README

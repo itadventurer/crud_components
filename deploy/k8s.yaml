@@ -1,7 +1,7 @@
 # Sample Kubernetes manifest for the live demo (the bundled test/dummy app).
-# Build + push the image first:  docker build -t YOUR_REGISTRY/crud-components-demo:latest .
-#                                docker push YOUR_REGISTRY/crud-components-demo:latest
-# then set `image:` below and `kubectl apply -f deploy/k8s.yaml`.
+# The `demo-image.yml` workflow builds + pushes the image on every push to main:
+#   ghcr.io/itadventurer/crud-components-demo:latest
+# Just `kubectl apply -f deploy/k8s.yaml` (or build it yourself from the Dockerfile).
 #
 # Safety model for a public demo with no PVC: the DB is an ephemeral emptyDir,
 # reseeded on boot and every 10 min by DEMO_RESET, so nothing a visitor does
@@ -27,7 +27,7 @@ spec:
         fsGroup: 1000               # so the emptyDir mounts are writable
       containers:
         - name: app
-          image: YOUR_REGISTRY/crud-components-demo:latest
+          image: ghcr.io/itadventurer/crud-components-demo:latest
           imagePullPolicy: Always
           ports:
             - containerPort: 8080

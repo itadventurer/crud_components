@@ -21,25 +21,24 @@ publisher above. After that, every release is hands-off.
 
 ## Cutting a release
 
-1. **Bump the version** in `lib/crud_components/version.rb` and move the
-   `## [Unreleased]`/top section of `CHANGELOG.md` under the new version number.
-   Open it as a normal PR; merge to `main`.
+1. **Bump the version** in `lib/crud_components/version.rb`. Open it as a normal
+   PR; merge to `main`.
 
 2. **Publish the release** for the matching tag — the workflow expects `vX.Y.Z`
    to equal the version in `version.rb`:
 
    ```bash
-   gh release create v0.2.0 --title v0.2.0 \
-     --notes "$(awk '/^## \[0.2.0\]/{f=1;next} /^## \[/{f=0} f' CHANGELOG.md)"
+   gh release create v0.1.0 --title v0.1.0 --generate-notes
    ```
 
-   (or use the GitHub UI → *Draft a new release* → pick the tag → paste the
-   CHANGELOG section). Publishing fires the workflow, which runs the tests,
-   builds the gem, attaches a build-provenance attestation, and pushes it.
+   (or use the GitHub UI → *Draft a new release* → pick the tag →
+   *Generate release notes*). Publishing fires the workflow, which runs the
+   tests, builds the gem, attaches a build-provenance attestation, and pushes it.
 
 That's it — `gem-push.yml` does the build + push; you never touch credentials.
 
 ### Versioning
 
 [SemVer](https://semver.org): new backward-compatible features → minor (`0.x`),
-bug-fixes → patch. The CHANGELOG is grouped `Added` / `Changed` / `Fixed`.
+bug-fixes → patch. Release notes are generated from the merged PRs
+(`--generate-notes`); there is no hand-maintained changelog.

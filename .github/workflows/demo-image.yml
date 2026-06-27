@@ -1,0 +1,52 @@
+name: Demo image
+
+# Builds the live-demo image (the bundled test/dummy playground) and pushes it
+# to the GitHub Container Registry. Runs on every push to main so the demo stays
+# current, and on demand. No secrets needed — auth is the workflow's GITHUB_TOKEN.
+#
+# Deploy it with deploy/k8s.yaml (set `image:` to the tag below), or run locally:
+#   docker run --rm -p 8080:8080 ghcr.io/itadventurer/crud-components-demo:latest
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+env:
+  IMAGE: ghcr.io/${{ github.repository_owner }}/crud-components-demo
+
+jobs:
+  build-push:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write   # push to ghcr.io
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Log in to ghcr.io
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Tags & labels
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.IMAGE }}
+          tags: |
+            type=raw,value=latest
+            type=sha
+
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max

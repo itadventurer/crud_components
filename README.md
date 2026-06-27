@@ -19,6 +19,9 @@ That line gives you a table with type-appropriate cells, sortable headers, an in
 filter row, and working URL params — `?genre=scifi&price_leq=20&sort=title&dir=desc`
 filters and sorts it, with or without JavaScript. No controller code, no model code.
 
+**▶ Live demo: [crud-components.zelenin.de](https://crud-components.zelenin.de)** — a
+browsable playground where every feature has a running page with the exact DSL behind it.
+
 ## Installation
 
 ```ruby
@@ -495,10 +498,12 @@ cd test/dummy && bin/rails db:schema:load db:seed && bin/rails server   # → :3
 ruby script/demo.rb               # query-side walkthrough in the terminal
 ```
 
-The playground is **living documentation**: its landing page indexes every feature, and
-each demo page carries a "How this page is built" panel with the exact DSL and ERB.
+The playground is **living documentation** — browse it live at
+**[crud-components.zelenin.de](https://crud-components.zelenin.de)**: its landing page
+indexes every feature, and each demo page carries a "How this page is built" panel with
+the exact DSL and ERB.
 
-![The playground landing page: a feature index grouped into Basics, Identity & associations, Power features and Integration — each card links to a running demo and shows the one line of code behind it](docs/screenshots/home.png)
+[![The playground landing page: a feature index grouped into Basics, Identity & associations, Power features and Integration — each card links to a running demo and shows the one line of code behind it](docs/screenshots/home.png)](https://crud-components.zelenin.de)
 
 Tests mirror the design: `dsl_validation_test.rb` for every raising combination,
 `query_security_test.rb` for the [security model](docs/security.md), `structure_test.rb`

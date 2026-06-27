@@ -20,7 +20,7 @@ Gem::Specification.new do |spec|
 
   spec.metadata['homepage_uri'] = spec.homepage
   spec.metadata['source_code_uri'] = spec.homepage
-  spec.metadata['changelog_uri'] = "#{spec.homepage}/blob/main/CHANGELOG.md"
+  spec.metadata['rubygems_mfa_required'] = 'true'
 
   # Prefer git, but fall back to a glob so the gem (and the demo image) build
   # without a .git directory. Excludes tests, the dummy, CI and demo-deploy
