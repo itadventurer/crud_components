@@ -1,0 +1,5 @@
+<%# Locals: field, query, form_id, compact, autosubmit, param_name, css %>
+<%= tag.input type: 'date', name: param_name,
+              value: query.value(field.name.to_s),
+              class: compact ? css.input_sm : css.input, form: form_id,
+              aria: { label: field.human_name } %>

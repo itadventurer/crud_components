@@ -40,8 +40,9 @@ class PropertyDefinition < ApplicationRecord
       unit: unit.presence,
       # One query per page for this column's values, keyed by subject id.
       preload: ->(records) { definition.values_by_subject(subject_model, records) },
-      # Reachable in SQL, so the column filters and sorts like any other.
-      filter: ->(scope, value) { definition.filter_scope(scope, subject_model, value) },
+      # Reachable in SQL, so the column filters and sorts like any other — with a
+      # control matching the property's flavor (see #filter_for).
+      filter: definition.filter_for(subject_model),
       sort:   ->(scope, dir)   { definition.sort_scope(scope, subject_model, dir) }
     ) { |record, loaded| definition.cast(loaded[record.id]&.value) }
   end
@@ -53,14 +54,47 @@ class PropertyDefinition < ApplicationRecord
       .index_by(&:subject_id)
   end
 
-  # Filter: subjects whose value contains the term (case-insensitive enough for
-  # the demo; safely escaped).
-  def filter_scope(scope, subject_model, value)
-    ids = property_values
-          .where(subject_type: subject_model.name)
-          .where('value LIKE ?', "%#{PropertyValue.sanitize_sql_like(value)}%")
-          .select(:subject_id)
-    scope.where(id: ids)
+  # A typed filter matching the property's flavor: a date filters by date range, a
+  # number by number range, a boolean by a yes/no select, and a free-text property
+  # by substring. Each apply block declares the keywords its type supplies (geq:/leq:
+  # for a range, eq: for a boolean, contains: for text) and is handed values already
+  # cast to the type — a Date, a BigDecimal, true/false — or nil when blank/unparseable.
+  def filter_for(subject_model)
+    case flavor
+    when 'date'
+      CrudComponents::TypedFilter.date(lambda do |scope, geq:, leq:|
+        rows = values_for(subject_model)
+        rows = rows.where('value >= ?', geq.iso8601) if geq   # ISO dates sort lexically
+        rows = rows.where('value <= ?', leq.iso8601) if leq
+        scope.where(id: rows.select(:subject_id))
+      end)
+    when 'number'
+      CrudComponents::TypedFilter.numeric(lambda do |scope, geq:, leq:|
+        rows = values_for(subject_model)
+        rows = rows.where('CAST(value AS REAL) >= ?', geq) if geq
+        rows = rows.where('CAST(value AS REAL) <= ?', leq) if leq
+        scope.where(id: rows.select(:subject_id))
+      end)
+    when 'boolean'
+      CrudComponents::TypedFilter.boolean(lambda do |scope, eq:|
+        next scope if eq.nil?   # "any"
+
+        scope.where(id: values_for(subject_model).where(value: eq.to_s).select(:subject_id))
+      end)
+    else
+      CrudComponents::TypedFilter.text(lambda do |scope, contains:|
+        next scope if contains.blank?
+
+        rows = values_for(subject_model).where('value LIKE ?', "%#{PropertyValue.sanitize_sql_like(contains)}%")
+        scope.where(id: rows.select(:subject_id))
+      end)
+    end
+  end
+
+  # This definition's values, scoped to the subject model — a relation to refine
+  # into a subject-id subquery.
+  def values_for(subject_model)
+    property_values.where(subject_type: subject_model.name)
   end
 
   # Sort: order by the value via a correlated subquery (`dir` is the gem's

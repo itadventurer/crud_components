@@ -97,7 +97,7 @@ module CrudComponents
       def filterable?
         return false if facets[:filter] == false
         return false if CrudComponents::RESERVED_PARAMS.include?(name.to_s)
-        return true if filter_facet
+        return true if typed_filter || filter_facet
 
         derived_filterable?
       end
@@ -107,6 +107,14 @@ module CrudComponents
           facets[:filter].is_a?(Hash) || facets[:filter].is_a?(Symbol) ? facets[:filter] : nil
       end
 
+      # A {TypedFilter} facet — a column whose filter declares a value type, so it
+      # renders the matching control (number/date range, boolean, select) and its
+      # apply block receives cast eq/geq/leq/contains values rather than a raw
+      # string.
+      def typed_filter
+        facets[:filter] if facets[:filter].is_a?(CrudComponents::TypedFilter)
+      end
+
       def derived_filterable?
         false
       end
@@ -114,6 +122,8 @@ module CrudComponents
       # Which filter control partial to render: :text, :select, :boolean,
       # :number_range or :date_range.
       def filter_control
+        return typed_filter.control if typed_filter
+
         filter_facet ? :text : derived_filter_control
       end
 
@@ -121,8 +131,8 @@ module CrudComponents
         :text
       end
 
-      def filter_choices(_query = nil)
-        nil
+      def filter_choices(query = nil)
+        typed_filter&.filter_choices(query)
       end
 
       def range_filter?
@@ -131,7 +141,9 @@ module CrudComponents
 
       # `exact`, `geq`, `leq` are the raw param values (Strings or nil).
       def apply_filter(scope, exact: nil, geq: nil, leq: nil)
-        if filter_facet
+        if typed_filter
+          typed_filter.apply(scope, exact:, geq:, leq:)
+        elsif filter_facet
           return scope unless exact
 
           apply_filter_facet(scope, exact)

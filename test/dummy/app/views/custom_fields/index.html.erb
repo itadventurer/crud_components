@@ -6,9 +6,10 @@
              "shown as extra columns. The model is untouched — the controller loads each " \
              "<code>PropertyDefinition</code> and turns it into a <code>CrudComponents::DynamicColumn</code>, then " \
              "passes the set as <code>extra_columns:</code>. Each column carries a <code>preload:</code> (one query " \
-             "per page, no N+1) and <code>filter:</code>/<code>sort:</code> facets, so <strong>Shelf</strong> (string), " \
-             "<strong>Weight</strong> (number, in g), <strong>Signed</strong> (boolean) and <strong>Acquired</strong> " \
-             "(date) sort and filter like real columns. Try the filter row and the sort headers.".html_safe,
+             "per page, no N+1), a <strong>typed</strong> <code>filter:</code> and a <code>sort:</code> — so " \
+             "<strong>Shelf</strong> (text), <strong>Weight</strong> (number range, in g), <strong>Signed</strong> " \
+             "(yes/no select) and <strong>Acquired</strong> (date range) filter with the control their type wants, " \
+             "not a plain text box. Try the filter row and the sort headers.".html_safe,
       docs: { 'Dynamic columns' => 'docs/fields.md#dynamic-columns', 'Views' => 'docs/views.md' }) do %>
 <%= code_file('app/controllers/custom_fields_controller.rb') do %>
 @books   = Book.all
@@ -20,9 +21,19 @@ def to_crud_column(subject_model)
   CrudComponents::DynamicColumn.new(
     key.to_sym, label: label, as: renderer, unit: unit.presence,
     preload: -&gt;(records) { definition.values_by_subject(subject_model, records) },  # one query/page
-    filter:  -&gt;(scope, value) { definition.filter_scope(scope, subject_model, value) },
-    sort:    -&gt;(scope, dir)   { definition.sort_scope(scope, subject_model, dir) }
+    filter:  definition.filter_for(subject_model),   # a TypedFilter matching the flavor
+    sort:    -&gt;(scope, dir) { definition.sort_scope(scope, subject_model, dir) }
   ) { |record, loaded| definition.cast(loaded[record.id]&amp;.value) }                   # the value resolver
+end
+
+# A typed control per flavor instead of a text box for everything:
+def filter_for(subject_model)
+  case flavor
+  when 'number'  then CrudComponents::TypedFilter.numeric(-&gt;(s, geq:, leq:) { ... })
+  when 'boolean' then CrudComponents::TypedFilter.boolean(-&gt;(s, eq:) { ... })
+  when 'date'    then CrudComponents::TypedFilter.date(-&gt;(s, geq:, leq:) { ... })
+  else                CrudComponents::TypedFilter.text(-&gt;(s, contains:) { ... })
+  end
 end
 <% end %>
 <%= code_file('app/views/custom_fields/index.html.erb', :erb) do %>

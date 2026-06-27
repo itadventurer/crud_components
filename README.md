@@ -154,7 +154,7 @@ end
 The **search spec** — the mini-language `filter` and `search_in` share — builds joins +
 parameterized, wildcard-escaped ILIKE from column/association names, nothing to sanitize.
 An association name alone *delegates* to that model's `search_in`. →
-[Fields → the search spec](docs/fields.md#the-search-spec)
+[Filtering → the search spec](docs/filtering.md#the-search-spec)
 
 ### Columns the model doesn't know about
 
@@ -465,7 +465,8 @@ CrudComponents.configure { |config| … }     # css/icon maps, select_limit, def
 
 | Doc                                        | What                                                                             |
 | ------------------------------------------ | -------------------------------------------------------------------------------- |
-| [docs/fields.md](docs/fields.md)           | Fields, renderers, facets, the search spec, identity, per-flavor behavior        |
+| [docs/fields.md](docs/fields.md)           | Fields, renderers, facets, dynamic & path columns, identity, per-flavor behavior |
+| [docs/filtering.md](docs/filtering.md)     | The `filter` facet, the search spec, typed filter controls, the standalone form  |
 | [docs/views.md](docs/views.md)             | The helpers, fieldsets, actions & route resolution, the manual query, pagination |
 | [docs/forms.md](docs/forms.md)             | `crud_form`, the permit list, `editable:`, form controls, attachments            |
 | [docs/security.md](docs/security.md)       | Permissions (`if:`/`editable:`), the whitelist, and the injection-safe URL model |
