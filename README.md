@@ -394,7 +394,7 @@ map plus a few partials, never a fork. → [Extending → styling](docs/extendin
 ```ruby
 crud_collection(records, fieldset: nil, layout: :table, query: :auto, param_prefix: nil,
                 actions: true, group_by: nil, extra_columns: nil, picker: false, picked_columns: :auto)
-crud_record(record, fieldset: nil, actions: true, layout: :record, picker: false, picked_columns: :auto)
+crud_record(record, fieldset: nil, actions: true, layout: :record, picked_columns: :auto)
 crud_filter(model, fieldset: nil, query: nil, param_prefix: nil, layout: :filter)
 crud_form(record, fieldset: nil, action: nil, url: nil, method: nil, layout: :form)
 crud_actions(record_or_model, fieldset: nil)

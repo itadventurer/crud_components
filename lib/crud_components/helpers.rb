@@ -55,22 +55,21 @@ module CrudComponents
     # @param actions [Boolean] render the row actions (false to place them with
     #   {#crud_actions}).
     # @param layout [Symbol] the partial under `crud_components/` (`:record` ships).
-    # @param picker [Boolean] honor a column picker on this page (default false). A
-    #   detail view has no inline gear of its own — place a standalone
-    #   {#crud_column_picker} and set this so the dl narrows to match.
-    # @param picked_columns [Symbol, Array<Symbol>] which fields to show when the
-    #   picker is on: `:auto` (default) reads `?cols=`; an `Array` shows exactly
-    #   those (no param read). Same semantics as {#crud_collection}.
+    # @param picked_columns [Symbol, Array<Symbol>] narrow/order the fields shown. A
+    #   detail view has no inline gear of its own, so pass an `Array` you resolved
+    #   (e.g. from a standalone {#crud_column_picker} on the page, via
+    #   {CrudComponents.selected_columns}). `:auto` (default) means "don't narrow" —
+    #   with no gear here a stray `?cols=` is ignored.
     # @param param_prefix [Symbol, nil] namespaces the `?cols=` param this view reads
     #   (match it to the picker's `param_prefix:`).
     # @param extra_columns [Array<CrudComponents::DynamicColumn>, nil] user-defined
     #   columns whose data lives outside the model's table, shown as extra rows
     #   (same as {#crud_collection}'s `extra_columns:`, for a detail view).
     # @return [ActiveSupport::SafeBuffer] the rendered HTML.
-    def crud_record(record, fieldset: nil, actions: true, layout: :record, picker: false, picked_columns: :auto,
+    def crud_record(record, fieldset: nil, actions: true, layout: :record, picked_columns: :auto,
                     param_prefix: nil, extra_columns: nil)
       presenter = Presenters::Record.new(view: self, record: record, fieldset: fieldset, actions: actions,
-                                         picker: picker, picked_columns: picked_columns, param_prefix: param_prefix,
+                                         picked_columns: picked_columns, param_prefix: param_prefix,
                                          extra_columns: extra_columns)
       render "crud_components/#{layout}", record_presenter: presenter
     end

@@ -39,16 +39,18 @@ module CrudComponents
       def group_heading(group_model) = group_model.model_name.human
       def group_icon(group_model) = Structure.for(group_model).icon
 
-      # The ordered column names to show, or nil for "all permitted". Picking off
-      # → nil. A resolved Array → verbatim (no param read). `:auto` → the `?cols=`
-      # submit (nil when absent, i.e. show all until the user picks).
+      # The ordered column names to show, or nil for "all permitted". The selection
+      # is independent of the gear: a resolved **Array** always applies (the backend
+      # decided it — the gear may live elsewhere, e.g. a standalone picker or a
+      # detail view), verbatim and without reading the param. `:auto` reads the
+      # `?cols=` submit **only when a gear is rendered here** (`picker: true`); with
+      # no gear here, `:auto` means "don't narrow" (a stray `?cols=` is ignored).
       def visible_columns
         return @visible_columns if defined?(@visible_columns)
 
         @visible_columns =
-          if !@picker then nil
-          elsif @picked_columns.is_a?(Array) then @picked_columns
-          else cols_param
+          if @picked_columns.is_a?(Array) then @picked_columns
+          elsif @picker then cols_param
           end
       end
 
