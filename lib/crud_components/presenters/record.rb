@@ -6,8 +6,8 @@ module CrudComponents
 
       attr_reader :record, :model, :structure, :fieldset, :param_prefix
 
-      def initialize(view:, record:, fieldset: nil, actions: true, visible_columns: nil, param_prefix: nil,
-                     extra_columns: nil)
+      def initialize(view:, record:, fieldset: nil, actions: true, picked_columns: :auto,
+                     param_prefix: nil, extra_columns: nil)
         super(view: view)
         @record = record
         @model = record.class
@@ -18,11 +18,14 @@ module CrudComponents
         # Dynamic columns work on a detail view too — user-defined properties
         # whose data lives outside the model's table, shown as extra rows.
         @dynamic_fields = Array(extra_columns).map { |c| c.to_field(@model).preload!([record]) }
-        # A column picker can drive a detail view too: ?cols= (or a `visible_columns:`
-        # Array default) narrows/orders the dl just like a table. A detail view has
-        # no inline gear, so an Array is the only meaningful value here. `fields`,
-        # `column_visible?` and `visible_columns` come from ColumnSelection.
-        @visible_override = visible_columns.is_a?(Array) ? visible_columns.map(&:to_sym) : nil
+        # A column picker can narrow/order this dl too, but a detail view has no
+        # inline gear of its own (no `picker:` knob) — the gear is a standalone
+        # `crud_column_picker` on the page. So pass `picked_columns:` an Array you
+        # resolved (e.g. via `CrudComponents.selected_columns(params)`); `:auto`
+        # here means "don't narrow" (no gear → a stray `?cols=` is ignored).
+        # (`fields`, `column_visible?` and the picker logic come from ColumnSelection.)
+        @picker = false
+        @picked_columns = normalize_picked_columns(picked_columns)
       end
 
       def title

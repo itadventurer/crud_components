@@ -61,36 +61,52 @@ class DynamicColumnsTest < ActiveSupport::TestCase
     assert_equal :color, names.last
   end
 
-  test '?cols= limits and orders the visible columns' do
-    fields = collection(params: { 'cols' => %w[color title] }, extra_columns: [color]).fields
+  test 'picked_columns: :auto reads ?cols= to limit and order the visible columns' do
+    fields = collection(picker: true, params: { 'cols' => %w[color title] }, extra_columns: [color]).fields
     assert_equal %i[color title], fields.map(&:name)
   end
 
   test 'an unknown ?cols= name is ignored, not rendered' do
-    fields = collection(params: { 'cols' => %w[nope title] }).fields
+    fields = collection(picker: true, params: { 'cols' => %w[nope title] }).fields
     assert_equal %i[title], fields.map(&:name)
   end
 
-  test 'visible_columns: is the default selection; ?cols= overrides it' do
-    assert_equal %i[title color], collection(extra_columns: [color], visible_columns: %i[title color]).fields.map(&:name)
-    assert_equal %i[color],
-                 collection(params: { 'cols' => %w[color] }, extra_columns: [color], visible_columns: %i[title]).fields.map(&:name)
+  test 'picked_columns: an Array shows exactly that, and never reads ?cols=' do
+    # verbatim, in order
+    assert_equal %i[title color],
+                 collection(picker: true, extra_columns: [color], picked_columns: %i[title color]).fields.map(&:name)
+    # a ?cols= submit does NOT override an explicit Array (the backend resolved it)
+    assert_equal %i[title],
+                 collection(picker: true, params: { 'cols' => %w[color] }, extra_columns: [color],
+                            picked_columns: %i[title]).fields.map(&:name)
   end
 
-  test 'visible_columns: true renders the picker (gear) with no server default' do
-    assert collection(visible_columns: true).column_picker?
-    assert_not collection(visible_columns: nil).column_picker?
-    # an Array also shows the gear (the array is just its default selection)
-    assert collection(visible_columns: %i[title]).column_picker?
+  test 'picked_columns: :auto with no ?cols= shows all (the gear, nothing picked yet)' do
+    c = collection(picker: true, extra_columns: [color])
+    assert_equal c.available_fields.map(&:name), c.fields.map(&:name)   # no selection → every field
+  end
+
+  test 'picker: only toggles the gear; picked_columns applies on its own' do
+    # the gear follows picker: alone
+    assert collection(picker: true).column_picker?
+    assert_not collection(picker: false).column_picker?
+    assert_not collection.column_picker?                                  # picker: false is the default
+    assert_not collection(picker: false, picked_columns: %i[title]).column_picker?
+
+    # an Array narrows even with no gear here (the gear may live elsewhere)
+    assert_equal %i[title], collection(picker: false, picked_columns: %i[title]).fields.map(&:name)
+    # :auto with no gear here ignores a stray ?cols= (no narrowing)
+    assert_equal collection.available_fields.map(&:name),
+                 collection(picker: false, params: { 'cols' => %w[title] }).fields.map(&:name)
   end
 
   test '?cols= accepts the comma-joined form the JS controller submits' do
     assert_equal %i[price title],
-                 collection(params: { 'cols' => 'price,title' }, extra_columns: [color]).fields.map(&:name)
+                 collection(picker: true, params: { 'cols' => 'price,title' }, extra_columns: [color]).fields.map(&:name)
   end
 
   test 'column_visible? reflects the current selection' do
-    c = collection(params: { 'cols' => %w[title] }, extra_columns: [color])
+    c = collection(picker: true, params: { 'cols' => %w[title] }, extra_columns: [color])
     assert c.column_visible?(c.available_fields.find { |f| f.name == :title })
     assert_not c.column_visible?(c.available_fields.find { |f| f.name == :color })
   end
@@ -101,7 +117,7 @@ class DynamicColumnsTest < ActiveSupport::TestCase
 
     assert_not_includes collection(extra_columns: [gated]).available_fields.map(&:name), :secret
     # forged param can only hide/reorder permitted columns — never reveal this one
-    assert_equal %i[color], collection(params: { 'cols' => %w[secret color] },
+    assert_equal %i[color], collection(picker: true, params: { 'cols' => %w[secret color] },
                                        extra_columns: [color, gated]).fields.map(&:name)
   end
 
@@ -125,14 +141,22 @@ class DynamicColumnsTest < ActiveSupport::TestCase
     CrudComponents.selected_columns({}) { |_cols| flunk 'block must not run when nothing was submitted' }
   end
 
-  test 'crud_record (the Record presenter) honors visible_columns: and ?cols=, intersected with permitted fields' do
+  test 'crud_record (the Record presenter) narrows by picked_columns; it has no gear of its own' do
     book = Book.create!(title: 'R', slug: 'rec-vis', price: 1)
-    base = CrudComponents::Presenters::Record.new(view: view, record: book, visible_columns: %i[price title])
-    assert_equal %i[price title], base.fields.map(&:name)   # visible_columns: default, in order
+    # an explicit Array is verbatim (and never reads ?cols=, even when present)
+    base = CrudComponents::Presenters::Record.new(view: view, record: book, picked_columns: %i[price title])
+    assert_equal %i[price title], base.fields.map(&:name)
 
-    picked = CrudComponents::Presenters::Record.new(view: view(params: { 'cols' => %w[title] }),
-                                                    record: book, visible_columns: %i[price title])
-    assert_equal %i[title], picked.fields.map(&:name)       # ?cols= overrides the default
+    ignored = CrudComponents::Presenters::Record.new(view: view(params: { 'cols' => %w[title] }),
+                                                     record: book, picked_columns: %i[price title])
+    assert_equal %i[price title], ignored.fields.map(&:name)   # Array ignores ?cols=
+
+    # :auto (the default) does NOT read ?cols= on a record — no inline gear here, so a
+    # stray param is ignored; the controller resolves and passes an Array instead.
+    auto = CrudComponents::Presenters::Record.new(view: view(params: { 'cols' => %w[title] }),
+                                                  record: book, picked_columns: :auto)
+    assert_includes auto.fields.map(&:name), :title
+    assert auto.fields.size > 1, 'record :auto should not narrow from a stray ?cols='
   end
 
   test 'crud_record renders dynamic columns as extra rows (extra_columns:)' do

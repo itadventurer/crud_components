@@ -172,16 +172,22 @@ CrudComponents::DynamicColumn.new(:mail_42, label: 'Welcome mail',
 
 ![The same table with the column-picker gear open in the header — a checklist of every column the user may see (declared and dynamic), each toggleable, with Apply and Reset](docs/screenshots/column-picker.png)
 
-Pass `visible_columns: true` and a **gear** appears in the header row: users hide and reorder
+Pass `picker: true` and a **gear** appears in the header row: users hide and reorder
 the columns they may see, grouped by source model (Pipedrive-style). It submits `?cols[]=` to
 the same URL — like sort and filter — so it needs no endpoint, opens and works without
 JavaScript (native `<details>`), and is always intersected with the permitted set (a forged
-param can't reveal a gated column). Pass an Array instead of `true` for a saved default (a
-live pick wins). It's also a standalone helper (`crud_column_picker`) you can drop above a
+param can't reveal a gated column). By default (`picked_columns: :auto`) the gem reads the
+param for you — ephemeral, nothing stored. To persist, resolve the selection in your
+controller and pass it back as an Array; the gem then shows exactly that and never re-reads
+the param. It's also a standalone helper (`crud_column_picker`) you can drop above a
 `crud_record` detail view.
 
 ```erb
-<%= crud_collection @books, visible_columns: current_user.book_columns || true %>
+<%# ephemeral — the gem reads ?cols= %>
+<%= crud_collection @books, picker: true %>
+
+<%# persisted — controller stores the pick, view replays it (nil → :auto until the first pick) %>
+<%= crud_collection @books, picker: true, picked_columns: current_user.book_columns %>
 ```
 
 → [Views → column picker](docs/views.md#column-picker)
@@ -284,7 +290,7 @@ Take the query into your own hands to paginate or compose with a scope:
 <%= crud_collection @books, query: @query %> # If you use kaminari, the pagination is rendered automatically
 ```
 
-`query: false` (static) and `param_prefix:` handle several collections on one page. →
+`query: :static` and `param_prefix:` handle several collections on one page. →
 [Views → the manual query](docs/views.md#the-manual-query-pagination-and-big-tables)
 
 ## Mental model
@@ -386,9 +392,9 @@ map plus a few partials, never a fork. → [Extending → styling](docs/extendin
 ### Helpers (the everyday API)
 
 ```ruby
-crud_collection(records, fieldset: nil, layout: :table, query: nil,
-                param_prefix: nil, actions: true, group_by: nil)
-crud_record(record, fieldset: nil, actions: true, layout: :record)
+crud_collection(records, fieldset: nil, layout: :table, query: :auto, param_prefix: nil,
+                actions: true, group_by: nil, extra_columns: nil, picker: false, picked_columns: :auto)
+crud_record(record, fieldset: nil, actions: true, layout: :record, picked_columns: :auto)
 crud_filter(model, fieldset: nil, query: nil, param_prefix: nil, layout: :filter)
 crud_form(record, fieldset: nil, action: nil, url: nil, method: nil, layout: :form)
 crud_actions(record_or_model, fieldset: nil)
@@ -397,8 +403,9 @@ crud_actions(record_or_model, fieldset: nil)
 `crud_collection` takes a **relation** (`@books`, `Book.all`, or an authorized scope),
  so your authorization runs in the controller, before the gem renders.
 `crud_actions` takes a record (→ row actions) or a model class (→ collection actions). `query:` is a
-tri-state: *not given* = auto (build from params), a `Query` = manual (already filtered),
-`false` = static.
+tri-state: `:auto` (default) builds from params, a `Query` = manual (already filtered),
+`:static` = no filter row or sort links. The column picker is two knobs: `picker:` toggles the
+gear, `picked_columns:` seeds it (`:auto` reads `?cols=`; an Array is verbatim, no param read).
 
 ### DSL (inside `crud_structure do … end`)
 

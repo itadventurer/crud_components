@@ -11,12 +11,12 @@ broadcasts_refreshes   # production: push a refresh when a review changes
 <% end %>
 <%= code_file('app/views/live/index.html.erb', :erb) do %>
 &lt;%= turbo_stream_from :reviews %&gt;            &lt;%# production: subscribe to live updates %&gt;
-&lt;%= crud_collection @reviews, query: false %&gt;
+&lt;%= crud_collection @reviews, query: :static %&gt;
 <% end %>
 <% end %>
 
 <div class="card"><div class="card-body">
-  <%= crud_collection @reviews, query: false %>
+  <%= crud_collection @reviews, query: :static %>
 </div></div>
 
 <script type="module">

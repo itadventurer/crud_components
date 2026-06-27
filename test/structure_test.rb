@@ -284,6 +284,23 @@ class StructureTest < ActiveSupport::TestCase
     CrudComponents.config.select_limit = original
   end
 
+  # Regression: the field instance lives on the process-cached Structure, so the
+  # control must NOT freeze at its first-seen count — a table that grows past the
+  # limit after boot has to start rendering text instead of a stale full select.
+  test 'belongs_to filter control re-counts on the same (cached) field instance' do
+    Publisher.create!(name: 'P1', slug: 'p1')
+    original = CrudComponents.config.select_limit
+    CrudComponents.config.select_limit = 2
+    field = CrudComponents::Fields::BelongsToField.new(:publisher, Book)
+    assert_equal :select, field.filter_control            # 1 row ≤ 2
+
+    Publisher.create!(name: 'P2', slug: 'p2')
+    Publisher.create!(name: 'P3', slug: 'p3')
+    assert_equal :text, field.filter_control              # same instance, now 3 rows > 2
+  ensure
+    CrudComponents.config.select_limit = original
+  end
+
   # ── reflection categories ──────────────────────────────────────────────────
   test 'polymorphic belongs_to: type column hidden, association non-filterable' do
     structure = structure_of(Comment)

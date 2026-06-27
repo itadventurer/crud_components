@@ -1,7 +1,7 @@
 <h1 class="mb-3">Column picker</h1>
 
 <%= docs_panel(
-      intro: "Pass <code>visible_columns: true</code> and a <strong>gear</strong> appears in the header row: the user " \
+      intro: "Pass <code>picker: true</code> and a <strong>gear</strong> appears in the header row: the user " \
              "ticks which columns are shown and (with the optional <code>crud-columns</code> Stimulus controller) " \
              "drags to reorder them. It submits <code>?cols[]=</code> to this same URL — like the sort links and " \
              "filter row — so it opens and works without JavaScript. The picker <strong>groups every column by its " \
@@ -17,11 +17,11 @@ fieldset :picker, %i[title genre price publisher publisher.name
 <% end %>
 <%= code_file('app/views/columns/index.html.erb', :erb) do %>
 &lt;%= crud_collection @books, fieldset: :picker,
-                     extra_columns: @columns,        &lt;%# declared + path + dynamic — all pickable %&gt;
-                     visible_columns: true %&gt;        &lt;%# the one picker knob: gear + apply ?cols= %&gt;
+                     extra_columns: @columns,   &lt;%# declared + path + dynamic — all pickable %&gt;
+                     picker: true %&gt;            &lt;%# gear + read ?cols= (picked_columns: :auto) %&gt;
 <% end %>
 <% end %>
 
 <div class="card"><div class="card-body">
-  <%= crud_collection @books, fieldset: :picker, extra_columns: @columns, visible_columns: true %>
+  <%= crud_collection @books, fieldset: :picker, extra_columns: @columns, picker: true %>
 </div></div>

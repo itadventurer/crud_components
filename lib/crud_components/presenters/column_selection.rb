@@ -1,11 +1,19 @@
 module CrudComponents
   module Presenters
     # Shared "which columns are shown" logic for any presenter that exposes
-    # `available_fields` (the permitted universe) and a `param_prefix`. The
-    # picker submits `?cols[]=` (or `?cols=a,b`); this reads it, falls back to the
-    # `visible_columns:` default, and **always intersects with `available_fields`** — so a forged
-    # or stale selection can only hide or reorder columns, never reveal one the
-    # `if:` gate forbids. Mixed into both the collection and the record
+    # `available_fields` (the permitted universe) and a `param_prefix`. Two knobs
+    # drive it (set as `@picker` and `@picked_columns` by the including presenter):
+    #
+    #   @picker         false → no picking (the fieldset governs); true → the view
+    #                   participates (a collection also renders the gear).
+    #   @picked_columns :auto → read the `?cols=` submit; an Array → that exact
+    #                   selection, **without ever reading the param** (the backend
+    #                   already resolved it — from a persisted pref, or from the
+    #                   param via {CrudComponents.selected_columns}).
+    #
+    # The chosen selection is **always intersected with `available_fields`** — so a
+    # forged or stale selection can only hide or reorder columns, never reveal one
+    # the `if:` gate forbids. Mixed into both the collection and the record
     # presenter, so a column picker drives a table and a detail view alike.
     module ColumnSelection
       # The columns actually rendered: the permitted set, narrowed and ordered
@@ -31,15 +39,34 @@ module CrudComponents
       def group_heading(group_model) = group_model.model_name.human
       def group_icon(group_model) = Structure.for(group_model).icon
 
-      # The ordered column names the user selected, or nil for "all permitted".
-      # `?cols=` (a picker submit) wins over the `visible_columns:` server default.
+      # The ordered column names to show, or nil for "all permitted". The selection
+      # is independent of the gear: a resolved **Array** always applies (the backend
+      # decided it — the gear may live elsewhere, e.g. a standalone picker or a
+      # detail view), verbatim and without reading the param. `:auto` reads the
+      # `?cols=` submit **only when a gear is rendered here** (`picker: true`); with
+      # no gear here, `:auto` means "don't narrow" (a stray `?cols=` is ignored).
       def visible_columns
         return @visible_columns if defined?(@visible_columns)
 
-        @visible_columns = cols_param || @visible_override
+        @visible_columns =
+          if @picked_columns.is_a?(Array) then @picked_columns
+          elsif @picker then cols_param
+          end
       end
 
       private
+
+      # Normalize the `picked_columns:` knob: `:auto`/nil → `:auto`; an Array →
+      # its symbols. Anything else is a mistake worth catching at the call site.
+      def normalize_picked_columns(value)
+        case value
+        when :auto, nil then :auto
+        when Array then value.map(&:to_sym)
+        else
+          raise ArgumentError,
+                "picked_columns: expects :auto or an Array of column names, got #{value.inspect}"
+        end
+      end
 
       def select_visible(list)
         names = visible_columns
@@ -49,15 +76,12 @@ module CrudComponents
       end
 
       # The picker submits `cols[]=a&cols[]=b` (no-JS) or, with the crud-columns
-      # controller, a single comma-joined `cols=a,b` (prettier URL). Accept both.
+      # controller, a single comma-joined `cols=a,b` (prettier URL). Both forms are
+      # parsed by {CrudComponents.selected_columns} (the same reader hosts use to
+      # persist a pick) — we just symbolize the result. nil when nothing was picked.
       def cols_param
-        raw = column_request_params[column_param_key]
-        list = raw.is_a?(Array) ? raw : raw.is_a?(String) ? raw.split(',') : nil
-        names = list&.map { |n| n.to_s.strip }&.reject(&:blank?)&.map(&:to_sym)
-        names if names&.any?
+        CrudComponents.selected_columns(column_request_params, param_prefix: param_prefix)&.map(&:to_sym)
       end
-
-      def column_param_key = param_prefix ? "#{param_prefix}_cols" : 'cols'
 
       def column_request_params
         view.respond_to?(:request) && view.request ? view.request.query_parameters : {}

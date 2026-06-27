@@ -1,21 +1,21 @@
 <h1><%= crud_label(@book) %></h1>
 <%= docs_panel(
-      intro: "<code>crud_record</code> renders the record as a definition list with the same type-aware cells as the table. The <strong>column picker is reusable here too</strong>: <code>crud_column_picker @book</code> (the gear, top-right) submits <code>?cols=</code> to this page, and <code>crud_record @book, visible_columns: @visible</code> narrows the list to match — same mechanism as the table, no JS to open. Below it, an embedded reviews collection is <strong>static</strong> (<code>query: false</code>). The URL is the book's slug (<code>identify_by :slug</code>).",
+      intro: "<code>crud_record</code> renders the record as a definition list with the same type-aware cells as the table. The <strong>column picker is reusable here too</strong>: <code>crud_column_picker @book</code> (the gear, top-right) submits <code>?cols=</code> to this page, and <code>crud_record @book, picked_columns: @visible</code> narrows the list to match — same mechanism as the table, no JS to open. Below it, an embedded reviews collection is <strong>static</strong> (<code>query: :static</code>). The URL is the book's slug (<code>identify_by :slug</code>).",
       docs: { 'Record view' => 'docs/views.md', 'Column picker' => 'docs/views.md#column-picker' }) do %>
 <%= code_file('app/controllers/books_controller.rb') do %>
 @visible = CrudComponents.selected_columns(params)   # the picker's ?cols=, for crud_record (persist it if you like)
 <% end %>
 <%= code_file('app/views/books/show.html.erb', :erb) do %>
-&lt;%= crud_column_picker @book %&gt;                     &lt;%# the gear, reusable outside a table %&gt;
-&lt;%= crud_record @book, visible_columns: @visible %&gt;          &lt;%# honors the picker's selection %&gt;
+&lt;%= crud_column_picker @book %&gt;                                  &lt;%# the gear, reusable outside a table %&gt;
+&lt;%= crud_record @book, picked_columns: @visible %&gt;  &lt;%# honors the picker's selection %&gt;
 <% end %>
 <% end %>
 <div class="card mb-4"><div class="card-body">
   <div class="d-flex justify-content-end mb-2"><%= crud_column_picker @book %></div>
-  <%= crud_record @book, visible_columns: @visible %>
+  <%= crud_record @book, picked_columns: @visible %>
 </div></div>
 
-<h2 class="h4">Reviews <span class="text-muted">(static embedded collection — <code>query: false</code>)</span></h2>
+<h2 class="h4">Reviews <span class="text-muted">(static embedded collection — <code>query: :static</code>)</span></h2>
 <div class="card"><div class="card-body">
-  <%= crud_collection @book.reviews, query: false %>
+  <%= crud_collection @book.reviews, query: :static %>
 </div></div>

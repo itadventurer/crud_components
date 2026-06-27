@@ -16,13 +16,24 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   (a tidier, shareable URL). The server reads both forms — `selected_columns` and the picker
   accept the comma-joined string too. No-JS keeps the `cols[]` array.
 
+### Fixed
+
+- **`belongs_to` filter control no longer freezes at its boot-time row count.** The
+  select-vs-text decision (`config.select_limit`) is recomputed per render instead of
+  memoized on the process-cached field, so a table that grows past the limit after boot
+  stops rendering a stale full `<select>`.
+- **Path columns honor the reserved-param guard** (`q`/`sort`/`dir`/`page`/`per`/`cols`) in
+  `filterable?`/`sortable?`, matching every other field type.
+
 ### Changed
 
-- **One column-picker knob: `visible_columns:`** replaces `column_picker:` + `visible:` on
-  `crud_collection`/`crud_record` (and `crud_column_picker`'s `visible:`). `true` renders the
-  gear and applies `?cols=`; an `Array` is a server-side default a live `?cols=` overrides;
-  `nil` shows all columns with no gear. **Breaking:** rename `column_picker: true` →
-  `visible_columns: true` and `visible: cols` → `visible_columns: cols`.
+- **Symbolic `query:` mode** on `crud_collection`: `:auto` (default, build from params),
+  `:static` (no filter row or sort links), or a `Query` (manual). **Breaking:** replace
+  `query: false` with `query: :static`. The magic `nil`/`false` sentinels are gone; the gem
+  no longer guesses mode from a falsy value. This pairs with the column picker's
+  `picked_columns:` under one rule: *`:auto` = the gem reads the params; a resolved value
+  (a `Query`, or an `Array` of columns) = the backend already decided, and the gem doesn't
+  re-read the param.*
 
 - **Path columns delegate to the target model's field.** A single-valued path
   (`publisher.founded_on`, `publisher.price`, `publisher.status`) now renders, filters and
@@ -91,16 +102,17 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   sort via a LEFT JOIN; list paths (has_many/habtm) render joined and filter through the
   association. Eager-loaded automatically. Limits: `config.max_path_depth` (default 3)
   and at most one to-many hop. See `docs/fields.md#path-columns`.
-- **Column picker** — `column_picker: true` adds a gear to the header row that lets a
+- **Column picker** — `picker: true` adds a gear to the header row that lets a
   user hide/reorder the columns they may see. It submits `?cols[]=` to the same URL
   (no endpoint, works without JavaScript via native `<details>`; the optional
   `crud-columns` Stimulus controller adds drag-to-reorder). The selection is always
-  intersected with the permitted set. Path columns are grouped under their association.
-  Standalone `crud_column_picker` helper places it outside a table (e.g. above a detail
-  view); `CrudComponents.selected_columns(params)` extracts the selection to persist.
+  intersected with the permitted set, and columns group by source model. Standalone
+  `crud_column_picker` helper places it outside a table (e.g. above a detail view);
+  `CrudComponents.selected_columns(params)` extracts the selection to persist.
   See `docs/views.md#column-picker`.
-- **`visible:` / `?cols=` on `crud_collection` and `crud_record`** — narrow and order the
-  shown columns/fields; `?cols=` (a picker submit) wins over the `visible:` default.
+- **`picked_columns:` on `crud_collection` and `crud_record`** — what the picker shows:
+  `:auto` (default) reads `?cols=`; an `Array` is shown verbatim without reading the param
+  (the backend resolved it). Both keep the gear on screen.
 - **`extra_columns:` on `crud_record`** — the same dynamic columns on a detail view,
   shown as extra rows (batch-loaded on the single record).
 - **Name-gated smart renderers** — a column named `email`/`*_email` renders as a

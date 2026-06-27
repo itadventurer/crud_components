@@ -124,7 +124,7 @@ class FullIntegrationTest < ActionDispatch::IntegrationTest
 
   test 'group_by rejects a non-groupable field (e.g. has_many)' do
     error = assert_raises(ArgumentError) do
-      CrudComponents::Presenters::Collection.new(view: nil, records: Book.all, query: false, group_by: :reviews)
+      CrudComponents::Presenters::Collection.new(view: nil, records: Book.all, query: :static, group_by: :reviews)
     end
     assert_match(/must be a column, belongs_to or enum/, error.message)
   end
@@ -232,7 +232,7 @@ class FullIntegrationTest < ActionDispatch::IntegrationTest
   end
 
   # ── static collections and multi-collection pages ─────────────────────────
-  test 'query: false renders a static table without filter row or sort links' do
+  test 'query: :static renders a static table without filter row or sort links' do
     get book_path(@hobbit)
     assert_select 'h2', text: /Reviews/
     assert_select 'tr.crud-filter-row', count: 0
