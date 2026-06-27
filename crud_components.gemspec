@@ -23,9 +23,14 @@ Gem::Specification.new do |spec|
   spec.metadata['rubygems_mfa_required'] = 'true'
 
   # Prefer git, but fall back to a glob so the gem (and the demo image) build
-  # without a .git directory. Excludes tests, the dummy, CI and demo-deploy
-  # artifacts — none ship in the gem.
-  tracked = `git ls-files -z`.split("\x0")
+  # without git or a .git directory. Excludes tests, the dummy, CI and demo-deploy
+  # artifacts — none ship in the gem. (`git` is absent in the slim demo image, so
+  # the backtick is rescued — Errno::ENOENT otherwise aborts the build.)
+  tracked = begin
+    `git ls-files -z`.split("\x0")
+  rescue StandardError
+    []
+  end
   tracked = Dir.glob('**/*', File::FNM_DOTMATCH).select { |f| File.file?(f) } if tracked.empty?
   spec.files = tracked.reject do |f|
     f.start_with?('test/', 'script/', '.github/', 'docs/screenshots/', 'deploy/') ||
