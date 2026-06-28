@@ -54,40 +54,40 @@ class PropertyDefinition < ApplicationRecord
       .index_by(&:subject_id)
   end
 
-  # A typed filter matching the property's flavor: a date filters by date range, a
-  # number by number range, a boolean by a yes/no select, and a free-text property
-  # by substring. Each apply block declares the keywords its type supplies (geq:/leq:
-  # for a range, eq: for a boolean, contains: for text) and is handed values already
-  # cast to the type — a Date, a BigDecimal, true/false — or nil when blank/unparseable.
+  # The filter block — its control follows the column's `as:` flavor (date → date
+  # range, number → number range, boolean → yes/no, string → text). Each block
+  # declares the keywords its type supplies (geq:/leq: for a range, eq: for a
+  # boolean, contains: for text) and is handed values already cast to the type — a
+  # Date, a BigDecimal, true/false — or nil when blank/unparseable.
   def filter_for(subject_model)
     case flavor
     when 'date'
-      CrudComponents::TypedFilter.date(lambda do |scope, geq:, leq:|
+      lambda do |scope, geq:, leq:|
         rows = values_for(subject_model)
         rows = rows.where('value >= ?', geq.iso8601) if geq   # ISO dates sort lexically
         rows = rows.where('value <= ?', leq.iso8601) if leq
         scope.where(id: rows.select(:subject_id))
-      end)
+      end
     when 'number'
-      CrudComponents::TypedFilter.numeric(lambda do |scope, geq:, leq:|
+      lambda do |scope, geq:, leq:|
         rows = values_for(subject_model)
         rows = rows.where('CAST(value AS REAL) >= ?', geq) if geq
         rows = rows.where('CAST(value AS REAL) <= ?', leq) if leq
         scope.where(id: rows.select(:subject_id))
-      end)
+      end
     when 'boolean'
-      CrudComponents::TypedFilter.boolean(lambda do |scope, eq:|
+      lambda do |scope, eq:|
         next scope if eq.nil?   # "any"
 
         scope.where(id: values_for(subject_model).where(value: eq.to_s).select(:subject_id))
-      end)
+      end
     else
-      CrudComponents::TypedFilter.text(lambda do |scope, contains:|
+      lambda do |scope, contains:|
         next scope if contains.blank?
 
         rows = values_for(subject_model).where('value LIKE ?', "%#{PropertyValue.sanitize_sql_like(contains)}%")
         scope.where(id: rows.select(:subject_id))
-      end)
+      end
     end
   end
 

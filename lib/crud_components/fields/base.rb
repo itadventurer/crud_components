@@ -85,7 +85,7 @@ module CrudComponents
       end
 
       def renderer_options
-        options.except(:as, :if, :form_as, :label, :header, :header_actions)
+        options.except(:as, :if, :form_as, :label, :header, :header_actions, :filter_as, :filter_choices)
       end
 
       # ── permissions ──────────────────────────────────────────────────────
@@ -107,12 +107,14 @@ module CrudComponents
           facets[:filter].is_a?(Hash) || facets[:filter].is_a?(Symbol) ? facets[:filter] : nil
       end
 
-      # A {TypedFilter} facet — a column whose filter declares a value type, so it
-      # renders the matching control (number/date range, boolean, select) and its
-      # apply block receives cast eq/geq/leq/contains values rather than a raw
-      # string.
+      # The internal {TypedFilter} for a `filter:` block that declares keyword params
+      # (eq:/geq:/leq:/contains:) — its value type comes from `filter_as:` or `as:`,
+      # so it renders the matching control and receives cast values. A positional
+      # `->(scope, value)` block has none (plain text filter); nil for everyone else.
       def typed_filter
-        facets[:filter] if facets[:filter].is_a?(CrudComponents::TypedFilter)
+        return @typed_filter if defined?(@typed_filter)
+
+        @typed_filter = build_typed_filter
       end
 
       def derived_filterable?
@@ -267,6 +269,36 @@ module CrudComponents
       end
 
       private
+
+      # Maps a render type (`as:` / `filter_as:`) to a filter value type. An
+      # unmapped value (a custom renderer) falls back to text.
+      RENDER_TO_FILTER_TYPE = {
+        number: :numeric, numeric: :numeric,
+        date: :date, datetime: :date,
+        boolean: :boolean,
+        enum: :select, select: :select,
+        string: :text, text: :text
+      }.freeze
+
+      def build_typed_filter
+        facet = facets[:filter]
+        return facet if facet.is_a?(CrudComponents::TypedFilter)   # already built (escape hatch)
+        return nil unless facet.is_a?(Proc) && keyword_filter_block?(facet)
+
+        CrudComponents::TypedFilter.new(filter_type, facet, choices: options[:filter_choices])
+      end
+
+      # A filter block opts into a typed control by declaring keyword params
+      # (eq:/geq:/leq:/contains:); a positional `->(scope, value)` stays plain text.
+      def keyword_filter_block?(block)
+        block.parameters.any? { |kind, _| %i[key keyreq keyrest].include?(kind) }
+      end
+
+      # The filter's value type: `filter_as:` if given, else inferred from the
+      # render type `as:`, else text.
+      def filter_type
+        RENDER_TO_FILTER_TYPE.fetch(options[:filter_as] || options[:as], :text)
+      end
 
       def arel_column
         model.arel_table[name]
