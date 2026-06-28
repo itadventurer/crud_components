@@ -181,8 +181,13 @@ module CrudComponents
         @filter_fields ||= static? ? [] : query.filter_fields
       end
 
+      # Match by name, not object identity: a prebuilt Query carries its *own*
+      # DynamicField instances (from its extra_fields), while the collection built
+      # its own from extra_columns. Same column, different objects — `include?`
+      # would miss them and silently drop the inline filter/sort (issue #21).
+      # Declared fields are memoized on the Structure, so they share a name too.
       def filterable_field?(field)
-        filter_fields.include?(field)
+        filter_fields.any? { |f| f.name == field.name }
       end
 
       def filter_form_id
@@ -238,7 +243,7 @@ module CrudComponents
 
       # ── sorting ──────────────────────────────────────────────────────────
       def sortable_field?(field)
-        !static? && query && query.sortable_fields.include?(field)
+        !static? && query && query.sortable_fields.any? { |f| f.name == field.name }
       end
 
       def sort_url(field)

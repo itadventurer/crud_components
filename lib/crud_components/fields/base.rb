@@ -170,9 +170,15 @@ module CrudComponents
         false
       end
 
+      # An explicit `?sort=` must win over any order a prior stage set (a search
+      # backend's relevance rank, a default scope). The Symbol/derived branches
+      # already `.reorder`; a Proc facet is handed a scope whose prior order is
+      # cleared, so a block using the obvious `.order(...)` overrides the rank too
+      # rather than appending to it (see issue #23). A block may still `.reorder`
+      # itself — that composes fine on an already-cleared scope.
       def apply_sort(scope, dir)
         case (facet = sort_facet)
-        when Proc then facet.call(scope, dir)
+        when Proc then facet.call(scope.reorder(nil), dir)
         when Symbol then scope.reorder(model.arel_table[facet].public_send(dir))
         else scope.reorder(model.arel_table[name].public_send(dir))
         end
