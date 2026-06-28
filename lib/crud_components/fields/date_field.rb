@@ -14,8 +14,8 @@ module CrudComponents
       def default_editable? = !NON_EDITABLE_COLUMNS.include?(name.to_s)
       def form_control = datetime? ? :datetime : :date
 
-      def apply_derived_filter(scope, exact: nil, geq: nil, leq: nil)
-        if (d = cast(exact)) then scope = apply_day(scope, d) end
+      def apply_derived_filter(scope, value: nil, geq: nil, leq: nil)
+        if (d = cast(value)) then scope = apply_day(scope, d) end
         if (d = cast(geq)) then scope = scope.where(arel_column.gteq(lower_bound(d))) end
         if (d = cast(leq)) then scope = scope.where(arel_column.lteq(upper_bound(d))) end
         scope

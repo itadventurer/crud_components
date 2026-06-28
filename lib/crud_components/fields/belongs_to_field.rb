@@ -44,11 +44,11 @@ module CrudComponents
               .sort_by(&:first)
       end
 
-      def apply_derived_filter(scope, exact: nil, **)
-        return scope unless exact
+      def apply_derived_filter(scope, value: nil, **)
+        return scope unless value
 
-        identified = scope.where(name => target.where(target_structure.identify_by => exact))
-        searched = like_subquery(scope, exact)
+        identified = scope.where(name => target.where(target_structure.identify_by => value))
+        searched = like_subquery(scope, value)
         searched ? identified.or(searched) : identified
       end
 

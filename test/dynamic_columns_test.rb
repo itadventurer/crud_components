@@ -69,7 +69,7 @@ class DynamicColumnsTest < ActiveSupport::TestCase
   test 'a typed filter casts values to its type and hands the block only its keywords' do
     got = nil
     f = CrudComponents::TypedFilter.numeric(->(scope, geq:, leq:) { got = { geq:, leq: }; scope })
-    assert_equal :kept, f.apply(:kept, exact: 'x', geq: '5', leq: '10')   # returns the block's scope
+    assert_equal :kept, f.apply(:kept, value: 'x', geq: '5', leq: '10')   # returns the block's scope
     assert_equal({ geq: BigDecimal('5'), leq: BigDecimal('10') }, got)    # cast; the bare slot dropped
   end
 
@@ -82,26 +82,26 @@ class DynamicColumnsTest < ActiveSupport::TestCase
 
   test 'the bare ?field= value binds to contains: when the block asks, else eq:' do
     text_got = nil
-    CrudComponents::TypedFilter.text(->(scope, contains:) { text_got = contains; scope }).apply(:s, exact: 'foo')
+    CrudComponents::TypedFilter.text(->(scope, contains:) { text_got = contains; scope }).apply(:s, value: 'foo')
     assert_equal 'foo', text_got
 
     num_got = :unset
-    CrudComponents::TypedFilter.numeric(->(scope, eq:) { num_got = eq; scope }).apply(:s, exact: '42')
+    CrudComponents::TypedFilter.numeric(->(scope, eq:) { num_got = eq; scope }).apply(:s, value: '42')
     assert_equal BigDecimal('42'), num_got
   end
 
   test 'a boolean typed filter pre-parses true/false, and a blank value means any' do
     seen = []
     f = CrudComponents::TypedFilter.boolean(->(scope, eq:) { seen << eq; scope })
-    f.apply(:s, exact: 'true')
-    f.apply(:s, exact: 'no')
-    f.apply(:s, exact: '')
+    f.apply(:s, value: 'true')
+    f.apply(:s, value: 'no')
+    f.apply(:s, value: '')
     assert_equal [true, false, nil], seen
   end
 
   test 'a **opts block receives every keyword, cast' do
     got = nil
-    CrudComponents::TypedFilter.numeric(->(scope, **opts) { got = opts; scope }).apply(:s, exact: '1', geq: '2', leq: '3')
+    CrudComponents::TypedFilter.numeric(->(scope, **opts) { got = opts; scope }).apply(:s, value: '1', geq: '2', leq: '3')
     assert_equal({ eq: BigDecimal('1'), geq: BigDecimal('2'), leq: BigDecimal('3'), choices: nil }, got)
   end
 
@@ -110,7 +110,7 @@ class DynamicColumnsTest < ActiveSupport::TestCase
     f = CrudComponents::TypedFilter.select([%w[Hard hardcover], %w[Soft paperback]],
                                            ->(scope, eq:) { got = eq; scope })
     assert_equal [%w[Hard hardcover], %w[Soft paperback]], f.filter_choices
-    f.apply(:scope, exact: 'hardcover')
+    f.apply(:scope, value: 'hardcover')
     assert_equal 'hardcover', got
   end
 

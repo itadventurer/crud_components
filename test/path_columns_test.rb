@@ -94,8 +94,8 @@ class PathColumnsTest < ActiveSupport::TestCase
   end
 
   test 'a path filters through the association via the safe like-spec' do
-    assert_includes field('authors.email').apply_filter(Book.all, exact: 'ann@'), @book
-    assert_not_includes field('authors.email').apply_filter(Book.all, exact: 'nobody@'), @book
+    assert_includes field('authors.email').apply_filter(Book.all, value: 'ann@'), @book
+    assert_not_includes field('authors.email').apply_filter(Book.all, value: 'nobody@'), @book
   end
 
   test 'habtm → one is allowed (one to-many hop, then to-one)' do

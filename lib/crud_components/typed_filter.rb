@@ -61,13 +61,13 @@ module CrudComponents
       end
     end
 
-    # Apply with the raw param values (Strings or nil): `exact` is the bare
+    # Apply with the raw param values (Strings or nil): `value` is the bare
     # `?field=`, `geq`/`leq` the bounds. Each is cast to the type and routed to the
     # keyword the block declared; a value that doesn't cast becomes nil, so junk
     # never reaches SQL.
-    def apply(scope, exact: nil, geq: nil, leq: nil)
+    def apply(scope, value: nil, geq: nil, leq: nil)
       single = (@keywords.include?(:contains) && !@keywords.include?(:eq)) ? :contains : :eq
-      values = { single => cast(exact), geq: cast(geq), leq: cast(leq), choices: @choices }
+      values = { single => cast(value), geq: cast(geq), leq: cast(leq), choices: @choices }
       @apply.call(scope, **values.slice(*@keywords))
     end
 

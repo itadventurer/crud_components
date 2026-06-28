@@ -159,12 +159,12 @@ module CrudComponents
         delegating? && target_field.respond_to?(:human_value) ? target_field.human_value(value) : value
       end
 
-      def apply_filter(scope, exact: nil, geq: nil, leq: nil)
+      def apply_filter(scope, value: nil, geq: nil, leq: nil)
         return super if filter_facet      # an author-supplied facet wins
-        return delegate_filter(scope, exact: exact, geq: geq, leq: leq) if delegating?
-        return scope unless exact
+        return delegate_filter(scope, value: value, geq: geq, leq: leq) if delegating?
+        return scope unless value
 
-        LikeSpec.apply(scope, filter_spec, exact)
+        LikeSpec.apply(scope, filter_spec, value)
       end
 
       # ── sorting: single-valued paths only ────────────────────────────────────
@@ -233,8 +233,8 @@ module CrudComponents
       # target model on its own table (so `where(col => …)` binds correctly), then
       # constrain the root through the association chain — an IN subquery, no JOIN,
       # so it can't multiply rows.
-      def delegate_filter(scope, exact:, geq:, leq:)
-        matched = target_field.apply_filter(target_model.all, exact: exact, geq: geq, leq: leq)
+      def delegate_filter(scope, value:, geq:, leq:)
+        matched = target_field.apply_filter(target_model.all, value: value, geq: geq, leq: leq)
         constrained = reflections.reverse.reduce(matched) do |sub, ref|
           ref.active_record.where(ref.name => sub)
         end

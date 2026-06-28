@@ -139,16 +139,18 @@ module CrudComponents
         filter_control == :number_range || filter_control == :date_range
       end
 
-      # `exact`, `geq`, `leq` are the raw param values (Strings or nil).
-      def apply_filter(scope, exact: nil, geq: nil, leq: nil)
+      # The raw param values (Strings or nil): `value` is the bare `?field=`, `geq`
+      # and `leq` the range bounds. How a field reads `value` is up to it — an
+      # exact match for a number/enum, a substring for text.
+      def apply_filter(scope, value: nil, geq: nil, leq: nil)
         if typed_filter
-          typed_filter.apply(scope, exact:, geq:, leq:)
+          typed_filter.apply(scope, value:, geq:, leq:)
         elsif filter_facet
-          return scope unless exact
+          return scope unless value
 
-          apply_filter_facet(scope, exact)
+          apply_filter_facet(scope, value)
         else
-          apply_derived_filter(scope, exact:, geq:, leq:)
+          apply_derived_filter(scope, value:, geq:, leq:)
         end
       end
 

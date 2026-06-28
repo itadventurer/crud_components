@@ -30,11 +30,11 @@ module CrudComponents
       def default_editable? = !NON_EDITABLE_COLUMNS.include?(name.to_s)
       def form_control = :string
 
-      def apply_derived_filter(scope, exact: nil, **)
-        return scope unless exact
+      def apply_derived_filter(scope, value: nil, **)
+        return scope unless value
 
         # explicit escape char: backslash is not SQLite's default
-        scope.where(arel_column.matches(like_pattern(exact), '\\'))
+        scope.where(arel_column.matches(like_pattern(value), '\\'))
       end
     end
   end
