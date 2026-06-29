@@ -7,7 +7,7 @@ This project follows [semantic versioning](https://semver.org).
 
 ### Added
 
-- Typed filter controls for dynamic columns via `CrudComponents::TypedFilter` — a number/date range, a yes/no or a dropdown instead of a text box. ([#20](https://github.com/itadventurer/crud_components/issues/20))
+- Typed filter controls for dynamic columns: a `filter:` block with keyword params (`geq:`/`leq:`, `eq:`, `contains:`) filters as the column's `as:` type — a number/date range, a yes/no or a dropdown instead of a text box (override with `filter_as:`/`filter_choices:`). ([#20](https://github.com/itadventurer/crud_components/issues/20))
 - `crud_filter` accepts `extra_columns:` and an opt-in `sort:` picker for headerless layouts. ([#22](https://github.com/itadventurer/crud_components/issues/22))
 
 ### Fixed
