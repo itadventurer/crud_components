@@ -78,4 +78,19 @@ class HelpersTest < ActiveSupport::TestCase
     assert_includes html, '<style'
     assert_includes html, 'crud-column-picker-menu'
   end
+
+  # search_bar: false drops the toolbar's ?q= box. Book is searchable (search_in),
+  # so the only thing in the toolbar here is the search — with it off, the toolbar
+  # collapses entirely.
+  test 'crud_collection search_bar: false suppresses the toolbar search box' do
+    query = CrudComponents::Query.new(Book, {}, fieldset: :catalog)
+    on = CrudComponents::Presenters::Collection.new(view: nil, records: Book.all, query: query,
+                                                    actions: false, search_bar: true)
+    off = CrudComponents::Presenters::Collection.new(view: nil, records: Book.all, query: query,
+                                                     actions: false, search_bar: false)
+    assert on.searchable?
+    assert on.show_toolbar?
+    refute off.searchable?
+    refute off.show_toolbar?
+  end
 end
