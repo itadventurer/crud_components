@@ -13,7 +13,18 @@
       docs: { 'Dynamic columns' => 'docs/fields.md#dynamic-columns', 'Views' => 'docs/views.md' }) do %>
 <%= code_file('app/controllers/custom_fields_controller.rb') do %>
 @books   = Book.all
-@columns = PropertyDefinition.order(:id).map { |defn| defn.to_crud_column(Book) }
+@columns = []
+@columns << CrudComponents::DynamicColumn.new(
+  :price_usd,
+  label: 'Price (USD)',
+  as: :number,
+  unit: '$',
+  filter: ->(scope, geq:, leq:) { scope.where('price*1.1 >= ?', geq).where('price*1.1 <= ?', leq) },
+  sort: ->(scope, dir) { scope.order(Arel.sql("(price*1.1) #{dir}")) }
+) { |record| record.price * 1.1 }
+
+@columns += PropertyDefinition.order(:id).map { |defn| defn.to_crud_column(Book) }
+
 <% end %>
 <%= code_file('app/models/property_definition.rb') do %>
 def to_crud_column(subject_model)
