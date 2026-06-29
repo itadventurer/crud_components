@@ -130,4 +130,28 @@ opt-in (a table doesn't need it).
 
 See it live on the [cards layout](https://crud-components.zelenin.de/books?layout=cards).
 
+## The params a query reads
+
+`crud_collection` and `crud_filter` build and read their own `Query`, so you rarely touch
+params directly. When you do drive a [manual query](views.md#the-manual-query-pagination-and-big-tables)
+from a controller, the query already knows exactly which params it reads — a param only
+applies if it names a filterable field you can see (plus the reserved `q`/`sort`/`dir`), so
+junk never reaches SQL and it's safe without a permit list. But a controller usually wants
+that param surface anyway: to strong-params it, and to rebuild **filter-preserving links** (a
+pager, a breadcrumb, a "clear search" target). Rather than hand-maintain a list that mirrors
+the columns and drifts when they change, ask the query:
+
+```ruby
+@query.permitted_keys   # prefixed param names it reads: each filter field's value and
+                        # `_geq`/`_leq` bounds, plus q/sort/dir. (page/per are yours.)
+@query.filter_params    # the present subset of *this* request, by real param name —
+                        # e.g. { "title" => "hobbit", "price_geq" => "10", "sort" => "name" }
+@query.active_filters   # active filter/search values by logical name, for chips —
+                        # e.g. { "title" => "hobbit", "q" => "dragons" }
+```
+
+`filter_params` is the one to thread into link helpers (`books_path(**@query.filter_params)`)
+instead of keeping a hand-kept params shim; it already respects `param_prefix:`. All three are
+fieldset- and permission-bound: a key a user can't see is never listed.
+
 See also: [Fields & rendering](fields.md) · [Views & fieldsets](views.md) · [Security](security.md).

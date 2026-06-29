@@ -369,7 +369,9 @@ the query into your own hands — the explicit form of what the helper does auto
 
 Everything stays an ActiveRecord relation, so any paginator and any pre-existing scope
 compose. The manual query is also how you get the filtered relation for counts, CSV
-exports, or charts.
+exports, or charts. To permit the query's params yourself or rebuild filter-preserving
+links by hand, the query exposes the params it reads — see
+[the params a query reads](filtering.md#the-params-a-query-reads).
 
 **The footer pager renders itself** when the relation you pass is already paginated —
 i.e. you called `.page` and it decorates the relation (kaminari, will_paginate). The gem
