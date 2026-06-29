@@ -93,4 +93,21 @@ class HelpersTest < ActiveSupport::TestCase
     refute off.searchable?
     refute off.show_toolbar?
   end
+
+  # A filterable table needs the trailing column even without row actions or a
+  # picker: the inline filter row's submit/reset button lives in that column.
+  # (Regression: an owner-less, picker-less table rendered filter inputs with no
+  # button to apply them.)
+  test 'trailing_column? holds for a filterable table without actions or picker' do
+    query = CrudComponents::Query.new(Book, {}, fieldset: :catalog)
+    filterable = CrudComponents::Presenters::Collection.new(view: nil, records: Book.all,
+                                                            query: query, actions: false)
+    static = CrudComponents::Presenters::Collection.new(view: nil, records: Book.all,
+                                                        query: :static, actions: false)
+    assert filterable.filterable?
+    refute filterable.column_picker?
+    refute filterable.actions_column?
+    assert filterable.trailing_column?, 'filter row needs a trailing column for its button'
+    refute static.trailing_column?, 'a static, action-less, picker-less table needs none'
+  end
 end
