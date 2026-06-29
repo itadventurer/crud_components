@@ -152,7 +152,10 @@ meaning until a facet tells the gem how to express it.
 
 > **Query-block contract.** `filter`/`sort`/`search_in` blocks receive `(scope, value)`
 > (or `(scope, dir)` for sort) and return a relation. There is no view context at query
-> time; the scope arrives extended with `where_like` (below).
+> time; the scope arrives extended with `where_like`.
+
+For the `filter` facet's spec mini-language, typed controls and the standalone form, see
+[Filtering & search](filtering.md).
 
 ## Dynamic columns
 
@@ -205,6 +208,10 @@ CrudComponents::DynamicColumn.new(:priority, as: :number,
   sort:    ->(scope, dir)   { scope.order(Arel.sql("(#{subquery_for(prop)}) #{dir}")) }
 ) { |record, loaded| loaded[record.id]&.value }
 ```
+
+A dynamic column filters the way it renders: give its `filter:` block keyword params
+(`geq:`/`leq:`, `eq:`, `contains:`) and it gets the control its `as:` type wants — a number/date
+range, a yes/no select, a dropdown; see [Filtering → typed filter controls](filtering.md#typed-filter-controls).
 
 `if:` follows the same rules as a declared field's: a denied column is absent from the
 table, the filter row, sorting and `?cols=` — everywhere. See the column picker in
@@ -289,7 +296,7 @@ fieldset :index, %i[title publisher.name authors.email]
   then a link to its show page — so a path column doubles as a jump-to-the-object.
 - A **list** path (has_many / habtm) renders the values joined — `authors.email` shows
   every author's email (each linkified, since `email` is a smart-rendered name) — and is
-  **filterable** (a contains-match through the join, via the [search spec](#the-search-spec))
+  **filterable** (a contains-match through the join, via the [search spec](filtering.md#the-search-spec))
   but not sortable by default (no single value to order by; add a `sort` facet if you have a
   meaningful aggregate).
 
@@ -311,45 +318,6 @@ limits report a clear `DefinitionError`.
 `if:`, `label:` and facet overrides work as on any field — declare the path with
 `attribute(:"authors.email", if: :manage)` to gate it, or give it a block to override how it
 renders, filters or sorts.
-
-## The search spec
-
-One declarative mini-language for "case-insensitive contains across these columns,
-joining as needed" — shared by `filter` (passed positionally) and `search_in`:
-
-```ruby
-filter :title                                  # own column
-filter :title, :subtitle                       # several own columns, OR-combined
-filter authors: %i[name email]                 # join, explicit columns
-filter user: { address: %i[street town] }      # nested joins, explicit columns
-filter :publisher                              # join, DELEGATE to Publisher's search_in
-filter :title, { authors: :name }              # mixed
-```
-
-The **delegation form** — an association name *without* columns — means "search it the
-way that model defines being searched" (its `search_in`). It is the idiomatic style and
-stays correct as the target model's definition evolves.
-
-The gem turns a spec into `left_joins` plus parameterized, wildcard-escaped `ILIKE`
-(via `sanitize_sql_like` with an explicit `\` escape char, so `%`, `_` and `\` are all
-literal). A spec contains only column/association names you wrote — **no SQL strings**,
-nothing to sanitize. A joined match is `DISTINCT`; an own-column spec is not (no join to
-dedupe). Delegation cycles are guarded (max 5 delegation hops) and raise rather than
-stack-overflow.
-
-### The escape hatch
-
-A block is the escape hatch for genuinely custom logic; the scope it receives carries
-the same machinery, so you keep the safe pit of success without `sanitize_sql_like`:
-
-```ruby
-filter do |scope, value|
-  scope.where(active: true).where_like({ authors: :name }, value)
-end
-```
-
-`where_like(spec, value)` is available on every scope handed to a filter/search block.
-Raw SQL in a block is possible — and then explicitly your responsibility.
 
 ## Identity: `label`, `identify_by`, `search_in`, `icon`
 
@@ -438,5 +406,5 @@ Click-to-filter: in a collection, an enum badge and a boolean icon link to set t
 column's filter (respecting the fieldset whitelist and `param_prefix`). The inline
 filter row uses compact controls; the standalone `crud_filter` form uses full-size ones.
 
-See also: [Views & fieldsets](views.md) · [Forms](forms.md) · [Security](security.md) ·
-[Extending](extending.md).
+See also: [Filtering & search](filtering.md) · [Views & fieldsets](views.md) · [Forms](forms.md) ·
+[Security](security.md) · [Extending](extending.md).

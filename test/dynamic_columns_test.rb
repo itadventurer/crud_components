@@ -65,6 +65,105 @@ class DynamicColumnsTest < ActiveSupport::TestCase
     assert_not_includes order_clause, 'price'   # the prior order was cleared, not kept as primary
   end
 
+  # ── typed filter controls ────────────────────────────────────────────────────
+  # The internal mechanism: casting, keyword routing, control derivation.
+  test 'a typed filter casts values to its type and hands the block only its keywords' do
+    got = nil
+    f = CrudComponents::TypedFilter.new(:numeric, ->(scope, geq:, leq:) { got = { geq:, leq: }; scope })
+    assert_equal :kept, f.apply(:kept, value: 'x', geq: '5', leq: '10')   # returns the block's scope
+    assert_equal({ geq: BigDecimal('5'), leq: BigDecimal('10') }, got)    # cast; the bare slot dropped
+  end
+
+  test 'an unparseable value drops to nil before the block (junk never reaches SQL)' do
+    got = :unset
+    CrudComponents::TypedFilter.new(:numeric, ->(scope, geq:, leq:) { got = { geq:, leq: }; scope })
+                               .apply(:scope, geq: 'not-a-number', leq: '')
+    assert_equal({ geq: nil, leq: nil }, got)
+  end
+
+  test 'the bare ?field= value binds to contains: when the block asks, else eq:' do
+    text_got = nil
+    CrudComponents::TypedFilter.new(:text, ->(scope, contains:) { text_got = contains; scope }).apply(:s, value: 'foo')
+    assert_equal 'foo', text_got
+
+    num_got = :unset
+    CrudComponents::TypedFilter.new(:numeric, ->(scope, eq:) { num_got = eq; scope }).apply(:s, value: '42')
+    assert_equal BigDecimal('42'), num_got
+  end
+
+  test 'a boolean typed filter pre-parses true/false, and a blank value means any' do
+    seen = []
+    f = CrudComponents::TypedFilter.new(:boolean, ->(scope, eq:) { seen << eq; scope })
+    f.apply(:s, value: 'true')
+    f.apply(:s, value: 'no')
+    f.apply(:s, value: '')
+    assert_equal [true, false, nil], seen
+  end
+
+  test 'a **opts block receives every keyword, cast' do
+    got = nil
+    CrudComponents::TypedFilter.new(:numeric, ->(scope, **opts) { got = opts; scope }).apply(:s, value: '1', geq: '2', leq: '3')
+    assert_equal({ eq: BigDecimal('1'), geq: BigDecimal('2'), leq: BigDecimal('3'), choices: nil }, got)
+  end
+
+  test 'a select typed filter exposes its choices and feeds the block eq' do
+    got = nil
+    f = CrudComponents::TypedFilter.new(:select, ->(scope, eq:) { got = eq; scope },
+                                        choices: [%w[Hard hardcover], %w[Soft paperback]])
+    assert_equal [%w[Hard hardcover], %w[Soft paperback]], f.filter_choices
+    f.apply(:scope, value: 'hardcover')
+    assert_equal 'hardcover', got
+  end
+
+  test 'TypedFilter rejects an unknown type and a missing block' do
+    assert_raises(ArgumentError) { CrudComponents::TypedFilter.new(:bogus, ->(s) { s }) }
+    assert_raises(ArgumentError) { CrudComponents::TypedFilter.new(:text, nil) }
+  end
+
+  # The public surface: `as:` drives the filter type, the block's keywords the control.
+  test 'a dynamic column filters as its as: type — a number block with bounds is a range' do
+    field = CrudComponents::DynamicColumn.new(:weight, as: :number, filter: ->(s, geq:, leq:) { s }).to_field(Book)
+    assert field.filterable?
+    assert_equal :number_range, field.filter_control
+    assert field.range_filter?
+  end
+
+  test 'a number block that asks only for eq: renders a single field' do
+    field = CrudComponents::DynamicColumn.new(:weight, as: :number, filter: ->(s, eq:) { s }).to_field(Book)
+    assert_equal :number, field.filter_control
+  end
+
+  test 'a date column filters as a date range' do
+    field = CrudComponents::DynamicColumn.new(:published_on, as: :date, filter: ->(s, geq:, leq:) { s }).to_field(Book)
+    assert_equal :date_range, field.filter_control
+  end
+
+  test 'filter_as: overrides the filter type when it differs from as:' do
+    field = CrudComponents::DynamicColumn.new(:rating, as: :string, filter_as: :number,
+                                              filter: ->(s, geq:, leq:) { s }).to_field(Book)
+    assert_equal :number_range, field.filter_control
+  end
+
+  test 'filter_as: :select with filter_choices: renders a dropdown with those choices' do
+    field = CrudComponents::DynamicColumn.new(:binding, filter_as: :select,
+                                              filter_choices: [%w[Hard hardcover]],
+                                              filter: ->(s, eq:) { s }).to_field(Book)
+    assert_equal :select, field.filter_control
+    assert_equal [%w[Hard hardcover]], field.filter_choices
+  end
+
+  test 'a positional filter block (no keywords) stays a plain text filter' do
+    field = CrudComponents::DynamicColumn.new(:c, filter: ->(s, _v) { s }).to_field(Book)
+    assert_equal :text, field.filter_control
+    assert_not field.range_filter?
+    assert_nil field.filter_choices
+  end
+
+  test 'a keyword block with no as: defaults to a text filter' do
+    field = CrudComponents::DynamicColumn.new(:note, filter: ->(s, contains:) { s }).to_field(Book)
+    assert_equal :text, field.filter_control
+  end
+
   # ── the presenter: selection + ordering ──────────────────────────────────────
   test 'dynamic columns are appended to the permitted column set' do
     names = collection(extra_columns: [color]).available_fields.map(&:name)
@@ -306,6 +405,16 @@ class DynamicColumnsIntegrationTest < ActionDispatch::IntegrationTest
     get '/custom_fields', params: { sort: 'weight', dir: 'desc' }
     assert_response :success
     assert response.body.index('Beta') < response.body.index('Alpha'), 'desc weight: 900 (Beta) before 300 (Alpha)'
+  end
+
+  test 'a number dynamic column filters by range (geq/leq), not substring (issue #20)' do
+    get '/custom_fields', params: { weight_geq: '500' }
+    assert_response :success
+    assert_select 'td', text: /Beta/                   # 900 ≥ 500
+    assert_select 'td', { text: /Alpha/, count: 0 }    # 300 < 500, excluded
+    # and it renders a typed range control, not a text box, in the filter row
+    assert_select 'input[name=weight_geq]'
+    assert_select 'input[name=weight_leq]'
   end
 
   test 'the column picker limits the visible columns via ?cols=' do

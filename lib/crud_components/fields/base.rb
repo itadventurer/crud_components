@@ -85,7 +85,7 @@ module CrudComponents
       end
 
       def renderer_options
-        options.except(:as, :if, :form_as, :label, :header, :header_actions)
+        options.except(:as, :if, :form_as, :label, :header, :header_actions, :filter_as, :filter_choices)
       end
 
       # ── permissions ──────────────────────────────────────────────────────
@@ -97,7 +97,7 @@ module CrudComponents
       def filterable?
         return false if facets[:filter] == false
         return false if CrudComponents::RESERVED_PARAMS.include?(name.to_s)
-        return true if filter_facet
+        return true if typed_filter || filter_facet
 
         derived_filterable?
       end
@@ -107,6 +107,16 @@ module CrudComponents
           facets[:filter].is_a?(Hash) || facets[:filter].is_a?(Symbol) ? facets[:filter] : nil
       end
 
+      # The internal {TypedFilter} for a `filter:` block that declares keyword params
+      # (eq:/geq:/leq:/contains:) — its value type comes from `filter_as:` or `as:`,
+      # so it renders the matching control and receives cast values. A positional
+      # `->(scope, value)` block has none (plain text filter); nil for everyone else.
+      def typed_filter
+        return @typed_filter if defined?(@typed_filter)
+
+        @typed_filter = build_typed_filter
+      end
+
       def derived_filterable?
         false
       end
@@ -114,6 +124,8 @@ module CrudComponents
       # Which filter control partial to render: :text, :select, :boolean,
       # :number_range or :date_range.
       def filter_control
+        return typed_filter.control if typed_filter
+
         filter_facet ? :text : derived_filter_control
       end
 
@@ -121,22 +133,26 @@ module CrudComponents
         :text
       end
 
-      def filter_choices(_query = nil)
-        nil
+      def filter_choices(query = nil)
+        typed_filter&.filter_choices(query)
       end
 
       def range_filter?
         filter_control == :number_range || filter_control == :date_range
       end
 
-      # `exact`, `geq`, `leq` are the raw param values (Strings or nil).
-      def apply_filter(scope, exact: nil, geq: nil, leq: nil)
-        if filter_facet
-          return scope unless exact
+      # The raw param values (Strings or nil): `value` is the bare `?field=`, `geq`
+      # and `leq` the range bounds. How a field reads `value` is up to it — an
+      # exact match for a number/enum, a substring for text.
+      def apply_filter(scope, value: nil, geq: nil, leq: nil)
+        if typed_filter
+          typed_filter.apply(scope, value:, geq:, leq:)
+        elsif filter_facet
+          return scope unless value
 
-          apply_filter_facet(scope, exact)
+          apply_filter_facet(scope, value)
         else
-          apply_derived_filter(scope, exact:, geq:, leq:)
+          apply_derived_filter(scope, value:, geq:, leq:)
         end
       end
 
@@ -253,6 +269,36 @@ module CrudComponents
       end
 
       private
+
+      # Maps a render type (`as:` / `filter_as:`) to a filter value type. An
+      # unmapped value (a custom renderer) falls back to text.
+      RENDER_TO_FILTER_TYPE = {
+        number: :numeric, numeric: :numeric,
+        date: :date, datetime: :date,
+        boolean: :boolean,
+        enum: :select, select: :select,
+        string: :text, text: :text
+      }.freeze
+
+      def build_typed_filter
+        facet = facets[:filter]
+        return facet if facet.is_a?(CrudComponents::TypedFilter)   # already built (escape hatch)
+        return nil unless facet.is_a?(Proc) && keyword_filter_block?(facet)
+
+        CrudComponents::TypedFilter.new(filter_type, facet, choices: options[:filter_choices])
+      end
+
+      # A filter block opts into a typed control by declaring keyword params
+      # (eq:/geq:/leq:/contains:); a positional `->(scope, value)` stays plain text.
+      def keyword_filter_block?(block)
+        block.parameters.any? { |kind, _| %i[key keyreq keyrest].include?(kind) }
+      end
+
+      # The filter's value type: `filter_as:` if given, else inferred from the
+      # render type `as:`, else text.
+      def filter_type
+        RENDER_TO_FILTER_TYPE.fetch(options[:filter_as] || options[:as], :text)
+      end
 
       def arel_column
         model.arel_table[name]
