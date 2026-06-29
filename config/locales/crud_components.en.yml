@@ -31,6 +31,11 @@ en:
       apply: "Apply"
       submit: "Filter"
       reset: "Reset"
+      sort_by: "Sort by"
+      unsorted: "–"
+      direction: "Direction"
+      asc: "Ascending"
+      desc: "Descending"
     pager:
       label: "Pagination"
       summary: "Page %{page} of %{total} · %{count} total"

@@ -20,7 +20,7 @@
 
 <% if layout == :cards %>
 <%= docs_panel(
-      intro: "&ldquo;Cards&rdquo; is a <strong>custom layout you add</strong> &mdash; the gem ships only the built-in <code>:table</code>. Drop one partial that receives the same <code>collection</code> presenter (still driven by the <code>:#{fieldset}</code> fieldset) and arrange the markup however you like; the gem still derives the fields, cells, filtering, sorting and actions for you.",
+      intro: "&ldquo;Cards&rdquo; is a <strong>custom layout you add</strong> &mdash; the gem ships only the built-in <code>:table</code>. Drop one partial that receives the same <code>collection</code> presenter (still driven by the <code>:#{fieldset}</code> fieldset) and arrange the markup however you like; the gem still derives the fields, cells, filtering, sorting and actions for you. A card grid has <strong>no column headers</strong>, so <code>crud_filter</code> takes <code>sort: true</code> to carry the sort picker.",
       docs: { 'Add a layout' => 'docs/extending.md#add-a-layout', 'Views' => 'docs/views.md' }) do %>
 <%= code_file('app/views/crud_components/layouts/_cards.html.erb', :erb) do %>
 &lt;% collection.records.each do |record| %&gt;
@@ -31,6 +31,7 @@
 <% end %>
 <%= code_file('app/views/books/index.html.erb', :erb) do %>
 &lt;%= crud_collection @books, fieldset: :<%= fieldset %>, layout: :cards %&gt;
+&lt;%= crud_filter   Book, fieldset: :<%= fieldset %>, sort: true %&gt;   &lt;%# headerless → carry the sort picker %&gt;
 <% end %>
 <% end %>
 <% else %>
@@ -61,7 +62,8 @@ end
   <div class="col-xl-3">
     <div class="card"><div class="card-body">
       <h5 class="card-title">Filter</h5>
-      <%= crud_filter Book, fieldset: fieldset %>
+      <%# Cards have no column headers, so let the filter form carry the sort picker. %>
+      <%= crud_filter Book, fieldset: fieldset, sort: layout == :cards %>
     </div></div>
   </div>
 </div>

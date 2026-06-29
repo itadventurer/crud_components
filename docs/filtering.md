@@ -107,3 +107,26 @@ end
 
 `where_like(spec, value)` is available on every scope handed to a filter/search block.
 Raw SQL in a block is possible — and then explicitly your responsibility.
+
+## The standalone filter form
+
+`crud_collection` renders an inline filter row; `crud_filter` renders the same filters as a
+**standalone form** (a sidebar or modal) you place yourself. It takes the same `extra_columns:`
+as `crud_collection`, so a card grid gets its [dynamic-column](fields.md#dynamic-columns)
+filters without hand-building a `Query`:
+
+```erb
+<%= crud_collection @books, layout: :cards, extra_columns: @columns %>
+<%= crud_filter   Book, extra_columns: @columns, sort: true %>
+```
+
+A table carries sort links in its column headers, but a **headerless** surface (cards, a list)
+has none — so pass **`sort: true`** to render a field + direction picker built from the query's
+sortable fields. It submits `?sort=&dir=` with the rest of the form, needs no JavaScript, and is
+opt-in (a table doesn't need it).
+
+![The cards view's filter sidebar: a filter per field, then a "Sort by" field-and-direction picker at the bottom](screenshots/filter-sidebar.png)
+
+See it live on the [cards layout](https://crud-components.zelenin.de/books?layout=cards).
+
+See also: [Fields & rendering](fields.md) · [Views & fieldsets](views.md) · [Security](security.md).

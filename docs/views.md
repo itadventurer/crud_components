@@ -15,7 +15,7 @@ this doc.
 crud_collection(records, fieldset: nil, layout: :table, query: :auto, param_prefix: nil,
                 actions: true, group_by: nil, extra_columns: nil, picker: false, picked_columns: :auto)
 crud_record(record, fieldset: nil, actions: true, layout: :record, picked_columns: :auto)
-crud_filter(model, fieldset: nil, query: nil, param_prefix: nil, layout: :filter)
+crud_filter(model, fieldset: nil, query: nil, param_prefix: nil, extra_columns: nil, sort: false, layout: :filter)
 crud_form(record, fieldset: nil, action: nil, url: nil, method: nil, layout: :form)   # see forms.md
 crud_actions(record_or_model, fieldset: nil)   # a record → row actions; a model class → collection actions
 ```
@@ -94,6 +94,10 @@ fieldset :index, %i[cover title price], filters: %i[genre published_on]
 
 `filters:` extends the fieldset's filterable set (sorting stays strictly visible fields);
 `crud_filter` renders all of them.
+
+The standalone `crud_filter` form takes `extra_columns:` (for dynamic-column filters) and
+`sort: true` (a sort picker for headerless surfaces) — see
+[Filtering → the standalone form](filtering.md#the-standalone-filter-form).
 
 ### Layout is a separate axis
 
