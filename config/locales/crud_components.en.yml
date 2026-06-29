@@ -25,6 +25,8 @@ en:
     filter:
       any: "–"
       not_set: "Not set"
+      present: "Present"
+      absent: "Absent"
       "yes": "Yes"
       "no": "No"
       search: "Search"

@@ -17,6 +17,13 @@ module CrudComponents
   # nullable columns offer it as a "not set" choice). Improbable as a real
   # value, so it never collides with a genuine enum key or boolean string.
   NULL_FILTER_VALUE = '__null__'.freeze
+
+  # The two non-blank values of an attachment **presence** filter — its 3-state
+  # control (any / present / absent) submits these, and the query turns them into
+  # an EXISTS / NOT EXISTS (`where.associated` / `where.missing`) over the backing
+  # attachment association rather than a value match. See {Fields::AttachmentField}.
+  PRESENT_FILTER_VALUE = 'present'.freeze
+  ABSENT_FILTER_VALUE = 'absent'.freeze
 end
 
 require_relative 'crud_components/version'

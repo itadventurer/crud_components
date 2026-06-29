@@ -1,0 +1,13 @@
+<%# Locals: field, query, form_id, compact, autosubmit, param_name, css
+    Present / absent control for an attachment column — the query turns the value
+    into an EXISTS / NOT EXISTS (see Fields::AttachmentField). %>
+<% choices = [
+     [t('crud_components.filter.any', default: '–'), ''],
+     [t('crud_components.filter.present', default: 'Present'), CrudComponents::PRESENT_FILTER_VALUE],
+     [t('crud_components.filter.absent', default: 'Absent'), CrudComponents::ABSENT_FILTER_VALUE]
+   ] %>
+<%= select_tag param_name,
+               options_for_select(choices, query.value(field.name.to_s)),
+               class: compact ? css.select_input_sm : css.select_input, form: form_id, id: nil,
+               data: (autosubmit ? { action: 'change->crud-filter#submit' } : {}),
+               aria: { label: field.human_name } %>
