@@ -20,9 +20,10 @@ module CrudComponents
     #   auto collections can share one page.
     # @param actions [Boolean] render the actions column + toolbar (false to place
     #   them yourself with {#crud_actions}).
-    # @param search [Boolean] render the toolbar's `?q=` search box (default true).
-    #   Pass false to drop it — e.g. when a page-level search already covers the
-    #   collection. Only the box; an explicit `?q=` still applies in `:auto` mode.
+    # @param search_bar [Boolean] render the toolbar's `?q=` search box (default
+    #   true). Pass false to drop just this collection's box — e.g. when a
+    #   page-level search already covers it. The box only; the model stays
+    #   searchable elsewhere and an explicit `?q=` still applies in `:auto` mode.
     # @param group_by [Symbol, nil] a column, belongs_to or enum to group rows
     #   under collapsible headers.
     # @param extra_columns [Array<CrudComponents::DynamicColumn>, nil] user-defined
@@ -41,11 +42,11 @@ module CrudComponents
     #   reorder, never reveal a column the `if:` gate forbids.
     # @return [ActiveSupport::SafeBuffer] the rendered HTML.
     def crud_collection(records, fieldset: nil, layout: :table, query: :auto, param_prefix: nil,
-                        actions: true, search: true, group_by: nil, extra_columns: nil,
+                        actions: true, search_bar: true, group_by: nil, extra_columns: nil,
                         picker: false, picked_columns: :auto)
       presenter = Presenters::Collection.new(view: self, records: records, fieldset: fieldset,
                                              query: query, layout: layout, param_prefix: param_prefix,
-                                             actions: actions, search: search, group_by: group_by,
+                                             actions: actions, search_bar: search_bar, group_by: group_by,
                                              extra_columns: extra_columns,
                                              picker: picker, picked_columns: picked_columns)
       render "crud_components/layouts/#{presenter.layout}", collection: presenter

@@ -15,7 +15,7 @@ module CrudComponents
       attr_reader :model, :structure, :fieldset, :query, :layout, :param_prefix, :owner
 
       def initialize(view:, records:, fieldset: nil, query: :auto, layout: :table,
-                     param_prefix: nil, actions: true, search: true, group_by: nil,
+                     param_prefix: nil, actions: true, search_bar: true, group_by: nil,
                      extra_columns: nil, picker: false, picked_columns: :auto)
         super(view: view)
         unless records.respond_to?(:klass)
@@ -31,7 +31,7 @@ module CrudComponents
         @layout = layout
         @param_prefix = param_prefix
         @actions_enabled = actions
-        @search_enabled = search
+        @search_bar_enabled = search_bar
         # Two orthogonal column-picker knobs (see ColumnSelection): the gear is on
         # iff `picker`; the selection comes from the param (`:auto`) or verbatim
         # from the resolved Array — they never both read the param.
@@ -198,7 +198,7 @@ module CrudComponents
 
       # ── header search (?q=) and reset ──────────────────────────────────────
       def searchable?
-        @search_enabled && !static? && query && query.searchable?
+        @search_bar_enabled && !static? && query && query.searchable?
       end
 
       def search_param_name
