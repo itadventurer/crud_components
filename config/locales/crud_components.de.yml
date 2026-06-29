@@ -24,6 +24,8 @@ de:
     filter:
       any: "–"
       not_set: "Nicht gesetzt"
+      present: "Vorhanden"
+      absent: "Nicht vorhanden"
       "yes": "Ja"
       "no": "Nein"
       search: "Suche"

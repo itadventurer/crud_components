@@ -1,11 +1,14 @@
 module CrudComponents
   module Fields
-    # belongs_to / has_one: nil-safe link via the target's label. The filter
-    # (belongs_to only) accepts both the target's identify_by value (what the
-    # select submits) and free text matched against the target's label — the
-    # name shown in the cell — one param, two OR-combined parameterized
-    # subqueries.
+    # belongs_to / has_one: nil-safe link via the target's label. A belongs_to
+    # filters by value — accepting both the target's identify_by value (what the
+    # select submits) and free text matched against the target's label, the name
+    # shown in the cell, as one param of two OR-combined parameterized subqueries.
+    # A has_one has no value to submit, so it filters by present / absent instead
+    # (#apply_presence_filter).
     class BelongsToField < Base
+      include PresenceFilter
+
       def default_renderer = :association
 
       def reflection
@@ -31,8 +34,14 @@ module CrudComponents
       end
 
       def derived_filterable?
+        return true if reflection.has_one?
+
         reflection.belongs_to? && !reflection.polymorphic?
       end
+
+      # A has_one has no value to match — only "is it there" — so it gets the
+      # present / absent control; a belongs_to gets the value picker below.
+      def presence_only? = reflection.has_one?
 
       # Sortable by the column behind the target's label — the name shown in the
       # cell — reached with a join. A block label, or a label that isn't a real
@@ -51,6 +60,8 @@ module CrudComponents
       # value and render the wrong control once the table grows past the limit.
       # One COUNT per filter-row render is negligible next to rendering the table.
       def derived_filter_control
+        return :presence if presence_only?
+
         target.count <= CrudComponents.config.select_limit ? :select : :text
       end
 
@@ -61,6 +72,7 @@ module CrudComponents
       end
 
       def apply_derived_filter(scope, value: nil, **)
+        return apply_presence_filter(scope, value) if presence_only?
         return scope unless value
 
         identified = scope.where(name => target.where(target_structure.identify_by => value))

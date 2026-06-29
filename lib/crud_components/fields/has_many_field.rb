@@ -1,8 +1,13 @@
 module CrudComponents
   module Fields
-    # has_many / habtm: truncated list of links ("a, b +3 more"). No derived
-    # filter or sort; opt in with `filter like: :assoc` (delegation).
+    # has_many / habtm: truncated list of links ("a, b +3 more"). Filters by
+    # present / absent out of the box (#apply_presence_filter, via the EXISTS the
+    # collection implies); opt into a value match instead with `filter like: :assoc`
+    # — a `filter` facet takes precedence over the derived presence control. No
+    # derived sort.
     class HasManyField < Base
+      include PresenceFilter
+
       def default_renderer = :association_list
 
       def reflection
