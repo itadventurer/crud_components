@@ -94,8 +94,15 @@ class QuerySecurityTest < ActiveSupport::TestCase
     refute_match(/ORDER BY/i, sql, 'genre is not visible in :compact')
   end
 
-  test 'associations and computed fields without sort facets are unsortable' do
-    refute_match(/ORDER BY/i, apply({ 'sort' => 'publisher' }).to_sql)
+  test 'a belongs_to sorts by the target label via a join' do
+    sql = apply({ 'sort' => 'publisher', 'dir' => 'asc' }).to_sql
+    assert_match(/ORDER BY.*publishers/i, sql)
+    ordered = apply({ 'sort' => 'publisher', 'dir' => 'asc' }).to_a
+    # Ace < Tor Books → the Ace book precedes the Tor book
+    assert_operator ordered.index(@dispossessed), :<, ordered.index(@hobbit)
+  end
+
+  test 'a computed field without a sort facet is unsortable' do
     refute_match(/ORDER BY/i, apply({ 'sort' => 'shop_margin' }).to_sql)
   end
 

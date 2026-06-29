@@ -27,7 +27,16 @@ module CrudComponents
         reflection.belongs_to? && !reflection.polymorphic?
       end
 
-      def derived_sortable? = false
+      # Sortable by the column behind the target's label — the name shown in the
+      # cell — reached with a join. A block label, or a label that isn't a real
+      # column, has no SQL ordering, so the column isn't sortable then.
+      def derived_sortable? = sort_column.present?
+
+      def apply_sort(scope, dir)
+        return super if sort_facet
+
+        scope.left_joins(name).reorder(target.arel_table[sort_column].public_send(dir))
+      end
 
       # select (a dropdown of all targets) below `select_limit` rows, else free
       # text. Counted per render, not memoized: the field instance lives on the
@@ -79,6 +88,16 @@ module CrudComponents
       end
 
       private
+
+      # The target column to ORDER BY: the field behind its label when that's a
+      # real column, else nil (a block label or computed attribute can't be sorted
+      # in SQL). Polymorphic belongs_to has no single target, so never sortable.
+      def sort_column
+        return nil if reflection.polymorphic?
+
+        col = target_structure.label_field_name
+        col if col && target.column_names.include?(col.to_s)
+      end
 
       def like_subquery(scope, value)
         spec = target_structure.search_in_spec
