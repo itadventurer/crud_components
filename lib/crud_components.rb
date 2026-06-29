@@ -18,10 +18,10 @@ module CrudComponents
   # value, so it never collides with a genuine enum key or boolean string.
   NULL_FILTER_VALUE = '__null__'.freeze
 
-  # The two non-blank values of an association/attachment **presence** filter —
-  # its 3-state control (any / present / absent) submits these, and the query
-  # turns them into an EXISTS / NOT EXISTS (`where.associated` / `where.missing`)
-  # rather than a value match. See {Fields::PresenceFilter}.
+  # The two non-blank values of an attachment **presence** filter — its 3-state
+  # control (any / present / absent) submits these, and the query turns them into
+  # an EXISTS / NOT EXISTS (`where.associated` / `where.missing`) over the backing
+  # attachment association rather than a value match. See {Fields::AttachmentField}.
   PRESENT_FILTER_VALUE = 'present'.freeze
   ABSENT_FILTER_VALUE = 'absent'.freeze
 end
@@ -34,7 +34,6 @@ require_relative 'crud_components/like_spec'
 require_relative 'crud_components/where_like'
 require_relative 'crud_components/typed_filter'
 require_relative 'crud_components/fields/base'
-require_relative 'crud_components/fields/presence_filter'
 require_relative 'crud_components/fields/string_field'
 require_relative 'crud_components/fields/text_field'
 require_relative 'crud_components/fields/numeric_field'

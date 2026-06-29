@@ -1,6 +1,6 @@
 <%# Locals: field, query, form_id, compact, autosubmit, param_name, css
-    Present / absent control for an association or attachment column — the query
-    turns the value into an EXISTS / NOT EXISTS (see Fields::PresenceFilter). %>
+    Present / absent control for an attachment column — the query turns the value
+    into an EXISTS / NOT EXISTS (see Fields::AttachmentField). %>
 <% choices = [
      [t('crud_components.filter.any', default: '–'), ''],
      [t('crud_components.filter.present', default: 'Present'), CrudComponents::PRESENT_FILTER_VALUE],

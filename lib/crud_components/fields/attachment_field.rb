@@ -3,10 +3,6 @@ module CrudComponents
     # Active Storage attachment: rendered by content type — image inline,
     # previewable (e.g. PDF) as a preview, otherwise an icon + filename link.
     class AttachmentField < Base
-      # present / absent filter — "has a cover / has no cover" — joining through
-      # the underlying *_attachment(s) association (see #presence_association).
-      include PresenceFilter
-
       def default_renderer = :attachment
 
       def many?
@@ -14,17 +10,35 @@ module CrudComponents
       end
 
       def eager_load
-        [many? ? :"#{name}_attachments" : :"#{name}_attachment", *declared_preloads]
+        [attachment_reflection, *declared_preloads]
       end
 
-      # The Active Storage join `where.associated` / `where.missing` test: the
-      # column's backing has_one_attached / has_many_attached reflection.
-      def presence_association = many? ? :"#{name}_attachments" : :"#{name}_attachment"
+      # ── filtering ──────────────────────────────────────────────────────────
+      # An attachment has no value to type into a box, but "has a cover / has no
+      # cover" is the natural question — so it filters by presence: a 3-state
+      # any/present/absent control that composes into the query as an EXISTS /
+      # NOT EXISTS over the backing *_attachment(s) association.
+      def derived_filterable? = true
+      def derived_filter_control = :presence
+
+      def apply_derived_filter(scope, value: nil, **)
+        case value
+        when CrudComponents::PRESENT_FILTER_VALUE then scope.where.associated(attachment_reflection)
+        when CrudComponents::ABSENT_FILTER_VALUE  then scope.where.missing(attachment_reflection)
+        else scope
+        end
+      end
 
       # ── forms ────────────────────────────────────────────────────────────
       def default_editable? = true
       def form_control = :file
       def permit_param = many? ? { name => [] } : name
+
+      private
+
+      # The has_one_attached / has_many_attached association the eager-load and the
+      # presence filter join through.
+      def attachment_reflection = many? ? :"#{name}_attachments" : :"#{name}_attachment"
     end
   end
 end
