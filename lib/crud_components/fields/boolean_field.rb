@@ -18,8 +18,8 @@ module CrudComponents
       # A nullable column offers a "not set" (IS NULL) choice in the filter.
       def filter_includes_null? = nullable?
 
-      def apply_derived_filter(scope, exact: nil, **)
-        case exact&.downcase
+      def apply_derived_filter(scope, value: nil, **)
+        case value&.downcase
         when *TRUE_VALUES then scope.where(name => true)
         when *FALSE_VALUES then scope.where(name => false)
         when CrudComponents::NULL_FILTER_VALUE then nullable? ? scope.where(name => nil) : scope

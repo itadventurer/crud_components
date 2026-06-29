@@ -75,12 +75,12 @@ module CrudComponents
 
     def apply_filters(scope)
       filter_fields.reduce(scope) do |current, field|
-        exact = param(field.name.to_s)
+        value = param(field.name.to_s)
         geq = param("#{field.name}_geq")
         leq = param("#{field.name}_leq")
-        next current unless exact || geq || leq
+        next current unless value || geq || leq
 
-        field.apply_filter(current, exact: exact, geq: geq, leq: leq)
+        field.apply_filter(current, value: value, geq: geq, leq: leq)
       end
     end
 

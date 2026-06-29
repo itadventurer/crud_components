@@ -29,11 +29,11 @@ module CrudComponents
       # A nullable column offers a "not set" (IS NULL) choice in the filter.
       def filter_includes_null? = nullable?
 
-      def apply_derived_filter(scope, exact: nil, **)
-        return scope.where(name => nil) if exact == CrudComponents::NULL_FILTER_VALUE && nullable?
-        return scope unless exact && enum_keys.include?(exact)
+      def apply_derived_filter(scope, value: nil, **)
+        return scope.where(name => nil) if value == CrudComponents::NULL_FILTER_VALUE && nullable?
+        return scope unless value && enum_keys.include?(value)
 
-        scope.where(name => exact)
+        scope.where(name => value)
       end
     end
   end

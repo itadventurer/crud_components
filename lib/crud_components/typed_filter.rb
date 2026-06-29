@@ -1,25 +1,18 @@
 module CrudComponents
-  # A typed filter for a column whose data isn't a plain own-table column (a
-  # {DynamicColumn}). It pairs a value type with an apply block that reaches SQL,
-  # so the column renders the control its type wants — a range, a yes/no select,
-  # a dropdown — instead of a text box.
+  # The mechanism behind a typed dynamic-column filter (built internally by
+  # {Fields::Base} — you don't construct one). It pairs a value type with an apply
+  # block: the type drives casting and the rendered control, the block reaches SQL.
   #
-  # Build one with a per-type helper:
+  # A {DynamicColumn} gets one when its `filter:` block declares keyword params; the
+  # type comes from the column's `as:` (overridable with `filter_as:`). The block
+  # declares which of `eq:` / `geq:` / `leq:` / `contains:` it handles and is called
+  # with only those — each value already cast to the type (numeric → BigDecimal,
+  # date → Date, boolean → true/false), or nil when the param is blank or doesn't
+  # parse. Which control renders follows from the type and the declared keywords: a
+  # numeric/date block that asks for a bound (`geq:`/`leq:`) renders a range; one
+  # that asks only for `eq:` renders a single field.
   #
-  #   filter: CrudComponents::TypedFilter.numeric(->(scope, geq:, leq:) { … })  # range
-  #   filter: CrudComponents::TypedFilter.numeric(->(scope, eq:) { … })         # single value
-  #   filter: CrudComponents::TypedFilter.date(->(scope, geq:, leq:) { … })
-  #   filter: CrudComponents::TypedFilter.text(->(scope, contains:) { … })
-  #   filter: CrudComponents::TypedFilter.boolean(->(scope, eq:) { … })
-  #   filter: CrudComponents::TypedFilter.select(choices, ->(scope, eq:) { … })
-  #
-  # The apply block declares which of `eq:` / `geq:` / `leq:` / `contains:` it
-  # handles and is called with only those — each value already cast to the type
-  # (numeric → BigDecimal, date → Date, boolean → true/false), or nil when the
-  # param is blank or doesn't parse. Which control renders follows from the type
-  # and the declared keywords: a numeric/date block that asks for a bound
-  # (`geq:`/`leq:`) renders a range; one that asks only for `eq:` renders a single
-  # field.
+  # @api private
   class TypedFilter
     TYPES = %i[text numeric date boolean select].freeze
 
@@ -29,16 +22,6 @@ module CrudComponents
     KEYWORDS = %i[eq contains geq leq choices].freeze
 
     attr_reader :type, :choices
-
-    def self.text(apply) = new(:text, apply)
-    def self.numeric(apply) = new(:numeric, apply)
-    def self.date(apply) = new(:date, apply)
-    def self.boolean(apply) = new(:boolean, apply)
-
-    # `choices` is the select's option list: an Array of `[label, value]` pairs
-    # (or bare values), or a callable returning one (passed the query when it
-    # takes an argument, so options can depend on request state).
-    def self.select(choices, apply) = new(:select, apply, choices: choices)
 
     def initialize(type, apply, choices: nil)
       unless TYPES.include?(type)
@@ -61,13 +44,13 @@ module CrudComponents
       end
     end
 
-    # Apply with the raw param values (Strings or nil): `exact` is the bare
+    # Apply with the raw param values (Strings or nil): `value` is the bare
     # `?field=`, `geq`/`leq` the bounds. Each is cast to the type and routed to the
     # keyword the block declared; a value that doesn't cast becomes nil, so junk
     # never reaches SQL.
-    def apply(scope, exact: nil, geq: nil, leq: nil)
+    def apply(scope, value: nil, geq: nil, leq: nil)
       single = (@keywords.include?(:contains) && !@keywords.include?(:eq)) ? :contains : :eq
-      values = { single => cast(exact), geq: cast(geq), leq: cast(leq), choices: @choices }
+      values = { single => cast(value), geq: cast(geq), leq: cast(leq), choices: @choices }
       @apply.call(scope, **values.slice(*@keywords))
     end
 

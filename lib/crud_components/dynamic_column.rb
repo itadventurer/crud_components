@@ -12,13 +12,21 @@ module CrudComponents
   #       PropertyValue.where(definition: prop, subject: records).index_by(&:subject_id)
   #     },
   #     sort:   ->(scope, dir) { ... },              # optional — omit for display-only
-  #     filter: ->(scope, value) { ... }) { |record, loaded| loaded[record.id]&.value }
+  #     filter: ->(scope, geq:, leq:) { ... }) { |record, loaded| loaded[record.id]&.value }
   #
   # The block is the value resolver: `|record|` or `|record, loaded|`, where
   # `loaded` is whatever `preload:` returned. It returns a plain value that the
   # `as:` renderer (or, with no `as:`, the value's type) displays — exactly like
-  # a computed field. `filter:`/`sort:` are the same facet blocks the DSL takes;
-  # supply them only when the data is reachable in SQL, otherwise the column is
+  # a computed field.
+  #
+  # `sort:` is the same facet block the DSL takes. `filter:` reaches SQL too, but
+  # the control it renders follows the column's type: a `filter:` block that
+  # declares keyword params (`geq:`/`leq:`, `eq:`, `contains:`) filters as the
+  # `as:` type does — a `:number` column gets a number range, `:date` a date range,
+  # `:boolean` a yes/no select. Override the filter type with `filter_as:` (and
+  # `filter_choices:` for a select) when it differs from `as:`. A positional
+  # `filter: ->(scope, value)` block stays a plain text filter. Supply `filter:`/
+  # `sort:` only when the data is reachable in SQL, otherwise the column is
   # display-only and never reaches the query layer.
   #
   # A dynamic column often *is* a domain object (a mail, a resource), so its

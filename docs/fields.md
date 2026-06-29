@@ -209,9 +209,9 @@ CrudComponents::DynamicColumn.new(:priority, as: :number,
 ) { |record, loaded| loaded[record.id]&.value }
 ```
 
-A dynamic column with a `filter:` proc renders a text box by default. To give it the control
-its type wants — a number/date range, a yes/no select, a dropdown — wrap the block in a
-`CrudComponents::TypedFilter`; see [Filtering → typed filter controls](filtering.md#typed-filter-controls).
+A dynamic column filters the way it renders: give its `filter:` block keyword params
+(`geq:`/`leq:`, `eq:`, `contains:`) and it gets the control its `as:` type wants — a number/date
+range, a yes/no select, a dropdown; see [Filtering → typed filter controls](filtering.md#typed-filter-controls).
 
 `if:` follows the same rules as a declared field's: a denied column is absent from the
 table, the filter row, sorting and `?cols=` — everywhere. See the column picker in

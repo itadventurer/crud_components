@@ -30,37 +30,44 @@ arrives extended with `where_like` (see [the escape hatch](#the-escape-hatch)).
 
 ## Typed filter controls
 
-A bare `filter: ->(scope, value) { … }` on a [dynamic column](fields.md#dynamic-columns)
-always renders a **text box** and receives a raw string — fine for a substring match, but a
-date or number column then filters worse than it renders. Wrap the apply block in a
-`CrudComponents::TypedFilter`, built with a per-type helper, to get the control its type
-wants:
+A [dynamic column](fields.md#dynamic-columns) **filters the way it renders**. Give its
+`filter:` block keyword params and it gets the control its `as:` type wants — a date column a
+date range, a number column a number range, a boolean a yes/no select:
 
 ```ruby
-CrudComponents::TypedFilter.numeric(->(scope, geq:, leq:) { … })   # number range
-CrudComponents::TypedFilter.numeric(->(scope, eq:) { … })          # single number field
-CrudComponents::TypedFilter.date(->(scope, geq:, leq:) { … })      # date range
-CrudComponents::TypedFilter.text(->(scope, contains:) { … })       # text box (substring)
-CrudComponents::TypedFilter.boolean(->(scope, eq:) { … })          # yes / no / any
-CrudComponents::TypedFilter.select(choices, ->(scope, eq:) { … })  # dropdown; choices = [[label, value], …] or a callable
+CrudComponents::DynamicColumn.new(:published_on, as: :date,
+  filter: ->(scope, geq:, leq:) { … })          # → a date-range control
 ```
 
-The block declares which of `eq:` / `geq:` / `leq:` / `contains:` it handles and is called
-with **only those** — each value already cast to the type (`numeric` → `BigDecimal`, `date`
-→ `Date`, `boolean` → `true`/`false`), or `nil` when the param is blank or doesn't parse, so
-junk never reaches SQL. The bare `?field=` value binds to `contains:` when the block asks for
-it, otherwise to `eq:`; `?field_geq=` / `?field_leq=` bind to `geq:` / `leq:`.
-
-**Which control renders follows from the type and the keywords the block declares.** A
-`numeric`/`date` block that takes a bound (`geq:`/`leq:`) renders a range; one that takes only
-`eq:` renders a single field. So the same declaration drives both the SQL and the UI — there's
-no separate control to keep in sync.
+The block declares which of `geq:` / `leq:` / `eq:` / `contains:` it handles and is called
+with **only those** — each value already cast to the type (`:number` → `BigDecimal`, `:date`
+→ `Date`, `:boolean` → `true`/`false`), or `nil` when the param is blank or doesn't parse, so
+junk never reaches SQL. The keywords also choose the control: a number/date block that asks for
+a bound (`geq:`/`leq:`) renders a **range**, one that asks only for `eq:` a **single field**. So
+one block drives both the SQL and the UI.
 
 ![The /custom_fields filter row: a text box for the string property, a number range for the numeric one, a yes/no/any select for the boolean and a date range for the date](screenshots/typed-filters.png)
 
-The old `filter: ->(scope, value)` form keeps working unchanged (text box, substring). See
-[`/custom_fields`](https://crud-components.zelenin.de/custom_fields) for one filter per flavor
-(`test/dummy/app/models/property_definition.rb`).
+A positional `filter: ->(scope, value)` block (no keywords) stays a plain text filter — the
+simplest case, unchanged. See [`/custom_fields`](https://crud-components.zelenin.de/custom_fields)
+for one filter per flavor (`test/dummy/app/models/property_definition.rb`).
+
+### When the filter type isn't the render type
+
+`filter_as:` overrides the filter type independently of `as:` (the same way `form_as:` overrides
+the form input) — for a custom renderer, or when you want a different control. A `:select` adds
+its options with `filter_choices:`:
+
+```ruby
+CrudComponents::DynamicColumn.new(:rating, as: :stars,        # renders as stars…
+  filter_as: :number, filter: ->(scope, geq:, leq:) { … })   # …but filters as a number range
+
+CrudComponents::DynamicColumn.new(:binding, as: :string,
+  filter_as: :select, filter_choices: [%w[Hard hardcover], %w[Soft paperback]],
+  filter: ->(scope, eq:) { … })                              # a dropdown
+```
+
+`filter_choices:` takes `[[label, value], …]` (or a callable returning them).
 
 ## The search spec
 

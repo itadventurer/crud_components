@@ -182,7 +182,7 @@ class DslValidationTest < ActiveSupport::TestCase
   test 'like-spec referencing nonsense raises' do
     model = define_model { attribute(:title) { filter :no_such_thing } }
     error = assert_raises(CrudComponents::DefinitionError) do
-      structure_of(model).field(:title).apply_filter(model.all, exact: 'x')
+      structure_of(model).field(:title).apply_filter(model.all, value: 'x')
     end
     assert_match(/neither a column nor an association/, error.message)
   end

@@ -7,6 +7,15 @@ class CustomFieldsController < ApplicationController
   # facets that reach the value store.
   def index
     @books = Book.all
-    @columns = PropertyDefinition.order(:id).map { |defn| defn.to_crud_column(Book) }
+    @columns = []
+    @columns << CrudComponents::DynamicColumn.new(
+      :price_usd,
+      label: 'Price (USD)',
+      as: :number,
+      unit: '$',
+      filter: ->(scope, geq:, leq:) { scope.where('price*1.1 >= ?', geq).where('price*1.1 <= ?', leq) },
+      sort: ->(scope, dir) { scope.order(Arel.sql("(price*1.1) #{dir}")) }
+      ) { |record| record.price * 1.1 }
+      @columns += PropertyDefinition.order(:id).map { |defn| defn.to_crud_column(Book) }
   end
 end
