@@ -361,11 +361,14 @@ module CrudComponents
         @actions_enabled && (custom_actions_partial.present? || row_action_definitions.any?)
       end
 
-      # The trailing column exists when there are row actions *or* a column
-      # picker (its gear lives in that column's header cell) — so the header,
-      # rows and width all agree even on a picker-only, action-less table.
+      # The trailing column exists when something needs to live in it: row
+      # actions (in the body cells), the column picker (its gear in the header
+      # cell), or the inline filter row (its submit/reset button sits in this
+      # column). Without it a filterable table would render filter inputs with
+      # no button to apply them. Keeping it here also keeps the header, rows and
+      # width all in agreement.
       def trailing_column?
-        actions_column? || column_picker?
+        actions_column? || column_picker? || filterable?
       end
 
       def custom_actions_partial
