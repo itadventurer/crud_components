@@ -7,6 +7,10 @@ module CrudComponents
   class Query
     SORT_DIRECTIONS = %w[asc desc].freeze
 
+    # The reserved params the query itself reads. Pagination (page/per) is the
+    # host's — it lives in the controller, never here — so it is not listed.
+    RESERVED_PARAMS = %w[q sort dir].freeze
+
     attr_reader :model, :structure, :fieldset, :param_prefix
 
     def initialize(model, params, fieldset: nil, ability: nil, param_prefix: nil, extra_fields: [])
@@ -42,10 +46,37 @@ module CrudComponents
     # Current value of a (logical, unprefixed) param — for filter controls.
     def value(key) = param(key)
 
-    def active?
-      keys = filter_fields.flat_map { |f| [f.name.to_s, "#{f.name}_geq", "#{f.name}_leq"] }
-      (keys + ['q']).any? { |key| param(key) }
+    # The (prefixed) request-param names this query reads: every visible filter
+    # field's value and `_geq`/`_leq` bounds, plus the reserved q/sort/dir. The
+    # single source of truth for a strong-params permit list, so it can't drift
+    # from the columns:
+    #   params.permit(*query.permitted_keys)
+    def permitted_keys
+      (filter_param_keys + RESERVED_PARAMS).map { |key| param_name(key) }
     end
+
+    # The subset of the current request params this query reads, present values
+    # only, keyed by their real (prefixed) param names. Feed it to
+    # filter-preserving links (pagers, breadcrumbs, "reset" targets) instead of
+    # keeping a hand-maintained copy of the params.
+    def filter_params
+      permitted_keys.each_with_object({}) do |key, kept|
+        raw = @params[key]
+        kept[key] = raw if raw.is_a?(String) && raw.present?
+      end
+    end
+
+    # The active filter and search values keyed by their logical (unprefixed)
+    # name — for rendering active-filter chips. Range bounds appear as
+    # `<field>_geq` / `<field>_leq`; the search box as `q`.
+    def active_filters
+      (filter_param_keys + ['q']).each_with_object({}) do |key, active|
+        val = param(key)
+        active[key] = val if val
+      end
+    end
+
+    def active? = active_filters.any?
 
     # [field_name_string, direction_string] or nil.
     def sort_state
@@ -56,6 +87,14 @@ module CrudComponents
     def param_name(key) = "#{prefix}#{key}"
 
     private
+
+    # Logical (unprefixed) filter param keys: each visible filter field's value
+    # plus its `_geq`/`_leq` bounds. Bounds are listed for every field even
+    # though only ranges use them — apply_filters reads all three uniformly, so
+    # the permit list mirrors exactly what can reach SQL.
+    def filter_param_keys
+      filter_fields.flat_map { |field| [field.name.to_s, "#{field.name}_geq", "#{field.name}_leq"] }
+    end
 
     def prefix = param_prefix ? "#{param_prefix}_" : ''
 

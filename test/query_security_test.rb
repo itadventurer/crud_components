@@ -261,6 +261,70 @@ class QuerySecurityTest < ActiveSupport::TestCase
     refute query({}).active?
   end
 
+  # ── exposing the params it understands (filter_params / permitted_keys) ─────
+  test 'permitted_keys lists every visible filter field with its bounds plus q/sort/dir' do
+    keys = query({}).permitted_keys
+    # a visible text field and its (unused-but-permitted) bounds
+    assert_includes keys, 'title'
+    assert_includes keys, 'title_geq'
+    assert_includes keys, 'title_leq'
+    # the reserved params the query reads
+    assert_includes keys, 'q'
+    assert_includes keys, 'sort'
+    assert_includes keys, 'dir'
+    # pagination is the host's, never the query's
+    refute_includes keys, 'page'
+    # only what's filterable in the fieldset — internal_token is not visible
+    refute_includes keys, 'internal_token'
+  end
+
+  test 'permitted_keys is fieldset-bound and never names what you cannot see' do
+    assert_includes query({}, fieldset: :catalog).permitted_keys, 'genre'
+    refute_includes query({}, fieldset: :compact).permitted_keys, 'genre'
+  end
+
+  test 'permitted_keys respects a granting ability for gated fields' do
+    refute_includes query({}).permitted_keys, 'purchase_price'
+    granted = query({}, ability: CrudTestHelpers::AllowAll.new).permitted_keys
+    assert_includes granted, 'purchase_price'
+    assert_includes granted, 'purchase_price_geq'
+  end
+
+  test 'permitted_keys is enough to permit ActionController params the query then reads' do
+    raw = ActionController::Parameters.new('title' => 'hobbit', 'evil' => 'x',
+                                           'sort' => 'title', 'dir' => 'desc')
+    permitted = raw.permit(*query({}).permitted_keys)
+    assert_equal [@hobbit], apply(permitted).to_a
+    refute permitted.key?('evil')
+  end
+
+  test 'filter_params keeps only present, understood params under their real names' do
+    fp = query({ 'title' => 'hobbit', 'price_geq' => '10', 'price_leq' => '',
+                 'sort' => 'title', 'evil' => 'x', 'page' => '3' }).filter_params
+    assert_equal({ 'title' => 'hobbit', 'price_geq' => '10', 'sort' => 'title' }, fp)
+  end
+
+  test 'filter_params drops non-scalar values' do
+    assert_empty query({ 'title' => { 'evil' => 'hash' } }).filter_params
+  end
+
+  test 'active_filters reads filter and search values by logical name, excluding sort/dir' do
+    af = query({ 'title' => 'hobbit', 'price_geq' => '10', 'q' => 'dragons',
+                 'sort' => 'title', 'dir' => 'desc' }).active_filters
+    assert_equal({ 'title' => 'hobbit', 'price_geq' => '10', 'q' => 'dragons' }, af)
+  end
+
+  test 'a param_prefix flows through permitted_keys, filter_params and active_filters' do
+    q = query({ 'books_title' => 'hobbit', 'title' => 'ignored', 'books_q' => 'x' },
+              param_prefix: :books)
+    assert_includes q.permitted_keys, 'books_title'
+    assert_includes q.permitted_keys, 'books_q'
+    refute_includes q.permitted_keys, 'title'
+    assert_equal({ 'books_title' => 'hobbit', 'books_q' => 'x' }, q.filter_params)
+    # active_filters keys are logical (unprefixed) for the chip UI
+    assert_equal({ 'title' => 'hobbit', 'q' => 'x' }, q.active_filters)
+  end
+
   test 'unknown fieldset raises' do
     assert_raises(CrudComponents::UnknownFieldsetError) { query({}, fieldset: :playgruond) }
   end

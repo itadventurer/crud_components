@@ -11,6 +11,7 @@ This project follows [semantic versioning](https://semver.org).
 - `crud_filter` accepts `extra_columns:` and an opt-in `sort:` picker for headerless layouts. ([#22](https://github.com/itadventurer/crud_components/issues/22))
 - A `belongs_to` column sorts by its target's label (via a join), matching the existing filter-by-label. ([#27](https://github.com/itadventurer/crud_components/pull/27))
 - `crud_collection` takes `search_bar:` (default true) to drop the toolbar's `?q=` search box for one collection. ([#29](https://github.com/itadventurer/crud_components/pull/29))
+- `Query` exposes the params it understands: `#permitted_keys` (the strong-params list for the filters it reads), `#filter_params` (the present subset of this request, for filter-preserving links) and `#active_filters` (active values by logical name, for chips) — so a host no longer hand-maintains a permit list that mirrors the columns. ([#31](https://github.com/itadventurer/crud_components/issues/31))
 
 ### Changed
 
