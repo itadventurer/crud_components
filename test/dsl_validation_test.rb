@@ -156,17 +156,17 @@ class DslValidationTest < ActiveSupport::TestCase
     end
   end
 
-  test 'like-spec delegation to a block-based search_in raises with a way out' do
-    target = define_model(table: 'publishers', name: 'BlockSearchPublisher') do
-      search_in { |scope, q| scope }
+  test 'like-spec delegation to a block-labelled target raises with a way out' do
+    target = define_model(table: 'publishers', name: 'BlockLabelPublisher') do
+      label { |publisher| publisher.name.upcase }
     end
-    Object.const_set(:BlockSearchPublisher, target)
+    Object.const_set(:BlockLabelPublisher, target)
 
     model = Class.new(ApplicationRecord) do
       self.table_name = 'books'
       include CrudComponents::Model
       define_singleton_method(:name) { 'TempBookWithBlockTarget' }
-      belongs_to :publisher, class_name: 'BlockSearchPublisher', optional: true
+      belongs_to :publisher, class_name: 'BlockLabelPublisher', optional: true
     end
     model.crud_structure { search_in :publisher }
 
@@ -176,7 +176,7 @@ class DslValidationTest < ActiveSupport::TestCase
     assert_match(/custom block/, error.message)
     assert_match(/spell the columns out/, error.message)
   ensure
-    Object.send(:remove_const, :BlockSearchPublisher) if Object.const_defined?(:BlockSearchPublisher)
+    Object.send(:remove_const, :BlockLabelPublisher) if Object.const_defined?(:BlockLabelPublisher)
   end
 
   test 'like-spec referencing nonsense raises' do

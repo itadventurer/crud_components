@@ -24,7 +24,7 @@ class Book < ApplicationRecord
 
   crud_structure do
     identify_by :slug
-    search_in :title, :subtitle, :publisher, :authors   # :authors delegates to Author's spec
+    search_in :title, :subtitle, :publisher, :authors   # :publisher / :authors match each target's label
 
     attribute :price, as: :number, unit: '€', digits: 2
     attribute :blurb, as: :markdown      # soft-dependency renderer (commonmarker/redcarpet/kramdown)

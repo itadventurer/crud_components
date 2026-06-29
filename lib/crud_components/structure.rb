@@ -189,9 +189,12 @@ module CrudComponents
       @search_in_spec ||= (@search_decl.presence || default_search_spec)
     end
 
+    # "Search what you see": with no search_in declared, ?q= covers the text
+    # shown on the index — own string/text columns, plus associations through
+    # their label. Columns you never display (and a model's hidden secrets) are
+    # never reached. Derived from the index fieldset; declared search_in wins.
     def default_search_spec
-      model.columns.select { |col| %i[string text].include?(col.type) }
-           .map { |col| col.name.to_sym }
+      fieldset_fields(fieldset(:index)).filter_map(&:search_spec_entry).uniq
     end
 
     def searchable?

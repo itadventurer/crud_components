@@ -79,20 +79,21 @@ filter :title                                  # own column
 filter :title, :subtitle                       # several own columns, OR-combined
 filter authors: %i[name email]                 # join, explicit columns
 filter user: { address: %i[street town] }      # nested joins, explicit columns
-filter :publisher                              # join, DELEGATE to Publisher's search_in
+filter :publisher                              # join, match Publisher's label (what you see)
 filter :title, { authors: :name }              # mixed
 ```
 
-The **delegation form** — an association name *without* columns — means "search it the
-way that model defines being searched" (its `search_in`). It is the idiomatic style and
-stays correct as the target model's definition evolves.
+The **label form** — an association name *without* columns — matches the target's
+**label**: the name shown in that association's cell ("search what you see"). It is the
+idiomatic style and never reaches the target's other columns, so a secret column on the
+target can't be probed through an association. When the target's label is a custom block
+(no single column to match), spell the columns out (`filter authors: :name`).
 
 The gem turns a spec into `left_joins` plus parameterized, wildcard-escaped `ILIKE`
 (via `sanitize_sql_like` with an explicit `\` escape char, so `%`, `_` and `\` are all
 literal). A spec contains only column/association names you wrote — **no SQL strings**,
 nothing to sanitize. A joined match is `DISTINCT`; an own-column spec is not (no join to
-dedupe). Delegation cycles are guarded (max 5 delegation hops) and raise rather than
-stack-overflow.
+dedupe).
 
 ### The escape hatch
 

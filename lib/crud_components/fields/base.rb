@@ -56,6 +56,14 @@ module CrudComponents
         model.columns_hash[name.to_s]
       end
 
+      # How this field feeds the default ?q= ("search what you see"): its own
+      # string/text column, or nil for fields with no free-text column behind
+      # them (numbers, dates, enums, attachments, computed). Associations
+      # override this to contribute their target's label.
+      def search_spec_entry
+        name if column && %i[string text].include?(column.type)
+      end
+
       # Whether the backing column permits NULL — gates the "not set" filter
       # choice and the 3-state form control for nullable boolean/enum fields.
       def nullable?

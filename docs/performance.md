@@ -13,7 +13,7 @@ config can't guess.
   [Fast cell rendering](#fast-cell-rendering).
 - **belongs_to filters degrade gracefully.** A belongs_to filter renders a `<select>` of
   the target's records up to `config.select_limit` (default 250); beyond that it switches
-  to a text input over the target's `search_in`, so a 50k-row association never builds a
+  to a text input over the target's `label`, so a 50k-row association never builds a
   giant `<select>`. (A typeahead/autocomplete is a later version.)
 - **Long text truncates** in collections — the full value renders on the record page.
 

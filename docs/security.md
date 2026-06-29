@@ -125,15 +125,17 @@ The guarantees, each backed by a test:
 
 ## `?q=` search and permissions
 
-`search_in` is the model's **text identity**, used model-globally (it powers `?q=`, the
-belongs_to text fallback, and delegated specs). Two things follow:
+`search_in` is the model's **text identity**, powering `?q=`. Three things follow:
 
 - A **declared, permission-gated** column (`attribute :notes, if: :manage`) is dropped from
   the search spec for a user who can't see it — `?q=` upholds "hidden everywhere".
-- An **undeclared** column in the zero-config default spec (all string/text columns) is
-  searched model-globally by design. If a model has a sensitive string column you don't
-  want reachable via `?q=`, declare `search_in` explicitly with only the columns you want.
-  The default is broad so zero-config search "just finds things"; narrowing it is the
-  author's call.
+- The **zero-config default is "search what you see"**: the index's own string/text columns
+  plus its associations' labels. A column you never display — including a model's secret
+  columns (`encrypted_password`, `*_token`, `api_key`) — is never searched. Declare
+  `search_in` to override (a narrower column list, or a block for full-text).
+- An **association** reached by `?q=`, the belongs_to text fallback, or a spec naming it
+  (`filter :publisher`) matches the target's **label** only — never the target's other
+  columns. So filtering by a `belongs_to :user` can't probe `users.encrypted_password`,
+  even when `User` has no `crud_structure` of its own.
 
   See also: [Performance](performance.md) · [Views](views.md) · [Fields](fields.md) · [Forms](forms.md).

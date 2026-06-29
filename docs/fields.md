@@ -324,7 +324,7 @@ renders, filters or sorts.
 ```ruby
 label :title              # method or block; default: name → title → first string column → "Book #42"
 identify_by :slug         # default: :id
-search_in :title, :subtitle, :publisher   # default: own string/text columns
+search_in :title, :subtitle, :publisher   # default: the index's string/text fields + associations' labels
 icon 'book'               # default: guessed from the model name (config.model_icons), else none
 ```
 
@@ -337,8 +337,12 @@ icon 'book'               # default: guessed from the model name (config.model_i
 - **`identify_by`** — the column URL params use to identify a record of this model. With
   `identify_by :slug`, a filter URL reads `?publisher=tor-books` and resolves via
   `Publisher.where(slug: …)`.
-- **`search_in`** — the model's text identity: what `?q=` searches, what the belongs_to
-  text-filter fallback matches, and what delegated specs (`filter :publisher`) expand to.
+- **`search_in`** — the model's text identity: what `?q=` searches. Undeclared, it's
+  "search what you see" — the index's own string/text columns plus its associations'
+  labels — so secret columns you don't display are never searched. Declare it to override
+  (a custom column list, or a block for full-text/`tsvector`). The belongs_to text-filter
+  fallback and an association named in a spec (`filter :publisher`) match the target's
+  **label** only, never its `search_in`.
 - **`icon`** — a Bootstrap-icon name (no `bi-` prefix — paired with `config.css.icon_prefix`,
   swap the whole library there) that badges the model wherever it appears: column-picker
   groups, association links, path-column cells. Undeclared, it's guessed from the model name
@@ -397,7 +401,7 @@ with `preload: %i[publisher]` — [Performance](performance.md#eager-loading-ren
 | enum                      | i18n'd badge (nil `—`), click-to-filter      | select of keys                                           | yes  | values validated against the enum; nullable column adds a "not set" (IS NULL) choice |
 | json                      | `<pre>` (rouge if present)                   | —                                                        | —    | not form-editable in v1                                                              |
 | Active Storage attachment | image / preview / icon by content type       | —                                                        | —    | form shows current; keep/add/remove via signed_ids                                   |
-| `belongs_to`              | nil-safe link via target `label`             | select (≤ `select_limit`) / text over target `search_in` | v2   | resolves by `identify_by`                                                            |
+| `belongs_to`              | nil-safe link via target `label`             | select (≤ `select_limit`) / text over target `label`    | v2   | resolves by `identify_by`                                                            |
 | `has_many` / habtm        | "a, b +n more" links                         | opt-in `filter` facet                                    | no   | "+n more" links to nested/filtered index                                             |
 | public method             | by value type                                | —                                                        | —    | needs a facet to filter/sort                                                         |
 | `render` block            | block output                                 | —                                                        | —    | facets add filter/sort                                                               |
