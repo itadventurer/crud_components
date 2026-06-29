@@ -369,29 +369,9 @@ the query into your own hands — the explicit form of what the helper does auto
 
 Everything stays an ActiveRecord relation, so any paginator and any pre-existing scope
 compose. The manual query is also how you get the filtered relation for counts, CSV
-exports, or charts.
-
-### The params it understands
-
-A `Query` only ever reads params that name a filterable field you can see (plus the
-reserved `q`/`sort`/`dir`) — junk never reaches SQL — so it doesn't need a strong-params
-permit list to be safe. But a controller usually wants the param subset anyway: to
-strong-params it, and to rebuild **filter-preserving links** (a pager, a breadcrumb, a
-"clear search" target). Rather than hand-maintain a list that mirrors the columns and
-drifts when they change, ask the query:
-
-```ruby
-@query.permitted_keys   # prefixed param names it reads: each filter field's value and
-                        # `_geq`/`_leq` bounds, plus q/sort/dir. (page/per are yours.)
-@query.filter_params    # the present subset of *this* request, by real param name —
-                        # e.g. { "title" => "hobbit", "price_geq" => "10", "sort" => "name" }
-@query.active_filters   # active filter/search values by logical name, for chips —
-                        # e.g. { "title" => "hobbit", "q" => "dragons" }
-```
-
-`filter_params` is the one to thread into link helpers (`books_path(**@query.filter_params)`)
-instead of keeping a `@search_params` shim; it already respects `param_prefix:`. All three
-are fieldset- and permission-bound: a key a user can't see is never listed.
+exports, or charts. To permit the query's params yourself or rebuild filter-preserving
+links by hand, the query exposes the params it reads — see
+[the params a query reads](filtering.md#the-params-a-query-reads).
 
 **The footer pager renders itself** when the relation you pass is already paginated —
 i.e. you called `.page` and it decorates the relation (kaminari, will_paginate). The gem
