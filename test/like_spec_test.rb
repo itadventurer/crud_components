@@ -25,10 +25,12 @@ class LikeSpecTest < ActiveSupport::TestCase
     assert_equal [@hobbit], apply(Book.all, { publisher: :name }, 'tor').to_a
   end
 
-  test 'delegation: association name alone uses the target search_in' do
-    # Review's spec includes :book; Book's spec includes :publisher (nested delegation)
+  test 'delegation: association name alone searches the target label' do
+    # :book reaches Book's label (title), the name shown in the cell — not its
+    # other columns, and not a further hop into Book's own search_in.
     assert_equal [@review], apply(Review.all, [:book], 'hobbit').to_a
-    assert_equal [@review], apply(Review.all, [:book], 'tor').to_a, 'two delegation hops'
+    assert_empty apply(Review.all, [:book], 'tor').to_a,
+                 'label-only: the book\'s publisher is not reached through :book'
   end
 
   test 'mixed spec' do
@@ -73,5 +75,13 @@ class LikeSpecTest < ActiveSupport::TestCase
   test 'an own-column spec adds no DISTINCT (no join to dedupe)' do
     refute_match(/DISTINCT/i, apply(Book.all, :title, 'x').to_sql)
     assert_match(/DISTINCT/i, apply(Book.all, { publisher: :name }, 'x').to_sql)
+  end
+
+  # Regression for #28: a bare association delegates to the target's label
+  # only, so a secret column on the target is never reached by free-text search.
+  test 'delegation does not reach the target columns behind its label' do
+    @hobbit.update!(internal_token: 'sekrit')
+    assert_empty apply(Review.all, [:book], 'sekrit').to_a, 'token column not reachable through :book'
+    assert_equal [@review], apply(Review.all, [:book], 'hobbit').to_a, 'the label (title) still matches'
   end
 end

@@ -30,7 +30,9 @@ class StructureTest < ActiveSupport::TestCase
     structure = structure_of(Author)
     assert_equal :name, structure.label_source
     assert_equal :id, structure.identify_by
-    assert_equal %i[name email], structure.search_in_spec
+    # "search what you see": own string columns, plus the displayed :books
+    # habtm reached through Book's label (title) — not Author's hidden columns.
+    assert_equal %i[name email books], structure.search_in_spec
   end
 
   test 'zero-config fieldsets: default exists, index/show fall back to it' do

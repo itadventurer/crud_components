@@ -5,17 +5,12 @@ module CrudComponents
   #   :title                       own column
   #   %i[title subtitle]           several own columns, OR-combined
   #   { authors: %i[name email] }  join, explicit columns
-  #   :publisher                   join, delegate to Publisher's search_in
-  #   { user: :address }           nested join, delegate to Address
+  #   :publisher                   join, search Publisher's label (what you see)
+  #   { user: :address }           nested join, search Address's label
   #
   # Specs never contain SQL strings; conditions are built through Arel with
   # LIKE wildcards escaped, so they are parameterized end to end.
   module LikeSpec
-    # Only *delegation* hops (an association name resolved through the target's
-    # search_in) can form a cycle; explicit nesting is bounded by the literal
-    # spec. So the guard counts delegations only.
-    MAX_DELEGATIONS = 5
-
     module_function
 
     def apply(scope, spec, value)
@@ -47,19 +42,16 @@ module CrudComponents
       end
     end
 
-    # Resolves a spec into flat [path, klass, column] entries, expanding
-    # association names without columns through the target's search_in spec.
-    # `delegations` counts only delegation hops (the cycle risk).
-    def expand(model, spec, path = [], delegations = 0)
-      if delegations > MAX_DELEGATIONS
-        raise DefinitionError, "search_in/like delegation more than #{MAX_DELEGATIONS} levels deep " \
-                               "starting at #{model} — most likely a delegation cycle"
-      end
-
+    # Resolves a spec into flat [path, klass, column] entries. A bare
+    # association name resolves to the target's label column — the text you
+    # actually see in that association's cell — so it can never reach a
+    # target's hidden columns (passwords, tokens, …) and there is no
+    # search_in chain to form a cycle.
+    def expand(model, spec, path = [])
       Array.wrap(spec).flat_map do |item|
         case item
-        when Symbol, String then expand_name(model, item.to_sym, path, delegations)
-        when Hash then item.flat_map { |assoc, sub| expand_assoc(model, assoc.to_sym, sub, path, delegations) }
+        when Symbol, String then expand_name(model, item.to_sym, path)
+        when Hash then item.flat_map { |assoc, sub| expand_assoc(model, assoc.to_sym, sub, path) }
         else
           raise DefinitionError, "invalid like-spec element #{item.inspect} for #{model} — " \
                                  'use column symbols, association symbols, or { assoc => columns } hashes'
@@ -67,38 +59,39 @@ module CrudComponents
       end
     end
 
-    def expand_name(model, name, path, delegations)
+    def expand_name(model, name, path)
       if model.columns_hash.key?(name.to_s)
         [Entry.new(path, model, name)]
       elsif (reflection = model.reflect_on_association(name))
-        delegate(model, reflection, path, delegations)
+        delegate(model, reflection, path)
       else
         raise DefinitionError, "like-spec references '#{name}', which is neither a column nor " \
                                "an association of #{model}"
       end
     end
 
-    # Explicit nesting ({ assoc => columns }) — bounded by the spec, not a
-    # cycle risk, so it does not count against the delegation limit.
-    def expand_assoc(model, assoc, sub, path, delegations)
+    # Explicit nesting ({ assoc => columns }) — spell the target's columns out.
+    def expand_assoc(model, assoc, sub, path)
       reflection = model.reflect_on_association(assoc)
       raise DefinitionError, "like-spec references association '#{assoc}', " \
                              "which #{model} does not have" unless reflection
 
-      expand(reflection.klass, sub, path + [assoc], delegations)
+      expand(reflection.klass, sub, path + [assoc])
     end
 
-    # Association name without columns: use the target model's search_in spec.
-    def delegate(model, reflection, path, delegations)
+    # Association name without columns: search the target's label column — the
+    # name shown in its cell ("search what you see"). A block/computed label has
+    # no single column to match, so ask for the columns explicitly.
+    def delegate(model, reflection, path)
       target = reflection.klass
-      target_spec = Structure.for(target).search_in_spec
-      if target_spec.nil?
-        raise DefinitionError, "cannot delegate like-spec to #{model}##{reflection.name}: " \
-                               "#{target}'s search_in is a custom block — spell the columns out, " \
+      label = Structure.for(target).label_field_name
+      if label.nil?
+        raise DefinitionError, "cannot search #{model}##{reflection.name} by label: " \
+                               "#{target}'s label is a custom block, not a column — spell the columns out, " \
                                "e.g. { #{reflection.name}: %i[...] }"
       end
 
-      expand(target, target_spec, path + [reflection.name], delegations + 1)
+      [Entry.new(path + [reflection.name], target, label)]
     end
 
     def deep_merge(left, right)

@@ -45,6 +45,12 @@ module CrudComponents
       end
 
       def target_structure = Structure.for(target)
+
+      # Default ?q= reaches the children's label (the names shown in the list).
+      # Skipped when the target's label is a block/columnless.
+      def search_spec_entry
+        name if target_structure.label_field_name
+      end
     end
   end
 end

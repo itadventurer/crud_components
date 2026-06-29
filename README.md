@@ -146,14 +146,14 @@ together in one block:
 ```ruby
 attribute :author_names do
   render { |book| book.authors.map(&:name).to_sentence }
-  filter :authors                  # delegate to Author's search_in; or spell it out: filter authors: :name
+  filter :authors                  # match Author's label; or spell it out: filter authors: :name
   sort   { |scope, dir| scope.left_joins(:authors).order('authors.name' => dir) }
 end
 ```
 
 The **search spec** — the mini-language `filter` and `search_in` share — builds joins +
 parameterized, wildcard-escaped ILIKE from column/association names, nothing to sanitize.
-An association name alone *delegates* to that model's `search_in`. →
+An association name alone matches that model's **label** (the name you see). →
 [Filtering → the search spec](docs/filtering.md#the-search-spec)
 
 ### Columns the model doesn't know about
@@ -212,7 +212,7 @@ the param. It's also a standalone helper (`crud_column_picker`) you can drop abo
 ```ruby
 label :title              # default: name → title → first string column, else "Book #42"
 identify_by :slug         # Use slug in the URLs
-search_in :title, :subtitle, :publisher   # :publisher delegates to Publisher's search_in
+search_in :title, :subtitle, :publisher   # :publisher matches Publisher's label
 ```
 
 `label` + `identify_by` + `search_in` are a model's **identity** — and they define how
@@ -322,7 +322,7 @@ The whole DSL:
 | `attribute` / `attributes`   | improve one/several fields (model-global)                                  |
 | `render` / `filter` / `sort` | facets inside an `attribute` block — override exactly one derived behavior |
 | `label`, `identify_by`       | identity: display name; the column URL params resolve                      |
-| `search_in`                  | the model's text identity (`?q=`, and what delegation expands to)          |
+| `search_in`                  | the model's text identity (`?q=`); default is "search what you see"        |
 | `action`                     | buttons, per row or per collection                                         |
 | `fieldset`                   | a named *selection* of fields and actions                                  |
 
@@ -357,7 +357,7 @@ Keyed by what a field *is* — with zero config, every row applies without decla
 | enum                      | i18n'd badge (click to filter; `—` if null)  | select of enum keys (+ "not set" if nullable)                                        | validated against the enum; "not set" → IS NULL         | yes         |
 | json column               | pretty `<pre>` (rouge if present)            | —                                                                                    | —                                                       | no          |
 | Active Storage attachment | image / preview / icon by content type       | —                                                                                    | —                                                       | no          |
-| `belongs_to`              | nil-safe link via target's `label`           | select valued by target's `identify_by` (text over `search_in` above `select_limit`) | `where(assoc: Target.where(identify_by => v))`          | v2          |
+| `belongs_to`              | nil-safe link via target's `label`           | select valued by target's `identify_by` (text over target's `label` above `select_limit`) | `where(assoc: Target.where(identify_by => v))`          | v2          |
 | `has_many` / habtm        | "a, b +n more" links                         | opt-in via `filter` facet                                                            | —                                                       | no          |
 | public model method       | by value type                                | —                                                                                    | —                                                       | —           |
 | `render` block / `as:`    | as declared                                  | — *(unless `filter` facet)*                                                          | — *(unless `sort` facet)*                               | facet-gated |
@@ -430,7 +430,7 @@ gear, `picked_columns:` seeds it (`:auto` reads `?cols=`; an Array is verbatim, 
 ```ruby
 label(method = nil, &block)
 identify_by(column)                               # default :id
-search_in(*spec) | search_in { |scope, q| … }     # default: own string/text columns
+search_in(*spec) | search_in { |scope, q| … }     # default: "search what you see" (displayed fields + labels)
 attribute(name, as: nil, form_as: nil, if: nil, editable: nil, **renderer_options, &block)
 attributes(*names, **shared_options)
   # bare block (arity 1)  = render markup

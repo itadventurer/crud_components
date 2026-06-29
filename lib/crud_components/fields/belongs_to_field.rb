@@ -2,8 +2,9 @@ module CrudComponents
   module Fields
     # belongs_to / has_one: nil-safe link via the target's label. The filter
     # (belongs_to only) accepts both the target's identify_by value (what the
-    # select submits) and free text matched against the target's search_in —
-    # one param, two OR-combined parameterized subqueries.
+    # select submits) and free text matched against the target's label — the
+    # name shown in the cell — one param, two OR-combined parameterized
+    # subqueries.
     class BelongsToField < Base
       def default_renderer = :association
 
@@ -21,6 +22,12 @@ module CrudComponents
 
       def target_structure
         Structure.for(target)
+      end
+
+      # Default ?q= reaches the target's label (the name shown in the cell).
+      # Skipped for polymorphic (no single target) or a block/columnless label.
+      def search_spec_entry
+        name if !reflection.polymorphic? && target_structure.label_field_name
       end
 
       def derived_filterable?
@@ -99,11 +106,13 @@ module CrudComponents
         col if col && target.column_names.include?(col.to_s)
       end
 
+      # Free text matches the target's label only — the name shown in the cell.
+      # A block/computed label has no column to match, so there's no text filter.
       def like_subquery(scope, value)
-        spec = target_structure.search_in_spec
-        return nil if spec.nil? || spec.empty?
+        label = target_structure.label_field_name
+        return nil unless label
 
-        scope.where(name => LikeSpec.apply(target.all, spec, value))
+        scope.where(name => LikeSpec.apply(target.all, [label], value))
       end
     end
   end
