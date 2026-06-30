@@ -13,8 +13,11 @@ see") see [security.md](security.md).
 ## The `filter` facet
 
 Every column is filterable by default through the control its type implies — a string by
-substring, a number/date by range, an enum/boolean by select. A computed or association
-column opts in with the `filter` facet (a [search spec](#the-search-spec) or a block):
+substring, a number/date by range, an enum/boolean by select, an association by its target's
+**label** (the name shown in the cell): a `belongs_to` as a select/text, a `has_many`/habtm as
+text matching any child. A *computed* column, or an association whose label is a block (no
+single column to match), opts in with the `filter` facet (a [search spec](#the-search-spec) or
+a block):
 
 ```ruby
 attribute :author_names do

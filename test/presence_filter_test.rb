@@ -3,8 +3,9 @@ require 'test_helper'
 # The present / absent filter for Active Storage attachment columns (issue #32):
 # an attachment has no value to match, but "has one / has none" does, and it has
 # to compose into the query as an EXISTS / NOT EXISTS like any other filter. Other
-# association flavors keep their standard behavior (a belongs_to value filter; no
-# derived filter on has_many until a `filter` facet opts in) — asserted below.
+# association flavors keep their standard behavior (a belongs_to value filter; a
+# has_many filtered by its children's label — unless that label is a block, which
+# has no column to match) — asserted below.
 class PresenceFilterTest < ActiveSupport::TestCase
   include CrudTestHelpers
 
@@ -60,7 +61,10 @@ class PresenceFilterTest < ActiveSupport::TestCase
     assert_equal [@with_cover], filtered(:publisher, @tor.slug).to_a
   end
 
-  test 'has_many has no derived filter (opt-in via a filter facet, unchanged)' do
+  # Book#reviews: a has_many whose target (Review) labels itself with a block, so
+  # there is no single column to match — no derived filter (a `filter` facet, or a
+  # column-labelled target, would opt it in).
+  test 'has_many with a block-labelled target has no derived filter' do
     refute field(:reviews).filterable?
   end
 end
