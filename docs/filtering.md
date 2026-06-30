@@ -13,8 +13,11 @@ see") see [security.md](security.md).
 ## The `filter` facet
 
 Every column is filterable by default through the control its type implies — a string by
-substring, a number/date by range, an enum/boolean by select. A computed or association
-column opts in with the `filter` facet (a [search spec](#the-search-spec) or a block):
+substring, a number/date by range, an enum/boolean by select, an association by its target's
+**label** (the name shown in the cell): a `belongs_to` as a select/text, a `has_many`/habtm as
+text matching any child. A *computed* column, or an association whose label is a block (no
+single column to match), opts in with the `filter` facet (a [search spec](#the-search-spec) or
+a block):
 
 ```ruby
 attribute :author_names do
@@ -24,6 +27,12 @@ end
 
 attribute :token, filter: false               # opt a derived field out of filtering
 ```
+
+A `has_many`/habtm column filters by its children's label with no extra config — typing in its
+filter box keeps owners that have a matching child. Here `/publishers` (which lists each
+publisher's **books**) is narrowed to publishers holding a book whose title contains "winter":
+
+![The /publishers filter row: a text box under the Books column holding "winter", and the rows below narrowed to publishers that have a matching book](screenshots/has-many-filter.png)
 
 A `filter`/`search_in` block receives `(scope, value)` and returns a relation; the scope
 arrives extended with `where_like` (see [the escape hatch](#the-escape-hatch)).

@@ -1,7 +1,7 @@
 module CrudComponents
   module Fields
-    # has_many / habtm: truncated list of links ("a, b +3 more"). No derived
-    # filter or sort; opt in with `filter like: :assoc` (delegation).
+    # has_many / habtm: truncated list of links ("a, b +3 more"). Filters by the
+    # children's label (the names shown in the list); no derived sort.
     class HasManyField < Base
       def default_renderer = :association_list
 
@@ -50,6 +50,20 @@ module CrudComponents
       # Skipped when the target's label is a block/columnless.
       def search_spec_entry
         name if target_structure.label_field_name
+      end
+
+      # ── filter ─────────────────────────────────────────────────────────────
+      # "Filter what you see": a free-text contains-match against the children's
+      # label — the names shown in the list — so an owner matches when at least
+      # one of its children does. Skipped when the target's label is a
+      # block/columnless (no single column to match). Mirrors belongs_to, which
+      # filters by its target's label the same way.
+      def derived_filterable? = target_structure.label_field_name.present?
+
+      def apply_derived_filter(scope, value: nil, **)
+        return scope unless value
+
+        LikeSpec.apply(scope, name, value)
       end
     end
   end

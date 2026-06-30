@@ -402,7 +402,7 @@ with `preload: %i[publisher]` — [Performance](performance.md#eager-loading-ren
 | json                      | `<pre>` (rouge if present)                   | —                                                        | —    | not form-editable in v1                                                              |
 | Active Storage attachment | image / preview / icon by content type       | —                                                        | —    | form shows current; keep/add/remove via signed_ids                                   |
 | `belongs_to`              | nil-safe link via target `label`             | select (≤ `select_limit`) / text over target `label`    | v2   | resolves by `identify_by`                                                            |
-| `has_many` / habtm        | "a, b +n more" links                         | opt-in `filter` facet                                    | no   | "+n more" links to nested/filtered index                                             |
+| `has_many` / habtm        | "a, b +n more" links                         | text over the children's `label` (block label: facet)    | no   | "+n more" links to nested/filtered index                                             |
 | public method             | by value type                                | —                                                        | —    | needs a facet to filter/sort                                                         |
 | `render` block            | block output                                 | —                                                        | —    | facets add filter/sort                                                               |
 
