@@ -28,6 +28,12 @@ end
 attribute :token, filter: false               # opt a derived field out of filtering
 ```
 
+A `has_many`/habtm column filters by its children's label with no extra config — typing in its
+filter box keeps owners that have a matching child. Here `/publishers` (which lists each
+publisher's **books**) is narrowed to publishers holding a book whose title contains "winter":
+
+![The /publishers filter row: a text box under the Books column holding "winter", and the rows below narrowed to publishers that have a matching book](screenshots/has-many-filter.png)
+
 A `filter`/`search_in` block receives `(scope, value)` and returns a relation; the scope
 arrives extended with `where_like` (see [the escape hatch](#the-escape-hatch)).
 
