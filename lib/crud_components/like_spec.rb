@@ -24,8 +24,14 @@ module CrudComponents
 
       return scope.where(condition) if joins.empty?
 
-      # distinct only matters once a join can multiply rows
-      scope.left_joins(joins).where(condition).distinct
+      # A join can multiply rows, so the match has to be de-duplicated. We do it
+      # with an id subquery rather than SELECT DISTINCT: DISTINCT compares every
+      # selected column, which Postgres can't do for a json (or other
+      # non-comparable) column the scope happens to select — it raises "could not
+      # identify an equality operator for type json". The subquery sidesteps that
+      # and keeps the join (and its rows) out of the outer query entirely.
+      key = model.arel_table[model.primary_key]
+      scope.where(key.in(model.left_joins(joins).where(condition).select(key).arel))
     end
 
     Entry = Struct.new(:path, :klass, :column) do
