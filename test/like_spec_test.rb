@@ -64,7 +64,7 @@ class LikeSpecTest < ActiveSupport::TestCase
     assert_empty apply(Book.all, :title, '\\%').to_a   # backslash does not escape the %
   end
 
-  test 'a joined match returns each row once (distinct)' do
+  test 'a joined match returns each row once' do
     le = Author.create!(name: 'Leann')
     li = Author.create!(name: 'Liam')
     book = Book.create!(title: 'Two Ls', slug: 'two-ls', authors: [le, li])
@@ -72,9 +72,18 @@ class LikeSpecTest < ActiveSupport::TestCase
     assert_equal 1, found.count { |b| b == book }, 'row not duplicated by the join'
   end
 
-  test 'an own-column spec adds no DISTINCT (no join to dedupe)' do
-    refute_match(/DISTINCT/i, apply(Book.all, :title, 'x').to_sql)
-    assert_match(/DISTINCT/i, apply(Book.all, { publisher: :name }, 'x').to_sql)
+  # The join (and the row multiplication it causes) is de-duplicated with an id
+  # subquery, not SELECT DISTINCT — DISTINCT would compare every selected column
+  # and blow up on a non-comparable one (e.g. a json column on the scope). So an
+  # own-column spec is a plain WHERE, and a joined spec filters by an id IN (…).
+  test 'a joined spec dedupes via an id subquery, not DISTINCT' do
+    own = apply(Book.all, :title, 'x').to_sql
+    refute_match(/DISTINCT/i, own)
+    refute_match(/SELECT/i, own.sub(/\ASELECT/, ''))   # only the outer SELECT, no subquery
+
+    joined = apply(Book.all, { publisher: :name }, 'x').to_sql
+    refute_match(/DISTINCT/i, joined)
+    assert_match(/"books"\."id" IN \(SELECT/i, joined)
   end
 
   # Regression for #28: a bare association delegates to the target's label
