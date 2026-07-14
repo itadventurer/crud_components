@@ -5,6 +5,8 @@ This project follows [semantic versioning](https://semver.org).
 
 ## Unreleased
 
+## v0.2.0 — 2026-07-14
+
 ### Added
 
 - Typed filter controls for dynamic columns: a `filter:` block with keyword params (`geq:`/`leq:`, `eq:`, `contains:`) filters as the column's `as:` type — a number/date range, a yes/no or a dropdown instead of a text box (override with `filter_as:`/`filter_choices:`). ([#20](https://github.com/itadventurer/crud_components/issues/20))
@@ -12,6 +14,8 @@ This project follows [semantic versioning](https://semver.org).
 - A `belongs_to` column sorts by its target's label (via a join), matching the existing filter-by-label. ([#27](https://github.com/itadventurer/crud_components/pull/27))
 - `crud_collection` takes `search_bar:` (default true) to drop the toolbar's `?q=` search box for one collection. ([#29](https://github.com/itadventurer/crud_components/pull/29))
 - `Query` exposes the params it understands: `#permitted_keys` (the strong-params list for the filters it reads), `#filter_params` (the present subset of this request, for filter-preserving links) and `#active_filters` (active values by logical name, for chips) — so a host no longer hand-maintains a permit list that mirrors the columns. ([#31](https://github.com/itadventurer/crud_components/issues/31))
+- Active Storage attachment columns filter by **presence**: a 3-state _any / present / absent_ dropdown (`EXISTS` / `NOT EXISTS`), covering `has_one_attached` and `has_many_attached`. ([#32](https://github.com/itadventurer/crud_components/issues/32))
+- A `has_many`/habtm column filters by its children's **label** — the names shown in the cell — matching `belongs_to`'s filter-by-label; skipped when the target labels itself with a block. ([#36](https://github.com/itadventurer/crud_components/pull/36))
 
 ### Changed
 
@@ -21,3 +25,5 @@ This project follows [semantic versioning](https://semver.org).
 
 - Dynamic columns keep their inline filter and sort link when a prebuilt `Query` is passed. ([#21](https://github.com/itadventurer/crud_components/issues/21))
 - A proc `sort` facet overrides a prior order (e.g. a search rank) instead of appending to it. ([#23](https://github.com/itadventurer/crud_components/issues/23))
+- The inline filter row's apply/reset button now renders on any filterable table, even one with row actions and the column picker both off (previously the button was missing). ([#35](https://github.com/itadventurer/crud_components/pull/35))
+- `LikeSpec` dedupes joined matches with an id subquery instead of `SELECT DISTINCT`, fixing `PG::UndefinedFunction` on Postgres when a model carrying a `json` column has one of its associations filtered. ([#37](https://github.com/itadventurer/crud_components/pull/37))
