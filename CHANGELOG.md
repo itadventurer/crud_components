@@ -5,6 +5,12 @@ This project follows [semantic versioning](https://semver.org).
 
 ## Unreleased
 
+## v0.2.1 — 2026-07-31
+
+### Fixed
+
+- An association column whose target labels itself with a *method* rather than a column (e.g. `label :display_title`) no longer raises `DefinitionError` ("… is neither a column nor an association of …") when its filter or `?q=` search runs. The label-based text match — and the `belongs_to` sort — are skipped whenever there is no column behind the label, as they already were for a block label. A `belongs_to` still filters by value; spell the columns out (`filter publisher: :name`) to match such a target as text.
+
 ## v0.2.0 — 2026-07-14
 
 ### Added

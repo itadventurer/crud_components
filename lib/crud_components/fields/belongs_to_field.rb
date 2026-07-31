@@ -27,7 +27,7 @@ module CrudComponents
       # Default ?q= reaches the target's label (the name shown in the cell).
       # Skipped for polymorphic (no single target) or a block/columnless label.
       def search_spec_entry
-        name if !reflection.polymorphic? && target_structure.label_field_name
+        name if !reflection.polymorphic? && target_structure.label_column_name
       end
 
       def derived_filterable?
@@ -102,14 +102,13 @@ module CrudComponents
       def sort_column
         return nil if reflection.polymorphic?
 
-        col = target_structure.label_field_name
-        col if col && target.column_names.include?(col.to_s)
+        target_structure.label_column_name
       end
 
       # Free text matches the target's label only — the name shown in the cell.
       # A block/computed label has no column to match, so there's no text filter.
       def like_subquery(scope, value)
-        label = target_structure.label_field_name
+        label = target_structure.label_column_name
         return nil unless label
 
         scope.where(name => LikeSpec.apply(target.all, [label], value))

@@ -90,11 +90,11 @@ module CrudComponents
     # no single column to match, so ask for the columns explicitly.
     def delegate(model, reflection, path)
       target = reflection.klass
-      label = Structure.for(target).label_field_name
+      label = Structure.for(target).label_column_name
       if label.nil?
         raise DefinitionError, "cannot search #{model}##{reflection.name} by label: " \
-                               "#{target}'s label is a custom block, not a column — spell the columns out, " \
-                               "e.g. { #{reflection.name}: %i[...] }"
+                               "#{target}'s label is not a column (custom block or computed method) — " \
+                               "spell the columns out, e.g. { #{reflection.name}: %i[...] }"
       end
 
       [Entry.new(path + [reflection.name], target, label)]
