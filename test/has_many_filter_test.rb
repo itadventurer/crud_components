@@ -46,4 +46,11 @@ class HasManyFilterTest < ActiveSupport::TestCase
   test 'a blank query is inert (the row is not filtered)' do
     assert_equal Publisher.count, filtered('').count
   end
+
+  test 'a target labelled by a computed method leaves the column unfilterable' do
+    with_label(Book, :shop_margin) do
+      refute books_field.filterable?
+      assert_equal Publisher.count, filtered('Dune').count
+    end
+  end
 end

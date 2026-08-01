@@ -172,6 +172,13 @@ module CrudComponents
       label_source.is_a?(Symbol) ? label_source : nil
     end
 
+    # The label as a real database column, else nil (block label, or a Symbol
+    # naming a computed method). Only a column can be sorted or LIKE-matched.
+    def label_column_name
+      name = label_field_name
+      name if name && model.column_names.include?(name.to_s)
+    end
+
     # The icon name (no library prefix) badging this model: the declared `icon`,
     # else the name-based guess in `config.model_icons` (keyed by the singular
     # underscored model name), else `config.model_fallback_icon` (nil = none).

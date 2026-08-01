@@ -93,4 +93,14 @@ class LikeSpecTest < ActiveSupport::TestCase
     assert_empty apply(Review.all, [:book], 'sekrit').to_a, 'token column not reachable through :book'
     assert_equal [@review], apply(Review.all, [:book], 'hobbit').to_a, 'the label (title) still matches'
   end
+
+  # A Symbol label can name a computed method as well as a column. There is no
+  # column to match then, so delegation is refused rather than building SQL
+  # against a column that does not exist.
+  test 'delegation refuses a label that is a computed method' do
+    with_label(Book, :shop_margin) do
+      error = assert_raises(CrudComponents::DefinitionError) { apply(Review.all, [:book], 'hobbit').to_a }
+      assert_match(/not a column/, error.message)
+    end
+  end
 end

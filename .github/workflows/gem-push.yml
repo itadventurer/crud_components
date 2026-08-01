@@ -17,6 +17,9 @@ jobs:
       id-token: write   # required for Trusted Publishing (OIDC)
     steps:
       - uses: actions/checkout@v7
+      # The dummy app boots Active Storage, whose default :vips processor loads
+      # ruby-vips, which needs the native libvips.
+      - run: sudo apt-get update && sudo apt-get install -y libvips
       - uses: ruby/setup-ruby@v1
         with:
           ruby-version: '3.4'

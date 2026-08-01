@@ -49,7 +49,7 @@ module CrudComponents
       # Default ?q= reaches the children's label (the names shown in the list).
       # Skipped when the target's label is a block/columnless.
       def search_spec_entry
-        name if target_structure.label_field_name
+        name if target_structure.label_column_name
       end
 
       # ── filter ─────────────────────────────────────────────────────────────
@@ -58,7 +58,7 @@ module CrudComponents
       # one of its children does. Skipped when the target's label is a
       # block/columnless (no single column to match). Mirrors belongs_to, which
       # filters by its target's label the same way.
-      def derived_filterable? = target_structure.label_field_name.present?
+      def derived_filterable? = target_structure.label_column_name.present?
 
       def apply_derived_filter(scope, value: nil, **)
         return scope unless value

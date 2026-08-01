@@ -13,7 +13,7 @@ jobs:
       fail-fast: false
       matrix:
         # A representative spread, not the full cartesian: every supported Ruby
-        # (3.2–4.0) and every supported Rails (7.1, 7.2, 8.0) appears, within
+        # (3.2–4.0) and every supported Rails (7.1, 7.2, 8.0, 8.1) appears, within
         # each Rails's own Ruby floor (7.2 needs 3.1+, 8.0 needs 3.2+).
         include:
           - { ruby: '3.2', rails: '7.1' }
@@ -21,11 +21,16 @@ jobs:
           - { ruby: '3.3', rails: '7.2' }
           - { ruby: '3.3', rails: '8.0' }
           - { ruby: '3.4', rails: '8.0' }
+          - { ruby: '3.4', rails: '8.1' }
           - { ruby: '4.0', rails: '8.0' }
+          - { ruby: '4.0', rails: '8.1' }
     env:
       RAILS_VERSION: ${{ matrix.rails }}
     steps:
       - uses: actions/checkout@v7
+      # The dummy app boots Active Storage, whose default :vips processor loads
+      # ruby-vips, which needs the native libvips.
+      - run: sudo apt-get update && sudo apt-get install -y libvips
       # Resolve a fresh lockfile so each Rails minor gets compatible deps.
       - run: rm -f Gemfile.lock
       - uses: ruby/setup-ruby@v1

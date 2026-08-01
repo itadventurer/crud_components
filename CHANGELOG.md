@@ -5,6 +5,16 @@ This project follows [semantic versioning](https://semver.org).
 
 ## Unreleased
 
+## v0.2.1 — 2026-08-01
+
+### Changed
+
+- Verified against **Rails 8.1** — the CI matrix now covers it alongside 7.1, 7.2 and 8.0. The gem's runtime API and its declared dependencies are unchanged; the rest is tooling (GitHub Actions bumped, demo image on Ruby 4.0, CI installs libvips so the playground's Active Storage previews load).
+
+### Fixed
+
+- An association column whose target labels itself with a *method* rather than a column (e.g. `label :display_title`) no longer raises `DefinitionError` ("… is neither a column nor an association of …") when its filter or `?q=` search runs. The label-based text match — and the `belongs_to` sort — are skipped whenever there is no column behind the label, as they already were for a block label. A `belongs_to` still filters by value; spell the columns out (`filter publisher: :name`) to match such a target as text.
+
 ## v0.2.0 — 2026-07-14
 
 ### Added

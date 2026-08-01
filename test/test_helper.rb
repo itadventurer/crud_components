@@ -23,6 +23,17 @@ module CrudTestHelpers
     CrudComponents::Structure.for(model)
   end
 
+  # Swap a model's crud_structure for a minimal one with the given label.
+  def with_label(model, label_name)
+    original = model.instance_variable_get(:@_crud_structure_block)
+    model.reset_crud_structure!
+    model.crud_structure { label label_name }
+    yield
+  ensure
+    model.instance_variable_set(:@_crud_structure_block, original)
+    model.instance_variable_set(:@_crud_structure, nil)
+  end
+
   # Run a block with RENDERER_GEMS swapped — lets the "missing gem raises" test
   # simulate an absent renderer gem even though the playground bundles the real
   # ones (commonmarker/asciidoctor) for its demos.

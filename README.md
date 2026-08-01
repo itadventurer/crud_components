@@ -216,8 +216,8 @@ search_in :title, :subtitle, :publisher   # :publisher matches Publisher's label
 ```
 
 `label` + `identify_by` + `search_in` are a model's **identity** — and they define how
-*other* models render, link and filter it through their associations. Declare Order's
-identity once and every `belongs_to :order` column gets it for free. →
+*other* models render, link and filter it through their associations. Declare Publisher's
+identity once and every `belongs_to :publisher` column gets it for free. →
 [Fields → identity](docs/fields.md#identity-label-identify_by-search_in)
 
 ### Buttons / Actions
