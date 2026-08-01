@@ -29,7 +29,7 @@ attribute :token, filter: false                       # opt a derived field out 
 `attributes` (plural) applies shared options to several fields at once:
 
 ```ruby
-attributes :participants, :owner, if: :manage
+attributes :purchase_price, :shop_margin, if: :manage
 ```
 
 The field universe is always *all* derived columns/associations plus declared computed
@@ -268,9 +268,9 @@ These are not specific to `DynamicColumn` — a declared `attribute :status, hea
 takes the same options. Everything works in the non-grouped and grouped (`group_by:`) layouts,
 and plays with the column picker (a hidden column simply renders no header). The
 `/column_headers` page in `test/dummy` is a full worked example. This is what lets a
-participants × mails / × resources **matrix** live entirely in `crud_collection` — one
-`DynamicColumn` per mail/resource, its controls in its own header — instead of a hand-built
-controls strip above the table.
+books × properties **matrix** live entirely in `crud_collection` — one `DynamicColumn` per
+property, its controls in its own header — instead of a hand-built controls strip above
+the table.
 
 ## Path columns
 
@@ -332,7 +332,7 @@ icon 'book'               # default: guessed from the model name (config.model_i
   Block form: `label { |book| "#{book.title} (#{book.published_on&.year})" }`. With no
   string column at all it falls back to `"Book #42"` (`model_name.human` + ` #` + id).
   When the label reaches into associations, declare them with `preload:` so they're
-  eager-loaded wherever this model is shown — `label :full_title, preload: %i[publisher]`
+  eager-loaded wherever this model is shown — `label :display_title, preload: %i[publisher]`
   ([Performance](performance.md#eager-loading-render-dependencies)).
 - **`identify_by`** — the column URL params use to identify a record of this model. With
   `identify_by :slug`, a filter URL reads `?publisher=tor-books` and resolves via

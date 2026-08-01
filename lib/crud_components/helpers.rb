@@ -186,7 +186,7 @@ module CrudComponents
     end
 
     # The label for an associated record in an association column: a per-column
-    # `label:` callable (`attribute :order, label: ->(o) { o.full_title(short: true) }`)
+    # `label:` callable (`attribute :publisher, label: ->(p) { p.display_title(short: true) }`)
     # when given, else the target's default {#crud_label}. Used by the
     # association / association_list renderers so a column can re-title the
     # associated record for its context while keeping the nil-safe link.

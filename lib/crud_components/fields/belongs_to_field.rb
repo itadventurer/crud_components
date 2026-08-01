@@ -70,7 +70,7 @@ module CrudComponents
 
       # Load the association, nesting the target's identity_preloads (its label's
       # own association deps) plus any per-column `preload:` so the target's
-      # label never N+1s. e.g. { order: %i[customer training] }.
+      # label never N+1s. e.g. { book: %i[publisher authors] }.
       # A polymorphic belongs_to has no single target class, so we can't nest its
       # label's preloads — just preload the association itself (Rails groups it by
       # type); the cell still renders each record's label and links it at runtime.
