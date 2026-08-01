@@ -34,7 +34,7 @@ module CrudComponents
     # How a record is titled (links, headings). Give a method name or a block.
     # @param method [Symbol, nil] a method on the record returning its label.
     # @param preload [Array<Symbol>, Symbol, nil] associations the label reaches
-    #   into (`label :full_title, preload: %i[customer training]`). They're
+    #   into (`label :display_title, preload: %i[publisher authors]`). They're
     #   eager-loaded automatically whenever this model is shown as another
     #   model's association column — declare once, no N+1 anywhere.
     # @yield [record] computes the label; receives the record.
@@ -51,7 +51,7 @@ module CrudComponents
     # Associations to eager-load whenever this model is rendered (as a row or as
     # another model's association cell) — for label/render dependencies the gem
     # can't infer. Additive with `label …, preload:`; declare more than once to
-    # accumulate. e.g. `preload :customer, :training`.
+    # accumulate. e.g. `preload :publisher, :authors`.
     # @param names [Array<Symbol>] association names (nested hashes allowed).
     # @return [void]
     def preload(*names)
@@ -154,7 +154,7 @@ module CrudComponents
     private
 
     # Normalize a preload value to an array of includes-specs, leaving a nested
-    # hash (`{ customer: :company }`) intact (Array() would split it).
+    # hash (`{ publisher: :books }`) intact (Array() would split it).
     def preload_list(value)
       case value
       when nil then []
