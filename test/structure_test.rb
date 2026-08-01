@@ -147,6 +147,16 @@ class StructureTest < ActiveSupport::TestCase
     assert_equal :title, structure_of(Book).label_field_name
   end
 
+  test 'label_column_name keeps only labels backed by a real column' do
+    assert_equal :title, structure_of(Book).label_column_name
+    assert_nil structure_of(Review).label_column_name
+
+    klass = define_model(name: 'ComputedLabelBook') { label :display_title }
+    klass.define_method(:display_title) { "#{title}!" }
+    assert_equal :display_title, structure_of(klass).label_field_name
+    assert_nil structure_of(klass).label_column_name
+  end
+
   # ── actions ────────────────────────────────────────────────────────────────
   test 'default actions exist; declared customs slot in before destroy' do
     actions = structure_of(Book).actions

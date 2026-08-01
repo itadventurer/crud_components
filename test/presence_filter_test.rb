@@ -67,4 +67,13 @@ class PresenceFilterTest < ActiveSupport::TestCase
   test 'has_many with a block-labelled target has no derived filter' do
     refute field(:reviews).filterable?
   end
+
+  # A computed-method label has no column behind it: the value half of the
+  # filter still resolves the record, the free-text half is dropped.
+  test 'belongs_to with a computed-method label keeps the value filter only' do
+    with_label(Publisher, :display_name) do
+      assert_equal [@with_cover], filtered(:publisher, @tor.id.to_s).to_a
+      assert_empty filtered(:publisher, 'Tor').to_a
+    end
+  end
 end

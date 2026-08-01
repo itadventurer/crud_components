@@ -15,9 +15,9 @@ see") see [security.md](security.md).
 Every column is filterable by default through the control its type implies — a string by
 substring, a number/date by range, an enum/boolean by select, an association by its target's
 **label** (the name shown in the cell): a `belongs_to` as a select/text, a `has_many`/habtm as
-text matching any child. A *computed* column, or an association whose label is a block (no
-single column to match), opts in with the `filter` facet (a [search spec](#the-search-spec) or
-a block):
+text matching any child. A *computed* column, or an association whose label has no column
+behind it — a block, or a method name like `label :display_title` — opts in with the `filter`
+facet (a [search spec](#the-search-spec) or a block):
 
 ```ruby
 attribute :author_names do
@@ -95,8 +95,9 @@ filter :title, { authors: :name }              # mixed
 The **label form** — an association name *without* columns — matches the target's
 **label**: the name shown in that association's cell ("search what you see"). It is the
 idiomatic style and never reaches the target's other columns, so a secret column on the
-target can't be probed through an association. When the target's label is a custom block
-(no single column to match), spell the columns out (`filter authors: :name`).
+target can't be probed through an association. When the target's label has no column behind
+it — a custom block, or a method name like `label :display_title` — spell the columns out
+(`filter authors: :name`).
 
 The gem turns a spec into `left_joins` plus parameterized, wildcard-escaped `ILIKE`
 (via `sanitize_sql_like` with an explicit `\` escape char, so `%`, `_` and `\` are all
