@@ -5,7 +5,11 @@ This project follows [semantic versioning](https://semver.org).
 
 ## Unreleased
 
-## v0.2.1 — 2026-07-31
+## v0.2.1 — 2026-08-01
+
+### Changed
+
+- Verified against **Rails 8.1** — the CI matrix now covers it alongside 7.1, 7.2 and 8.0. The gem's runtime API and its declared dependencies are unchanged; the rest is tooling (GitHub Actions bumped, demo image on Ruby 4.0, CI installs libvips so the playground's Active Storage previews load).
 
 ### Fixed
 

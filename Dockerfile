@@ -2,7 +2,7 @@
 # (excluded from the gemspec). Runs the dummy in production on an ephemeral
 # SQLite DB; DEMO_RESET reseeds it every 10 min so visitors can't damage
 # anything persistently. (No libvips/poppler → PDF previews degrade to icons.)
-FROM ruby:3.4-slim
+FROM ruby:4.0-slim
 
 RUN apt-get update -qq \
  && apt-get install -y --no-install-recommends build-essential libsqlite3-dev libyaml-dev \
