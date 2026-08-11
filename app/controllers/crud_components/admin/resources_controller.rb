@@ -10,6 +10,7 @@ module CrudComponents
       before_action :authorize_action!
 
       def index
+        @owner = owner
         @query = CrudComponents::Query.new(@model, params, fieldset: @entry.fieldset, ability: admin_ability)
         @records = paginate(@query.apply(base_scope))
       end
@@ -44,6 +45,17 @@ module CrudComponents
         redirect_to after_save_path(@record), alert: e.message
       end
 
+      # The ticked rows, each checked against the ability on its own.
+      def destroy_selected
+        records = CrudComponents.selected(base_scope, params).select { |record| allowed?(:destroy, record) }
+        records.each(&:destroy!)
+        redirect_to index_path,
+                    notice: t('crud_components.admin.notices.destroyed_selected', count: records.size,
+                              default: '%{count} deleted.')
+      rescue ActiveRecord::InvalidForeignKey, ActiveRecord::DeleteRestrictionError => e
+        redirect_to index_path, alert: e.message
+      end
+
       private
 
       def set_entry
@@ -53,7 +65,31 @@ module CrudComponents
         @model = @entry.model
       end
 
-      def base_scope = admin_scope(@entry)
+      # A nested index (`/admin/publishers/tor-books/books`) renders the owner's
+      # association; everything else renders the model's own scope.
+      def base_scope
+        return admin_scope(@entry) unless owner
+
+        owner.public_send(params[:crud_association])
+      end
+
+      def owner_entry
+        return @owner_entry if defined?(@owner_entry)
+
+        @owner_entry = params[:crud_owner] && admin_registry[params[:crud_owner]]
+      end
+
+      def owner
+        return @owner if defined?(@owner)
+
+        entry = owner_entry
+        return @owner = nil unless entry
+
+        record = find_record(admin_scope(entry), params["#{entry.singular_route_key}_id"], entry)
+        raise ForbiddenError, "not allowed to show this #{entry.model.model_name.human}" unless allowed?(:show, record)
+
+        @owner = record
+      end
 
       def set_record
         @record = find_record(base_scope, params[:id])
@@ -65,18 +101,18 @@ module CrudComponents
 
       # A URL segment matches `identify_by` first, then the primary key — so a
       # model whose `to_param` is a slug and one that uses ids both resolve.
-      def find_record(scope, param)
-        key = @entry.param_key
+      def find_record(scope, param, entry = @entry)
+        key = entry.param_key
         found = key.to_s == 'id' ? nil : scope.find_by(key => param)
-        found ||= scope.find_by(@model.primary_key => param)
-        raise ActiveRecord::RecordNotFound, "#{@model}: no record for #{param.inspect}" unless found
+        found ||= scope.find_by(entry.model.primary_key => param)
+        raise ActiveRecord::RecordNotFound, "#{entry.model}: no record for #{param.inspect}" unless found
 
         found
       end
 
       # Writes are checked against the permission that shows their button, so a
       # hidden Edit button and a forged PATCH agree.
-      ACTION_PERMISSIONS = { create: :new, update: :edit }.freeze
+      ACTION_PERMISSIONS = { create: :new, update: :edit, destroy_selected: :destroy }.freeze
 
       def authorize_action!
         subject = @record || @model
@@ -84,10 +120,14 @@ module CrudComponents
 
         authorize!(permission, subject) if respond_to?(:authorize!, true)
 
-        ability = admin_ability
-        return if ability.nil? || ability.can?(permission, subject)
+        return if allowed?(permission, subject)
 
         raise ForbiddenError, "not allowed to #{permission} this #{@model.model_name.human}"
+      end
+
+      def allowed?(permission, subject)
+        ability = admin_ability
+        ability.nil? || ability.can?(permission, subject)
       end
 
       def record_params(action)

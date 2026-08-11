@@ -399,7 +399,8 @@ module CrudComponents
         return nil unless @actions_enabled
 
         @selection_actions ||= Actions.new(view: view, subject: model, structure: structure,
-                                           actions: structure.fieldset_actions(fieldset, on: :selection),
+                                           actions: structure.fieldset_actions(fieldset, on: :selection) +
+                                                    @extra_actions.select { |action| action.on == :selection },
                                            owner: owner)
       end
 

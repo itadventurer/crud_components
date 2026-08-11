@@ -67,9 +67,41 @@ module CrudComponents
         structure.declared_fieldset_names.include?(:admin) ? :admin : :default
       end
 
+      # The registered targets of this model's to-many associations, as
+      # [association, entry] pairs — the nested indexes drawn under it.
+      NestedAssociation = Struct.new(:association, :entry) do
+        def name = entry.name
+
+        def route_key = entry.route_key
+      end
+
+      def nested_associations(registry)
+        model.reflect_on_all_associations
+             .select { |reflection| reflection.collection? }
+             .filter_map do |reflection|
+               target = safe_target(reflection)
+               next unless target
+
+               nested = registry[target]
+               next unless nested&.allows?(:index) && nested.model != model
+
+               NestedAssociation.new(reflection.name, nested)
+             end
+             .uniq(&:route_key)
+      end
+
       def to_s = name
 
       private
+
+      # A polymorphic or otherwise unresolvable association has no single target.
+      def safe_target(reflection)
+        return nil if reflection.options[:polymorphic] || reflection.options[:through]
+
+        reflection.klass
+      rescue NameError
+        nil
+      end
 
       def resolve_actions
         declared = options[:actions]

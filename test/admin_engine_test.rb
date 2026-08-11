@@ -276,4 +276,62 @@ class AdminEngineTest < ActionDispatch::IntegrationTest
     assert_nil CrudComponents::Admin.path_for(value, :edit)
     assert_nil CrudComponents::Admin.path_for(@hobbit, :no_such_action)
   end
+
+  # ── nested indexes ───────────────────────────────────────────────────────
+  test 'an owner has a nested index for each to-many association' do
+    get "/admin/publishers/tor-books/books"
+
+    assert_response :success
+    assert_select 'td', text: /The Hobbit/
+  end
+
+  test "a nested index shows only the owner's records" do
+    other = Publisher.create!(name: 'Ace', slug: 'ace')
+    Book.create!(title: 'A Wizard of Earthsea', slug: 'earthsea', publisher: other)
+
+    get '/admin/publishers/tor-books/books'
+
+    assert_response :success
+    assert_select 'td', text: /A Wizard of Earthsea/, count: 0
+  end
+
+  test 'a habtm association gets a nested index too' do
+    get "/admin/authors/#{@tolkien.id}/books"
+
+    assert_response :success
+    assert_select 'td', text: /The Hobbit/
+    assert_select 'td', text: /The Dispossessed/, count: 0
+  end
+
+  test 'an unknown owner is a 404' do
+    get '/admin/publishers/no-such-publisher/books'
+
+    assert_response :not_found
+  end
+
+  # ── bulk destroy ─────────────────────────────────────────────────────────
+  test 'the ticked rows are deleted' do
+    post '/toggle_admin'
+    other = Author.create!(name: 'Ursula K. Le Guin', email: 'ursula@example.com')
+
+    assert_difference -> { Author.count }, -2 do
+      delete '/admin/authors/destroy_selected', params: { selected: [@tolkien.id, other.id] }
+    end
+
+    assert_redirected_to '/admin/authors'
+  end
+
+  test 'a bulk delete the ability forbids is refused' do
+    assert_no_difference -> { Author.count } do
+      delete '/admin/authors/destroy_selected', params: { selected: [@tolkien.id] }
+    end
+
+    assert_response :forbidden
+  end
+
+  test 'a read-only model has no bulk delete route' do
+    delete '/admin/property_values/destroy_selected'
+
+    assert_response :not_found
+  end
 end

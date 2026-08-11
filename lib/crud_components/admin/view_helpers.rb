@@ -21,6 +21,23 @@ module CrudComponents
 
       def admin_title = CrudComponents::Admin.config.resolved_title
 
+      # The admin layout's stylesheet, inlined (CSP-nonce aware).
+      def admin_styles
+        nonce = content_security_policy_nonce if respond_to?(:content_security_policy_nonce)
+        tag.style(CrudComponents::Admin.bundled_css.html_safe, type: 'text/css', nonce: nonce)
+      end
+
+      # The bulk action deleting the ticked rows, or nil for a model that has
+      # no destroy route.
+      def admin_destroy_selected_action(entry)
+        return nil unless entry.allows?(:destroy)
+
+        CrudComponents::Action.new(
+          :destroy_selected, on: :selection, method: :delete, confirm: true, icon: 'trash',
+          title: t('crud_components.admin.destroy_selected', default: 'Delete selected')
+        ) { public_send("destroy_selected_#{entry.route_key}_path") }
+      end
+
       # The row action linking a record to the host app's own page for it.
       # Resolves through crud_app_path, so it disappears when there is none.
       def admin_show_in_app_action

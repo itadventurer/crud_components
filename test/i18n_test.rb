@@ -19,4 +19,14 @@ class I18nTest < ActiveSupport::TestCase
       assert_equal 'Nein', I18n.t('crud_components.filter.no')
     end
   end
+
+  test 'the admin chrome is translated too' do
+    assert_equal 'Show in app', I18n.t('crud_components.admin.show_in_app')
+    assert_equal '2 records deleted.', I18n.t('crud_components.admin.notices.destroyed_selected', count: 2)
+
+    I18n.with_locale(:de) do
+      assert_equal 'In der App ansehen', I18n.t('crud_components.admin.show_in_app')
+      assert_equal '2 Datensätze gelöscht.', I18n.t('crud_components.admin.notices.destroyed_selected', count: 2)
+    end
+  end
 end

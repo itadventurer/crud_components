@@ -1,10 +1,24 @@
 <% content_for :title, @entry.label %>
 
-<h1 class="h4 mb-3"><%= admin_icon(@entry.icon) %> <%= @entry.label %></h1>
+<% if @owner %>
+  <nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+      <li class="breadcrumb-item"><%= link_to @owner_entry.label, admin_index_path(@owner_entry) %></li>
+      <li class="breadcrumb-item"><%= link_to crud_label(@owner), url_for(@owner) %></li>
+      <li class="breadcrumb-item active" aria-current="page"><%= @entry.label %></li>
+    </ol>
+  </nav>
+<% end %>
+
+<h1 class="h4 mb-3">
+  <%= admin_icon(@entry.icon) %> <%= @entry.label %>
+  <% if @owner %><small class="text-muted fs-6">— <%= crud_label(@owner) %></small><% end %>
+</h1>
 
 <div class="card">
   <div class="card-body">
     <%= crud_collection @records, query: @query, fieldset: @entry.fieldset, picker: true,
-                        extra_actions: [admin_show_in_app_action] %>
+                        extra_actions: [admin_show_in_app_action,
+                                        admin_destroy_selected_action(@entry)].compact %>
   </div>
 </div>

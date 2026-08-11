@@ -279,6 +279,28 @@ Forms are the exception: they use the usual `:form` fieldset, since that is alre
 
 Nothing here is required. A model with no fieldsets at all still gets a complete admin.
 
+## Associations
+
+Every to-many association between two registered models gets a **nested index**:
+`/admin/publishers/tor-books/books` renders that publisher's books, with the same
+filtering and sorting as the flat one. Two things follow from having those routes:
+
+- the `+n more` link in a has_many cell resolves to the owner's own list instead of
+  falling back to plain text — including for `has_and_belongs_to_many`, which cannot be
+  expressed as a filter on the target;
+- the owner is authorized in its own right: you cannot read a publisher's books through
+  the nested route if the ability withholds that publisher.
+
+Polymorphic and `:through` associations are skipped — there is no single target model to
+draw a route to.
+
+## Bulk delete
+
+A model with a destroy route also gets `DELETE /admin/books/destroy_selected`, wired to the
+row checkboxes the gem already renders. Each ticked record is checked against the ability
+on its own before it is destroyed, so a bulk action can never delete more than the
+equivalent one-by-one clicks would.
+
 ## Trade-offs
 
 Worth knowing before you mount it:

@@ -45,3 +45,14 @@ en:
       next: "›"
       previous_label: "Previous"
       next_label: "Next"
+    admin:
+      models: "Models"
+      show_in_app: "Show in app"
+      destroy_selected: "Delete selected"
+      notices:
+        created: "%{model} created."
+        updated: "%{model} updated."
+        destroyed: "%{model} deleted."
+        destroyed_selected:
+          one: "1 record deleted."
+          other: "%{count} records deleted."

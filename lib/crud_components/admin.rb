@@ -42,6 +42,13 @@ module CrudComponents
         @mount_path = nil
       end
 
+      # The admin layout's own stylesheet, read once from the packaged file.
+      def bundled_css
+        @bundled_css ||= File.read(
+          File.expand_path('../../app/assets/stylesheets/crud_components_admin.css', __dir__)
+        )
+      end
+
       # Where the host mounted the engine, or nil when it did not.
       def mount_path
         return @mount_path if defined?(@mount_path) && !@mount_path.nil?
