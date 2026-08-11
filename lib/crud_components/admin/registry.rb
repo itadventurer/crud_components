@@ -102,8 +102,6 @@ module CrudComponents
       # The effective options, inherited from an STI parent's declaration too.
       def admin_options(model)
         Structure.for(model).admin_options
-      rescue CrudComponents::DefinitionError
-        false
       end
 
       # The options this very class declared, ignoring anything inherited.

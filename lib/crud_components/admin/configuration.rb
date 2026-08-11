@@ -14,6 +14,12 @@ module CrudComponents
         Delayed GoodJob Que Noticed PgSearch
       ].freeze
 
+      # Bootstrap 5 + Bootstrap Icons, what the bundled layout's markup expects.
+      DEFAULT_STYLESHEETS = [
+        'https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css',
+        'https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css'
+      ].freeze
+
       # Sidebar brand line; defaults to the application's name.
       attr_accessor :title
 
@@ -37,6 +43,17 @@ module CrudComponents
       # Whether the dashboard runs a COUNT(*) per model.
       attr_accessor :counts
 
+      # The controller the engine's own controllers inherit from — how the admin
+      # reaches your `current_user`, your session and your `rescue_from`s.
+      attr_accessor :parent_controller
+
+      # Rows per index page, when a pagination gem is present.
+      attr_accessor :per_page
+
+      # Stylesheet URLs the bundled layout loads. Irrelevant when `layout` names
+      # a layout of your own.
+      attr_accessor :stylesheets
+
       # The `before_action` body that decides who gets in. See {#authorize_with}.
       attr_reader :authorize_block
 
@@ -48,8 +65,17 @@ module CrudComponents
         @groups = []
         @excluded_namespaces = DEFAULT_EXCLUDED_NAMESPACES.dup
         @counts = true
+        @parent_controller = '::ApplicationController'
+        @per_page = 50
+        @stylesheets = DEFAULT_STYLESHEETS.dup
         @authorize_block = nil
         @allow_without_authentication = false
+      end
+
+      # The resolved parent controller class, falling back to ActionController::Base
+      # when the named one does not exist.
+      def parent_controller_class
+        @parent_controller.to_s.safe_constantize || ActionController::Base
       end
 
       # The gate. Runs as a `before_action` in the engine's controller, in that

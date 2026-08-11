@@ -9,7 +9,15 @@ module CrudComponents
     def action_path(view, action, record: nil, model: nil, owner: nil)
       if action.path_block
         subject = record || model
-        return view.instance_exec(subject, &action.path_block)
+        begin
+          return view.instance_exec(subject, &action.path_block)
+        rescue ActionController::UrlGenerationError
+          return nil
+        rescue NameError => e
+          raise unless missing_route_helper?(e)
+
+          return nil
+        end
       end
 
       if action.collection?
@@ -77,6 +85,13 @@ module CrudComponents
       { param: inverse.name, value: owner.public_send(identify) }
     rescue CrudComponents::DefinitionError
       nil
+    end
+
+    # A path block naming a route helper that does not exist here — the same
+    # page rendered under a mount that lacks it — omits the button. Anything
+    # else the block gets wrong is the app's own error and stays loud.
+    def missing_route_helper?(error)
+      error.name.to_s.end_with?('_path', '_url')
     end
 
     def safe_url(view, helper, *args, **kwargs)

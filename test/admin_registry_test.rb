@@ -26,11 +26,11 @@ end
 
 class AdminRegistryTest < ActiveSupport::TestCase
   def setup
-    CrudComponents::Admin.reset!
+    reset_admin_config!
   end
 
   def teardown
-    CrudComponents::Admin.reset!
+    restore_admin_config!
   end
 
   def registry = CrudComponents::Admin.registry
@@ -169,9 +169,9 @@ class AdminRegistryTest < ActiveSupport::TestCase
     assert_equal Author.all.to_sql, registry['Author'].scope.to_sql
   end
 
-  test 'an admin fieldset is picked up when declared' do
+  test 'an admin fieldset is picked up when declared, else every field' do
     assert_equal :admin, registry['AdminScopedModel'].fieldset
-    assert_nil registry['Book'].fieldset
+    assert_equal :default, registry['Book'].fieldset
   end
 
   # ── lookup and grouping ──────────────────────────────────────────────────

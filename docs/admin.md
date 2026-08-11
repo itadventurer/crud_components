@@ -146,7 +146,7 @@ nothing.
 | `actions:` | which of `%i[index show new create edit update destroy]` exist. Anything omitted has **no route**, so it is unreachable, not merely unlinked |
 | `group:` | the sidebar heading to file this model under |
 | `label:` | the sidebar label (defaults to the model's human name) |
-| `fieldset:` | the fieldset the admin's index uses (defaults to `:admin`, then `:index`) |
+| `fieldset:` | the fieldset the admin renders (defaults to `:admin` when declared, else every field) |
 | `scope:` | a callable narrowing the base relation, e.g. `scope: -> { order(:title) }` |
 
 A read-only model is just `actions: %i[index show]` — and because the routes for the write
@@ -165,8 +165,19 @@ CrudComponents::Admin.configure do |config|
   config.groups = ['Catalog', 'People']  # sidebar group order; unlisted groups follow, alphabetically
   config.counts = true                   # show record counts on the dashboard
   config.excluded_namespaces << 'Legacy' # more model-name prefixes discovery should skip
+  config.per_page = 50                   # rows per index page, when a pager gem is present
+  config.parent_controller = '::ApplicationController'   # what the engine's controllers inherit
+  config.stylesheets = [...]             # what the bundled layout loads (Bootstrap 5 + icons)
 end
 ```
+
+`parent_controller` is how the admin reaches your `current_user`, your session and your
+`rescue_from`s: the engine's controllers inherit from it. It falls back to
+`ActionController::Base` when the named class does not exist.
+
+Index pages paginate when a pagination gem is loaded — the relation is handed `.page` /
+`.per` if it responds to them, so kaminari and will_paginate both work and neither is a
+dependency. Without one, an index renders every row.
 
 `config.layout = 'application'` renders the admin inside your app's own chrome — the
 closest the admin gets to the gem's usual "not an island" posture. The bundled layout is a
@@ -217,9 +228,10 @@ than assuming it resolves.
 
 ## Fieldsets in the admin
 
-The admin looks for an `:admin` fieldset first and falls back to the usual `:index` /
-`:show` / form fieldsets. That lets a model present a lean set of columns to the app and
-the full set to the backend without either view having to know about the other:
+The admin shows **every field** unless the model declares an `:admin` fieldset. It
+deliberately does *not* inherit the model's `:index` fieldset: that one is a decision about
+what the app's own pages show, and the column it leaves out is often exactly the one you
+opened the admin to look at. The column-picker gear narrows a wide table per view.
 
 ```ruby
 crud_structure do
@@ -227,6 +239,9 @@ crud_structure do
   fieldset :admin, %i[title genre price stock slug active]  # what an operator needs
 end
 ```
+
+Forms are the exception: they use the usual `:form` fieldset, since that is already the
+"what may be edited" list rather than a display choice.
 
 Nothing here is required. A model with no fieldsets at all still gets a complete admin.
 

@@ -1,0 +1,14 @@
+<% content_for :title, t('crud_components.admin.new', model: @model.model_name.human, default: 'New %{model}') %>
+
+<nav aria-label="breadcrumb">
+  <ol class="breadcrumb">
+    <li class="breadcrumb-item"><%= link_to @entry.label, admin_index_path(@entry) %></li>
+    <li class="breadcrumb-item active" aria-current="page"><%= content_for(:title) %></li>
+  </ol>
+</nav>
+
+<div class="card">
+  <div class="card-body">
+    <%= crud_form @record %>
+  </div>
+</div>

@@ -1,0 +1,14 @@
+<h1 class="h4 mb-3"><%= admin_title %></h1>
+
+<div class="row row-cols-1 row-cols-sm-2 row-cols-lg-4 g-3">
+  <% @entries.each do |entry| %>
+    <div class="col">
+      <%= link_to admin_index_path(entry), class: 'card h-100 text-decoration-none text-reset' do %>
+        <div class="card-body">
+          <div class="fw-medium"><%= admin_icon(entry.icon) %> <%= entry.label %></div>
+          <div class="small text-muted"><%= entry.name %></div>
+        </div>
+      <% end %>
+    </div>
+  <% end %>
+</div>

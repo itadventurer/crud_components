@@ -60,11 +60,11 @@ module CrudComponents
         callable.arity.zero? ? base.instance_exec(&callable) : callable.call(base)
       end
 
-      # The index fieldset: `:admin` when declared, else the usual default.
+      # The fieldset the admin renders: `:admin` when declared, else every field.
       def fieldset
         return options[:fieldset].to_sym if options[:fieldset]
 
-        structure.declared_fieldset_names.include?(:admin) ? :admin : nil
+        structure.declared_fieldset_names.include?(:admin) ? :admin : :default
       end
 
       def to_s = name

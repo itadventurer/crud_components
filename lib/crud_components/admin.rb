@@ -1,6 +1,7 @@
 require_relative 'admin/configuration'
 require_relative 'admin/entry'
 require_relative 'admin/registry'
+require_relative 'admin/view_helpers'
 
 module CrudComponents
   # The optional, mountable admin UI:
@@ -14,6 +15,10 @@ module CrudComponents
     # Raised when a request reaches the engine before `authorize_with` (or the
     # explicit `allow_without_authentication!`) has been configured.
     class UnauthorizedError < Error; end
+
+    # Raised when the ability denies the action behind the request. Rendered as
+    # 403 by the engine's controllers.
+    class ForbiddenError < Error; end
 
     class << self
       def config

@@ -29,4 +29,6 @@ Rails.application.routes.draw do
   get 'live', to: 'live#index'
   post 'live/poke', to: 'live#poke'
   post 'toggle_admin', to: 'application#toggle_admin'
+
+  mount CrudComponents::Admin::Engine => '/admin'   # the optional admin UI, over the whole bookstore
 end

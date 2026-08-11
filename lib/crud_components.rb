@@ -167,3 +167,4 @@ module CrudComponents
 end
 
 require_relative 'crud_components/engine' if defined?(Rails::Engine)
+require_relative 'crud_components/admin/engine' if defined?(Rails::Engine)

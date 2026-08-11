@@ -1,0 +1,14 @@
+<% content_for :title, crud_label(@record) %>
+
+<nav aria-label="breadcrumb">
+  <ol class="breadcrumb">
+    <li class="breadcrumb-item"><%= link_to @entry.label, admin_index_path(@entry) %></li>
+    <li class="breadcrumb-item active" aria-current="page"><%= crud_label(@record) %></li>
+  </ol>
+</nav>
+
+<div class="card">
+  <div class="card-body">
+    <%= crud_record @record, fieldset: @entry.fieldset %>
+  </div>
+</div>
