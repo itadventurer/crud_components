@@ -11,7 +11,7 @@ module CrudComponents
       DEFAULT_EXCLUDED_NAMESPACES = %w[
         ActiveRecord ActiveStorage ActionText ActionMailbox
         SolidQueue SolidCache SolidCable
-        Delayed GoodJob Que Noticed PgSearch
+        Delayed GoodJob Que Noticed PgSearch FriendlyId
       ].freeze
 
       # Bootstrap 5 + Bootstrap Icons, what the bundled layout's markup expects.

@@ -96,6 +96,7 @@ means to administer:
 | `ActiveStorage::*`, `ActionText::*`, `ActionMailbox::*` | framework internals; you manage them through their owner |
 | the schema-migration and internal-metadata models | Rails bookkeeping |
 | background-job, cache and cable backing models (Solid Queue / Cache / Cable and friends) | infrastructure, and their tables are large and dull |
+| other gems' bookkeeping models (`FriendlyId::Slug`, `PgSearch::Document`, …) | a gem's own table, not your data |
 | HABTM join models | they have no independent identity |
 | STI subclasses | the base class's index already lists them, `type` column and all. A subclass that wants its own entry declares `admin` itself |
 | anonymous classes | a route needs a name that resolves back to the same class |
