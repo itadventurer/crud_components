@@ -73,6 +73,25 @@ module CrudComponents
         return unless defined?(Rails) && Rails.respond_to?(:application) && Rails.application
 
         Rails.application.eager_load!
+      rescue ThreadError
+        load_model_constants
+      end
+
+      # An eager load is already running further up the stack — a model or
+      # service reaching for route helpers while it loads pulls the route file
+      # in, and the route file lands here. Zeitwerk's eager-load lock is not
+      # reentrant, so resolve the model constants by name instead; ordinary
+      # autoloading takes no lock.
+      def load_model_constants
+        model_dirs.each do |dir|
+          Dir.glob(File.join(dir, '**', '*.rb')).sort.each do |file|
+            file.delete_prefix("#{dir}/").delete_suffix('.rb').camelize.safe_constantize
+          end
+        end
+      end
+
+      def model_dirs
+        Rails.application.config.paths['app/models'].existent
       end
 
       def excluded?(model)
