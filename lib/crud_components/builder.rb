@@ -18,7 +18,8 @@ module CrudComponents
   class Builder
     attr_reader :model, :declarations, :actions, :fieldsets,
                 :label_decl, :identify_by_decl, :search_decl,
-                :label_preload_decl, :preload_decl, :icon_decl, :admin_decl
+                :label_preload_decl, :preload_decl, :icon_decl, :admin_decl,
+                :app_path_decl
 
     # @param model [Class] the ActiveRecord model being described.
     # @yield the `crud_structure` block, evaluated against this Builder.
@@ -149,6 +150,19 @@ module CrudComponents
       raise DefinitionError, "#{model}: fieldset :#{name} declared twice" if @fieldsets.key?(name)
 
       @fieldsets[name] = Fieldset.new(name, fields, actions: actions, filters: filters)
+    end
+
+    # The host application's own page for a record, when it is not the
+    # conventional route (`main_app.book_path(book)`). Runs in the view
+    # context; return nil to suppress the link for a record.
+    #   app_path { |book| main_app.publisher_book_path(book.publisher, book) }
+    # @yield [record] the record to link to.
+    # @return [void]
+    def app_path(&block)
+      raise DefinitionError, "#{model}: app_path requires a block" unless block
+      raise DefinitionError, "#{model}: app_path declared twice" if defined?(@app_path_decl) && @app_path_decl
+
+      @app_path_decl = block
     end
 
     # How this model appears in the mounted admin UI (inert without it).

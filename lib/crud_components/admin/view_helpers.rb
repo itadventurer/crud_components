@@ -21,6 +21,15 @@ module CrudComponents
 
       def admin_title = CrudComponents::Admin.config.resolved_title
 
+      # The row action linking a record to the host app's own page for it.
+      # Resolves through crud_app_path, so it disappears when there is none.
+      def admin_show_in_app_action
+        CrudComponents::Action.new(
+          :show_in_app, on: :row, icon: 'box-arrow-up-right',
+          title: t('crud_components.admin.show_in_app', default: 'Show in app')
+        ) { |record| crud_app_path(record) }
+      end
+
       # Active Storage routes live in the application's route set, not in an
       # isolated engine's. Attachment cells reach them through these three.
       def url_for(options = nil)

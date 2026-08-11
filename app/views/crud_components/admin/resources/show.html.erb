@@ -9,6 +9,7 @@
 
 <div class="card">
   <div class="card-body">
-    <%= crud_record @record, fieldset: @entry.fieldset %>
+    <%= crud_record @record, fieldset: @entry.fieldset,
+                    extra_actions: [admin_show_in_app_action] %>
   </div>
 </div>

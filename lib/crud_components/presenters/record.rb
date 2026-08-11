@@ -7,13 +7,14 @@ module CrudComponents
       attr_reader :record, :model, :structure, :fieldset, :param_prefix
 
       def initialize(view:, record:, fieldset: nil, actions: true, picked_columns: :auto,
-                     param_prefix: nil, extra_columns: nil)
+                     param_prefix: nil, extra_columns: nil, extra_actions: nil)
         super(view: view)
         @record = record
         @model = record.class
         @structure = Structure.for(@model)
         @fieldset = @structure.fieldset(fieldset || :show)
         @actions_enabled = actions
+        @extra_actions = Array(extra_actions).select { |action| action.on == :row }
         @param_prefix = param_prefix
         # Dynamic columns work on a detail view too — user-defined properties
         # whose data lives outside the model's table, shown as extra rows.
@@ -49,7 +50,7 @@ module CrudComponents
         return nil unless @actions_enabled
 
         @actions ||= Actions.new(view: view, subject: record, structure: structure,
-                                 actions: structure.fieldset_actions(fieldset, on: :row),
+                                 actions: structure.fieldset_actions(fieldset, on: :row) + @extra_actions,
                                  suppress_show: true)
       end
     end

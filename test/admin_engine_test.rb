@@ -228,4 +228,52 @@ class AdminEngineTest < ActionDispatch::IntegrationTest
       assert_select '.crud-admin-nav', count: 0
     end
   end
+
+  # ── show in app ──────────────────────────────────────────────────────────
+  test 'a record links to the host application page for it' do
+    get '/admin/books/hobbit'
+
+    assert_response :success
+    assert_select "a[href='/books/hobbit']"
+  end
+
+  test 'every row links to its host application page' do
+    get '/admin/books'
+
+    assert_response :success
+    assert_select "a[href='/books/hobbit'][title=?]", 'Show in app'
+  end
+
+  test 'no host route means no link, not a broken one' do
+    Comment.create!(commentable: @hobbit, body: 'No route to me.')
+    get '/admin/comments'
+
+    assert_response :success
+    assert_select 'a[title=?]', 'Show in app', count: 0
+  end
+
+  test 'a declared app_path wins over the conventional route' do
+    document = Document.create!(title: 'The Manual', body: 'Body.')
+    get "/admin/documents/#{document.id}"
+
+    assert_response :success
+    assert_select "a[href=?]", "/documents##{ActionView::RecordIdentifier.dom_id(document)}"
+  end
+
+  # ── the way back ─────────────────────────────────────────────────────────
+  test 'an application page can link into the admin' do
+    get '/books/hobbit'
+
+    assert_response :success
+    assert_select "a[href='/admin/books/hobbit/edit']", text: 'Edit in admin'
+  end
+
+  test 'crud_admin_path is nil for an action the model does not offer' do
+    value = PropertyValue.create!(property_definition: PropertyDefinition.create!(key: 'isbn', flavor: 'string'),
+                                  subject: @hobbit, value: '123')
+
+    assert_equal "/admin/property_values/#{value.id}", CrudComponents::Admin.path_for(value, :show)
+    assert_nil CrudComponents::Admin.path_for(value, :edit)
+    assert_nil CrudComponents::Admin.path_for(@hobbit, :no_such_action)
+  end
 end

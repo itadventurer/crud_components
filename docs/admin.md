@@ -224,20 +224,41 @@ crud_structure do
 end
 ```
 
-The block runs in the view context, so all your helpers are available. Return `nil` to
-suppress the button for a particular record.
+The block runs in the view context, so all your helpers are available — including
+`main_app`, which you will need, since the admin renders in the engine's route set. Return
+`nil` to suppress the button for a particular record.
+
+The helper behind the button is public, so an ordinary page can use it too:
+`crud_app_path(record)`.
 
 ### The other direction
 
 The same idea, mirrored: from an ordinary app page, link into the admin.
 
 ```erb
-<%= link_to 'Edit in admin', crud_admin_path(@book, :edit) %>
+<% if (url = crud_admin_path(@book, :edit)) %>
+  <%= link_to 'Edit in admin', url %>
+<% end %>
 ```
 
-`crud_admin_path(record, action = :show)` returns `nil` when the model isn't registered or
-the action isn't enabled for it, so wrap it in a condition (or an `if` on the link) rather
-than assuming it resolves.
+`crud_admin_path(record, action = :show)` — also `:index`, `:new` — returns `nil` when the
+admin isn't mounted, the model isn't registered, or the action isn't enabled for it, so
+guard it rather than assuming it resolves. It finds the mount point itself; you don't pass
+one, and it keeps working if you remount the engine somewhere else.
+
+### How the button gets there
+
+Both surfaces take an `extra_actions:` list — row actions appended beyond the model's own:
+
+```erb
+<%= crud_collection @books, extra_actions: [my_action] %>
+<%= crud_record @book,      extra_actions: [my_action] %>
+```
+
+The admin passes its "Show in app" action that way, which is why the button is admin-only
+without the model having to know the admin exists. Extra actions go through the same
+permission check and the same route resolution as declared ones — an action whose path
+does not resolve is omitted, not rendered broken.
 
 ## Fieldsets in the admin
 

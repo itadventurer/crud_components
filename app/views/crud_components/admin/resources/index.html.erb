@@ -4,6 +4,7 @@
 
 <div class="card">
   <div class="card-body">
-    <%= crud_collection @records, query: @query, fieldset: @entry.fieldset, picker: true %>
+    <%= crud_collection @records, query: @query, fieldset: @entry.fieldset, picker: true,
+                        extra_actions: [admin_show_in_app_action] %>
   </div>
 </div>

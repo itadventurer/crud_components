@@ -222,4 +222,19 @@ class DslValidationTest < ActiveSupport::TestCase
     assert_match(/:publish/, error.message)
     assert_match(/not RESTful actions/, error.message)
   end
+
+  test 'app_path declared twice raises' do
+    model = define_model do
+      app_path { |book| "/a/#{book.id}" }
+      app_path { |book| "/b/#{book.id}" }
+    end
+    error = assert_raises(CrudComponents::DefinitionError) { structure_of(model) }
+    assert_match(/app_path declared twice/, error.message)
+  end
+
+  test 'app_path without a block raises' do
+    model = define_model { app_path }
+    error = assert_raises(CrudComponents::DefinitionError) { structure_of(model) }
+    assert_match(/app_path requires a block/, error.message)
+  end
 end

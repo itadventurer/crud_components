@@ -16,7 +16,7 @@ module CrudComponents
 
       def initialize(view:, records:, fieldset: nil, query: :auto, layout: :table,
                      param_prefix: nil, actions: true, search_bar: true, group_by: nil,
-                     extra_columns: nil, picker: false, picked_columns: :auto)
+                     extra_columns: nil, picker: false, picked_columns: :auto, extra_actions: nil)
         super(view: view)
         unless records.respond_to?(:klass)
           raise ArgumentError,
@@ -31,6 +31,7 @@ module CrudComponents
         @layout = layout
         @param_prefix = param_prefix
         @actions_enabled = actions
+        @extra_actions = Array(extra_actions)
         @search_bar_enabled = search_bar
         # Two orthogonal column-picker knobs (see ColumnSelection): the gear is on
         # iff `picker`; the selection comes from the param (`:auto`) or verbatim
@@ -489,7 +490,8 @@ module CrudComponents
       end
 
       def row_action_definitions
-        @row_action_definitions ||= structure.fieldset_actions(fieldset, on: :row)
+        @row_action_definitions ||= structure.fieldset_actions(fieldset, on: :row) +
+                                    @extra_actions.select { |action| action.on == :row }
       end
 
       def pn(key)

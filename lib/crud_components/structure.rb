@@ -44,7 +44,7 @@ module CrudComponents
     # `label …, preload:` and the standalone `preload` declaration.
     # admin_options: the `admin` declaration — a Hash of options, `false` when
     # the model opted out, nil when it said nothing.
-    attr_reader :model, :identify_by, :identity_preloads, :admin_options
+    attr_reader :model, :identify_by, :identity_preloads, :admin_options, :app_path_block
 
     def initialize(model, builder = nil)
       @model = model
@@ -53,6 +53,7 @@ module CrudComponents
       @identify_by = builder&.identify_by_decl || :id
       @icon_decl = builder&.icon_decl
       @admin_options = builder&.admin_decl
+      @app_path_block = builder&.app_path_decl
       @search_decl = builder&.search_decl
       @identity_preloads = ((builder&.label_preload_decl || []) + (builder&.preload_decl || [])).uniq
       @declared_actions = builder&.actions || {}
