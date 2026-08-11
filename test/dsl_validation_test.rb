@@ -186,4 +186,40 @@ class DslValidationTest < ActiveSupport::TestCase
     end
     assert_match(/neither a column nor an association/, error.message)
   end
+
+  # ── admin ────────────────────────────────────────────────────────────────
+  test 'admin declared twice raises' do
+    model = define_model do
+      admin group: 'A'
+      admin group: 'B'
+    end
+    error = assert_raises(CrudComponents::DefinitionError) { structure_of(model) }
+    assert_match(/admin declared twice/, error.message)
+  end
+
+  test 'admin with a non-boolean raises' do
+    model = define_model { admin :yes }
+    error = assert_raises(CrudComponents::DefinitionError) { structure_of(model) }
+    assert_match(/takes true or false/, error.message)
+  end
+
+  test 'admin false with options raises' do
+    model = define_model { admin false, group: 'Catalog' }
+    error = assert_raises(CrudComponents::DefinitionError) { structure_of(model) }
+    assert_match(/takes no options/, error.message)
+  end
+
+  test 'admin with an unknown option raises' do
+    model = define_model { admin sidebar: true }
+    error = assert_raises(CrudComponents::DefinitionError) { structure_of(model) }
+    assert_match(/unknown option/, error.message)
+    assert_match(/:actions/, error.message)
+  end
+
+  test 'admin with a non-RESTful action raises' do
+    model = define_model { admin actions: %i[index publish] }
+    error = assert_raises(CrudComponents::DefinitionError) { structure_of(model) }
+    assert_match(/:publish/, error.message)
+    assert_match(/not RESTful actions/, error.message)
+  end
 end

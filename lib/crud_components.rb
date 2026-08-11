@@ -54,6 +54,7 @@ require_relative 'crud_components/builder'
 require_relative 'crud_components/structure'
 require_relative 'crud_components/model'
 require_relative 'crud_components/query'
+require_relative 'crud_components/admin'
 
 module CrudComponents
   class << self

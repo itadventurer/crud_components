@@ -97,6 +97,8 @@ means to administer:
 | the schema-migration and internal-metadata models | Rails bookkeeping |
 | background-job, cache and cable backing models (Solid Queue / Cache / Cable and friends) | infrastructure, and their tables are large and dull |
 | HABTM join models | they have no independent identity |
+| STI subclasses | the base class's index already lists them, `type` column and all. A subclass that wants its own entry declares `admin` itself |
+| anonymous classes | a route needs a name that resolves back to the same class |
 | models whose table is missing | a half-migrated database should not 500 the sidebar |
 
 Discovery eager-loads your models, which is what makes route generation possible at all
@@ -156,19 +158,24 @@ hidden button.
 ```ruby
 CrudComponents::Admin.configure do |config|
   config.authorize_with { head :forbidden unless current_user&.admin? }
-  config.title  = 'Bookstore admin'    # brand line in the sidebar
-  config.layout = 'admin'              # 'admin' (bundled) or any layout of yours
-  config.only   = nil                  # Array of model names, or nil for "all discovered"
-  config.except = []                   # Array of model names
+  config.title  = 'Bookstore admin'      # brand line in the sidebar
+  config.layout = 'crud_components/admin'  # the bundled shell, or any layout of yours
+  config.only   = nil                    # Array of model names, or nil for "all discovered"
+  config.except = []                     # Array of model names (or the classes)
   config.groups = ['Catalog', 'People']  # sidebar group order; unlisted groups follow, alphabetically
-  config.counts = true                 # show record counts on the dashboard
+  config.counts = true                   # show record counts on the dashboard
+  config.excluded_namespaces << 'Legacy' # more model-name prefixes discovery should skip
 end
 ```
 
 `config.layout = 'application'` renders the admin inside your app's own chrome — the
-closest the admin gets to the gem's usual "not an island" posture. The bundled `admin`
-layout is a plain Bootstrap 5 shell with the sidebar, for apps that would rather keep the
-backend visually separate.
+closest the admin gets to the gem's usual "not an island" posture. The bundled layout is a
+plain Bootstrap 5 shell with the sidebar, for apps that would rather keep the backend
+visually separate.
+
+`only` is a directive rather than a filter: a model listed there is registered even if
+discovery would have skipped it, and the list is also the sidebar order. `admin false`
+still wins over it — a model that opted out stays out.
 
 ## Show in App
 
