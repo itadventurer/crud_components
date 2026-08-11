@@ -475,6 +475,7 @@ CrudComponents.configure { |config| … }     # css/icon maps, select_limit, def
 | [docs/security.md](docs/security.md)       | Permissions (`if:`/`editable:`), the whitelist, and the injection-safe URL model |
 | [docs/extending.md](docs/extending.md)     | Partials/renderers/layouts, progressive enhancement, styling, i18n               |
 | [docs/performance.md](docs/performance.md) | Eager-loading, the belongs_to select→text threshold, pagination                  |
+| [docs/admin.md](docs/admin.md)             | The optional mountable admin UI: discovery, authorization, Show in App           |
 
 
 ## Dependencies

@@ -2,8 +2,8 @@
 
 Declarative CRUD UI for ActiveRecord models. README.md is the front door (mental
 model + tour); `docs/` holds the in-depth reference (`fields`, `views`, `forms`,
-`security`, `extending`). Together they are the spec — written before/with the
-implementation and kept in sync.
+`security`, `extending`, `admin`). Together they are the spec — written before/with
+the implementation and kept in sync.
 
 ## Layout
 
