@@ -306,6 +306,17 @@ equivalent one-by-one clicks would.
 
 Worth knowing before you mount it:
 
+- **A host helper that shares a name with a route helper wins inside the admin.** The admin
+  renders in the host's helper context on purpose — that is what lets a model's custom
+  render block reach the host's partials and helpers. So an app that defines, say,
+  `ApplicationHelper#map_path` (wrapping a nested route) keeps that meaning in the admin
+  too: the label cell links to the *app's* page rather than the admin's, and the row's
+  `Show` button steps aside for it as it always does when a label link is present. `Edit`
+  and everything else still point into the admin. Rename the helper if you would rather
+  have the admin's own link.
+- **Route helpers the engine does not have fall through to `main_app`**, so those host
+  partials and blocks resolve their own routes rather than raising.
+
 - **Routes are drawn from the registry at boot**, which means model discovery eager-loads
   your models even in development. A *newly added* model therefore needs a server restart
   (or a `reload_routes!`) before it appears. This is the price of real, named, conventional
