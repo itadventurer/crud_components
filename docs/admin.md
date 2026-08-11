@@ -179,10 +179,23 @@ Index pages paginate when a pagination gem is loaded — the relation is handed 
 `.per` if it responds to them, so kaminari and will_paginate both work and neither is a
 dependency. Without one, an index renders every row.
 
-`config.layout = 'application'` renders the admin inside your app's own chrome — the
-closest the admin gets to the gem's usual "not an island" posture. The bundled layout is a
-plain Bootstrap 5 shell with the sidebar, for apps that would rather keep the backend
-visually separate.
+### The layout and the sidebar
+
+The bundled layout is a plain Bootstrap 5 shell: a brand bar, a sidebar listing every
+registered model (grouped, iconed, current one marked) and the page. Its only assets are
+the two CDN stylesheets in `config.stylesheets` — swap them for your own, or point
+`config.layout` at a layout of yours and load whatever you already load.
+
+Two things to know when you do point it at your own layout:
+
+- **Render the sidebar yourself** if you want it — `render 'crud_components/admin/sidebar'`.
+  Most apps that go this route already have navigation and don't.
+- **Route helpers in that layout must go through `main_app`.** The admin renders inside an
+  isolated engine, so a bare `root_path` in your layout resolves against the *engine's*
+  routes and raises. `main_app.root_path` is the fix, and it is safe everywhere else too.
+
+The sidebar and the dashboard only list models the current ability lets you `:index`, so a
+model an operator may not open is not advertised to them.
 
 `only` is a directive rather than a filter: a model listed there is registered even if
 discovery would have skipped it, and the list is also the sidebar order. `admin false`

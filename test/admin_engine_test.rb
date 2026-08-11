@@ -169,4 +169,63 @@ class AdminEngineTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_select 'th', text: /Purchase price/, count: 0
   end
+
+  # ── chrome ───────────────────────────────────────────────────────────────
+  test 'every page carries the sidebar, with the current model marked' do
+    get '/admin/books'
+
+    assert_response :success
+    assert_select '.crud-admin-nav a.active', text: /Book/
+    assert_select ".crud-admin-nav a[href='/admin/publishers']"
+    assert_select '.crud-admin-nav a.active', count: 1
+  end
+
+  test 'the sidebar groups models under their declared group' do
+    get '/admin'
+
+    assert_response :success
+    assert_select '.crud-admin-nav', text: /Custom properties/
+  end
+
+  test 'the dashboard counts the records' do
+    get '/admin'
+
+    assert_response :success
+    assert_select '.card', text: /Publisher\s*1/
+  end
+
+  test 'counts can be switched off' do
+    with_admin_config do |config|
+      config.allow_without_authentication!
+      config.counts = false
+      get '/admin'
+
+      assert_response :success
+      assert_select '.card .badge', count: 0
+    end
+  end
+
+  test 'a model the ability will not let you index is absent from the navigation' do
+    get '/admin'
+
+    assert_response :success
+    assert_select "a[href='/admin/property_definitions']", count: 0
+
+    post '/toggle_admin'
+    get '/admin'
+
+    assert_select "a[href='/admin/property_definitions']"
+  end
+
+  test 'the admin renders in the host layout when configured to' do
+    with_admin_config do |config|
+      config.allow_without_authentication!
+      config.layout = 'host_chrome'
+      get '/admin'
+
+      assert_response :success
+      assert_select '#host-chrome'
+      assert_select '.crud-admin-nav', count: 0
+    end
+  end
 end

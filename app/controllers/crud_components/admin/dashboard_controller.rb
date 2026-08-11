@@ -3,7 +3,7 @@ module CrudComponents
     # The mount root: what there is to administer.
     class DashboardController < ApplicationController
       def show
-        @entries = admin_registry.entries
+        @counts = admin_entries.to_h { |entry| [entry.name, admin_scope(entry).count] } if admin_config.counts
       end
     end
   end

@@ -53,13 +53,7 @@ module CrudComponents
         @model = @entry.model
       end
 
-      def base_scope
-        scope = @entry.scope
-        ability = cancan_ability
-        return scope unless ability && scope.respond_to?(:accessible_by)
-
-        scope.accessible_by(ability)
-      end
+      def base_scope = admin_scope(@entry)
 
       def set_record
         @record = find_record(base_scope, params[:id])

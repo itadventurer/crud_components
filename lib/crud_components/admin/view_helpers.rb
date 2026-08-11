@@ -8,10 +8,15 @@ module CrudComponents
         public_send("#{entry.route_key}_path")
       end
 
-      def admin_icon(name, **options)
+      def admin_icon(name, css_class: nil)
         return nil unless name
 
-        tag.i(nil, class: "#{CrudComponents.config.css.icon_prefix}#{name}", **options)
+        tag.i(nil, class: ["#{CrudComponents.config.css.icon_prefix}#{name}", css_class].compact.join(' '))
+      end
+
+      # Whether this entry is the one being looked at.
+      def admin_current_entry?(entry)
+        params[:crud_model].to_s == entry.name
       end
 
       def admin_title = CrudComponents::Admin.config.resolved_title

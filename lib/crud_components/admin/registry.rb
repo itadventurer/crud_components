@@ -21,8 +21,14 @@ module CrudComponents
       def registered?(model) = !self[model].nil?
 
       # Entries grouped for the sidebar: [group (nil = ungrouped), entries].
-      def groups
-        entries.group_by(&:group).sort_by { |group, _| [group_rank(group), group.to_s] }
+      def groups(list = entries)
+        list.group_by(&:group).sort_by { |group, _| [group_rank(group), group.to_s] }
+      end
+
+      # Where a group sits in the configured order; unlisted groups come last.
+      def group_rank(group)
+        position = Array(config.groups).index { |name| name.to_s == group.to_s }
+        position || Array(config.groups).size
       end
 
       def reload!
@@ -134,10 +140,7 @@ module CrudComponents
         list.sort_by { |entry| [group_rank(entry.group), entry.group.to_s, entry.label.to_s] }
       end
 
-      def group_rank(group)
-        position = Array(config.groups).index { |name| name.to_s == group.to_s }
-        position || Array(config.groups).size
-      end
+
     end
   end
 end

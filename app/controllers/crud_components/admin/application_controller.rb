@@ -30,13 +30,34 @@ module CrudComponents
         render plain: error.message, status: :forbidden
       end
 
-      helper_method :admin_config, :admin_registry
+      helper_method :admin_config, :admin_registry, :admin_entries, :admin_entry_groups
 
       private
 
       def admin_config = CrudComponents::Admin.config
 
       def admin_registry = CrudComponents::Admin.registry
+
+      # The registered models this user may open at all.
+      def admin_entries
+        @admin_entries ||= admin_registry.entries.select { |entry| readable?(entry) }
+      end
+
+      def admin_entry_groups = admin_registry.groups(admin_entries)
+
+      def readable?(entry)
+        ability = admin_ability
+        ability.nil? || ability.can?(:index, entry.model)
+      end
+
+      # The entry's relation, narrowed by the ability when one can scope.
+      def admin_scope(entry)
+        scope = entry.scope
+        ability = cancan_ability
+        return scope unless ability && scope.respond_to?(:accessible_by)
+
+        scope.accessible_by(ability)
+      end
 
       def ensure_admin_gate_configured!
         return if admin_config.authorized_access_configured?

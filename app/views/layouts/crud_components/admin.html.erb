@@ -13,17 +13,27 @@
   <body class="bg-body-tertiary">
     <nav class="navbar navbar-dark bg-dark">
       <div class="container-fluid">
-        <%= link_to admin_title, root_path, class: 'navbar-brand' %>
+        <%= link_to admin_title, root_path, class: 'navbar-brand mb-0 h1 fs-6' %>
       </div>
     </nav>
 
-    <main class="container-fluid py-4">
-      <% %i[notice alert].each do |level| %>
-        <% next unless flash[level] %>
-        <div class="alert alert-<%= level == :notice ? 'success' : 'danger' %>"><%= flash[level] %></div>
-      <% end %>
+    <div class="container-fluid">
+      <div class="row">
+        <aside class="col-12 col-md-3 col-xl-2 border-end bg-white py-3">
+          <div class="position-sticky" style="top: 1rem">
+            <%= render 'crud_components/admin/sidebar' %>
+          </div>
+        </aside>
 
-      <%= yield %>
-    </main>
+        <main class="col py-3">
+          <% %i[notice alert].each do |level| %>
+            <% next unless flash[level] %>
+            <div class="alert alert-<%= level == :notice ? 'success' : 'danger' %>"><%= flash[level] %></div>
+          <% end %>
+
+          <%= yield %>
+        </main>
+      </div>
+    </div>
   </body>
 </html>
