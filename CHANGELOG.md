@@ -5,6 +5,10 @@ This project follows [semantic versioning](https://semver.org).
 
 ## Unreleased
 
+### Fixed
+
+- The bundled playground (`test/dummy`) boots on hosts without the native libvips — the demo image is one, and so is any checkout that installed the gems but not the library. Active Storage's variant processor is switched off when libvips is missing, so attachments show as icon + filename instead of aborting the boot with `LoadError: Could not open library 'libvips.so.42'`. Nothing in the gem itself changes.
+
 ## v0.2.1 — 2026-08-01
 
 ### Changed

@@ -24,6 +24,10 @@ implementation and kept in sync.
 | `cd test/dummy && bin/rails db:schema:load db:seed` | prepare the playground DB |
 | `cd test/dummy && bin/rails server` | run the playground (Bootstrap/Turbo/Stimulus via CDN, no build step) |
 
+The native libvips and poppler are optional: without them the playground turns
+Active Storage variants off and attachments render as icon + filename. One CI
+leg runs that way.
+
 ## Conventions
 
 - README/docs-first: a behavior change updates the relevant doc (README for the
