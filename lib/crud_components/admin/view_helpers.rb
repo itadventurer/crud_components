@@ -3,9 +3,11 @@ module CrudComponents
     # View helpers for the engine's own templates. Included explicitly by the
     # engine's controllers, so they never reach the host app's views.
     module ViewHelpers
-      # The engine's index path for a registered model.
+      # The engine's index path for a registered model. Built from the engine's
+      # own route set rather than a bare helper name, which a host helper of the
+      # same name would shadow.
       def admin_index_path(entry)
-        public_send("#{entry.route_key}_path")
+        CrudComponents::Admin.path_for(entry.model, :index)
       end
 
       def admin_icon(name, css_class: nil)
@@ -67,7 +69,27 @@ module CrudComponents
         super
       end
 
+      # A route helper the engine does not have falls through to the host
+      # application's routes — the admin renders the host's partials and render
+      # blocks, and those call the host's routes.
+      def method_missing(name, *args, **options, &block)
+        return super unless forwardable_route_helper?(name)
+
+        main_app.public_send(name, *args, **options, &block)
+      end
+
+      def respond_to_missing?(name, include_private = false)
+        forwardable_route_helper?(name) || super
+      end
+
       private
+
+      def forwardable_route_helper?(name)
+        return false unless name.to_s.end_with?('_path', '_url')
+        return false unless respond_to?(:main_app)
+
+        main_app.respond_to?(name)
+      end
 
       def active_storage_object?(object)
         defined?(ActiveStorage) && object.class.name.to_s.start_with?('ActiveStorage::')
