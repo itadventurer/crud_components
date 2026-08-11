@@ -73,7 +73,7 @@ Built-in renderers:
 * `:enum` — i18n'd badge; nil shows `—`.
 * `:association` — nil-safe link via the target's `label`.
 * `:association_list` — "a, b +n more" links.
-* `:attachment` — supports `has_one_attached` / `has_many_attached`: each file is drawn by content type — an image inline, a previewable file (e.g. PDF) as a preview, anything else as an icon + filename download link. Sized by surface; a has_many set renders as a row.
+* `:attachment` — supports `has_one_attached` / `has_many_attached`: each file is drawn by content type — an image inline, a previewable file (e.g. PDF) as a preview, anything else as an icon + filename download link. Previews need a previewer binary (poppler/ffmpeg) plus [image_processing](https://github.com/janko/image_processing) and its variant backend — where any is missing, the file falls back to the icon. Sized by surface; a has_many set renders as a row.
 * `:json` — pretty-printed `<pre>`, syntax-highlighted when [rouge](https://github.com/rouge-ruby/rouge) is present (optional — no rouge, no colors, no error).
 * `:markdown` — needs one of [commonmarker](https://github.com/gjtorikian/commonmarker), [redcarpet](https://github.com/vmg/redcarpet) or [kramdown](https://github.com/gettalong/kramdown) in your bundle; **raises at boot** if none is present.
 * `:asciidoc` — needs [asciidoctor](https://github.com/asciidoctor/asciidoctor); **raises at boot** if absent.
