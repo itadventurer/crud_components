@@ -5,8 +5,6 @@ This project follows [semantic versioning](https://semver.org).
 
 ## Unreleased
 
-## v0.3.0 — 2026-08-12
-
 ### Added
 
 - **An optional, mountable admin UI.** `mount CrudComponents::Admin::Engine => '/admin'` gives every model an index, a record view and working forms, derived from the same `crud_structure` your own pages use — no scaffold per model and no second rendering path. The engine draws real conventional `resources` routes per model, which is why every existing link (derived actions, association links, `+n more`, `crud_form`'s inferred URL) resolves inside it unchanged. Models are discovered automatically; framework tables, HABTM join models and STI subclasses are skipped. It **refuses to serve a request** until `authorize_with` (or an explicit `allow_without_authentication!`) is configured, and beyond that gate `accessible_by`, `if:`/`editable:` and the derived permit list apply exactly as they do elsewhere. Includes a sidebar with groups and counts, nested indexes per to-many association, bulk delete, and German/English strings. ([#45](https://github.com/itadventurer/crud_components/issues/45)–[#51](https://github.com/itadventurer/crud_components/issues/51))
