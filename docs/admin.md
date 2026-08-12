@@ -110,8 +110,9 @@ means to administer:
 | anonymous classes | a route needs a name that resolves back to the same class |
 | models whose table is missing | a half-migrated database should not 500 the sidebar |
 
-Discovery eager-loads your models, which is what makes route generation possible at all
-(see [Trade-offs](#trade-offs)).
+Discovery loads the constants under your model directories — the app's and every engine's
+— which is what makes route generation possible at all (see [Trade-offs](#trade-offs)). A
+model that lives somewhere else is not discovered; list it in `config.only`.
 
 ## Turning models off, and on
 
@@ -325,10 +326,16 @@ Worth knowing before you mount it:
 - **Route helpers the engine does not have fall through to `main_app`**, so those host
   partials and blocks resolve their own routes rather than raising.
 
-- **Routes are drawn from the registry at boot**, which means model discovery eager-loads
-  your models even in development. A *newly added* model therefore needs a server restart
-  (or a `reload_routes!`) before it appears. This is the price of real, named, conventional
-  routes — and it buys the entire "no admin-specific linking code" property above.
+- **Routes are drawn from the registry at boot**, so model discovery loads your model
+  files in every process that boots the app — including rake tasks and asset builds, which
+  switch eager loading off on purpose. It loads *only* the model directories, never the
+  whole application, so a service that needs credentials at load time is not dragged into
+  an asset build. A *newly added* model needs a server restart (or a `reload_routes!`)
+  before it appears. This is the price of real, named, conventional routes — and it buys
+  the entire "no admin-specific linking code" property above.
+- **The route file runs even when the engine is not mounted.** Rails hands every engine's
+  routes to the application's route reloader, mounted or not, so the registry resolves on
+  boot either way. That is cheap (a directory of model files), but it is not zero.
 - **Dashboard counts are `SELECT COUNT(*)`**, one per model. On a schema with very large
   tables, set `config.counts = false`.
 - **The admin renders what the model declares.** A model with 60 columns gets a 60-column

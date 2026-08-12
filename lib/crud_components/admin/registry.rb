@@ -65,24 +65,18 @@ module CrudComponents
       end
 
       def candidates
-        eager_load!
+        load_model_constants
         ActiveRecord::Base.descendants
       end
 
-      def eager_load!
+      # Resolves every constant under the model directories, and nothing else.
+      # Deliberately not `Rails.application.eager_load!`: routes are drawn in
+      # every process, including rake tasks and asset builds, which switch
+      # eager loading off on purpose — and where an app's own initializers may
+      # not have the credentials that eager loading would ask for.
+      def load_model_constants
         return unless defined?(Rails) && Rails.respond_to?(:application) && Rails.application
 
-        Rails.application.eager_load!
-      rescue ThreadError
-        load_model_constants
-      end
-
-      # An eager load is already running further up the stack — a model or
-      # service reaching for route helpers while it loads pulls the route file
-      # in, and the route file lands here. Zeitwerk's eager-load lock is not
-      # reentrant, so resolve the model constants by name instead; ordinary
-      # autoloading takes no lock.
-      def load_model_constants
         model_dirs.each do |dir|
           Dir.glob(File.join(dir, '**', '*.rb')).sort.each do |file|
             file.delete_prefix("#{dir}/").delete_suffix('.rb').camelize.safe_constantize
@@ -90,7 +84,11 @@ module CrudComponents
         end
       end
 
+      # The app's model directories plus every engine's.
       def model_dirs
+        railties = [Rails.application, *Rails::Engine.subclasses.map(&:instance)]
+        railties.flat_map { |railtie| railtie.paths['app/models']&.existent || [] }.uniq
+      rescue StandardError
         Rails.application.config.paths['app/models'].existent
       end
 
