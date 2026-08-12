@@ -84,11 +84,12 @@ module CrudComponents
         end
       end
 
-      # The app's model directories plus every engine's.
+      # The application's own model directories, and only those. An engine's
+      # app/models holds the framework's own tables — loading Active Storage's
+      # Blob, for one, builds the configured storage service on the spot, which
+      # an asset build has no credentials for. Registering a model from an
+      # engine is what `config.only` is for.
       def model_dirs
-        railties = [Rails.application, *Rails::Engine.subclasses.map(&:instance)]
-        railties.flat_map { |railtie| railtie.paths['app/models']&.existent || [] }.uniq
-      rescue StandardError
         Rails.application.config.paths['app/models'].existent
       end
 
