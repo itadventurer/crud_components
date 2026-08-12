@@ -84,11 +84,12 @@ module CrudComponents
         end
       end
 
-      # The app's model directories plus every engine's.
+      # The application's own model directories, and only those. An engine's
+      # app/models holds the framework's own tables — loading Active Storage's
+      # Blob, for one, builds the configured storage service on the spot, which
+      # an asset build has no credentials for. Registering a model from an
+      # engine is what `config.only` is for.
       def model_dirs
-        railties = [Rails.application, *Rails::Engine.subclasses.map(&:instance)]
-        railties.flat_map { |railtie| railtie.paths['app/models']&.existent || [] }.uniq
-      rescue StandardError
         Rails.application.config.paths['app/models'].existent
       end
 
@@ -122,18 +123,40 @@ module CrudComponents
 
       def sti_subclass?(model) = model.base_class != model
 
-      # The effective options, inherited from an STI parent's declaration too.
+      # The `admin` declaration, read from the DSL block rather than from a
+      # resolved Structure: routes are drawn before a model's columns can be
+      # asked for (there may be no database, and resolving an attachment field
+      # would build the storage service). Inherited from an STI parent.
       def admin_options(model)
-        Structure.for(model).admin_options
+        block = declaration_block(model)
+        return nil unless block
+
+        Builder.new(model, &block).admin_decl
       end
 
       # The options this very class declared, ignoring anything inherited.
       def own_admin_options(model)
-        block = model.instance_variable_defined?(:@_crud_structure_block) &&
-                model.instance_variable_get(:@_crud_structure_block)
-        return nil unless block
+        return nil unless own_declaration_block(model)
 
         admin_options(model)
+      end
+
+      def declaration_block(model)
+        klass = model
+        while klass.respond_to?(:instance_variable_defined?)
+          block = own_declaration_block(klass)
+          return block if block
+
+          klass = klass.superclass
+          break if klass.nil? || klass == ActiveRecord::Base
+        end
+        nil
+      end
+
+      def own_declaration_block(model)
+        return nil unless model.instance_variable_defined?(:@_crud_structure_block)
+
+        model.instance_variable_get(:@_crud_structure_block)
       end
 
       # A table that cannot be inspected (no database at boot, e.g. an asset
