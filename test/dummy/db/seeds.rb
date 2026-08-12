@@ -100,6 +100,7 @@ cover_colors = %w[#264653 #2a9d8f #e9c46a #f4a261 #e76f51 #6d597a #355070 #b5657
     active: rand > 0.2,
     genre: genres.sample,
     metadata: { isbn: "978-#{rand(10**9)}", binding: %w[hardcover paperback].sample },
+    distributor_secret: SecureRandom.hex(16),
     publisher: [*publishers, nil].sample,
     authors: authors.sample(rand(1..3))
   )

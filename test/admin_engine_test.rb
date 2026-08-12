@@ -163,6 +163,15 @@ class AdminEngineTest < ActionDispatch::IntegrationTest
     assert Author.exists?(@tolkien.id)
   end
 
+  test 'a filtered column is masked, not printed' do
+    @hobbit.update!(distributor_secret: 's3cret')
+    get '/admin/books/hobbit'
+
+    assert_response :success
+    assert_select 'dd', text: /FILTERED/
+    assert_no_match(/s3cret/, response.body)
+  end
+
   test 'a column the ability hides stays hidden in the admin' do
     get '/admin/books'
 

@@ -230,8 +230,10 @@ module CrudComponents
     # model-global search by design and stay.
     def permitted_search_spec(permission)
       search_in_spec.reject do |entry|
-        entry.is_a?(Symbol) && model.columns_hash.key?(entry.to_s) &&
-          @declarations.key?(entry) && !field(entry).permitted?(permission)
+        next false unless entry.is_a?(Symbol) && model.columns_hash.key?(entry.to_s)
+        next true if CrudComponents.filtered_column?(entry)
+
+        @declarations.key?(entry) && !field(entry).permitted?(permission)
       end
     end
 

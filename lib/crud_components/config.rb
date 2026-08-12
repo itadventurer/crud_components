@@ -96,9 +96,21 @@ module CrudComponents
       'setting' => 'gear', 'permission' => 'shield-lock'
     }.freeze
 
+    # Column-name patterns whose values are never printed, never filterable,
+    # never sortable and never editable — the same list Rails keeps out of its
+    # logs. Strings match as substrings, Regexps as patterns; `[]` switches the
+    # whole thing off.
+    DEFAULT_FILTERED_COLUMNS = %w[passw secret token _key crypt salt certificate otp ssn signature].freeze
+
+    # Rails filters these from its *logs* for privacy, but a table that cannot
+    # show an email address is not a table anyone wants. Dropped from the
+    # inherited list; add them back explicitly if you disagree.
+    DISPLAY_SAFE = %i[email phone].freeze
+
     attr_accessor :select_limit, :group_collapse_threshold, :action_icons,
                   :file_icons, :file_fallback_icon, :fast_cells, :max_path_depth,
                   :model_icons, :model_fallback_icon
+    attr_writer :filtered_columns
     attr_reader :css
 
     def initialize
@@ -123,6 +135,24 @@ module CrudComponents
       # No generic badge for an unmapped, undeclared model — set a glyph here to
       # icon every model (e.g. 'box') if you prefer.
       @model_fallback_icon = nil
+    end
+
+    # Resolved on first use, so an app's `filter_parameters` are already set.
+    def filtered_columns
+      return @filtered_columns if defined?(@filtered_columns) && @filtered_columns
+
+      @filtered_columns = default_filtered_columns
+    end
+
+    private
+
+    # Rails' own list when there is one — an app that curated
+    # `config.filter_parameters` has already made this decision.
+    def default_filtered_columns
+      rails = defined?(Rails) && Rails.respond_to?(:application) && Rails.application
+      patterns = rails&.config&.filter_parameters
+      patterns = patterns.presence&.reject { |pattern| pattern.is_a?(Proc) } || DEFAULT_FILTERED_COLUMNS.dup
+      patterns - DISPLAY_SAFE
     end
   end
 end

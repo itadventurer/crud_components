@@ -43,6 +43,8 @@ module CrudComponents
       # (a CellContext or nil) lets value renderers build click-to-filter links;
       # it is nil on surfaces without a query.
       def render_cell(field, record, surface:, cell_context: nil)
+        return filtered_cell if field.filtered?
+
         # The render block gets the record *and* the field's value — so a block on
         # a DynamicColumn can read its `preload:`-ed value without an `as:` partial.
         # Extra arg is harmless for one-arg blocks/procs (Proc ignores surplus args).
@@ -56,6 +58,11 @@ module CrudComponents
         else
           view.render("crud_components/fields/#{renderer}", **locals)
         end
+      end
+
+      # A column the app considers too sensitive to print says so instead.
+      def filtered_cell
+        view.tag.span(view.t('crud_components.filtered', default: '[FILTERED]'), class: css.muted)
       end
 
       # Renders one filter control partial `crud_components/filters/_<control>`.

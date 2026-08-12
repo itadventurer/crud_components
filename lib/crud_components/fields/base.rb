@@ -93,7 +93,8 @@ module CrudComponents
       end
 
       def renderer_options
-        options.except(:as, :if, :form_as, :label, :header, :header_actions, :filter_as, :filter_choices)
+        options.except(:as, :if, :form_as, :label, :header, :header_actions, :filter_as, :filter_choices,
+                       :filtered)
       end
 
       # ── permissions ──────────────────────────────────────────────────────
@@ -101,8 +102,18 @@ module CrudComponents
         Permission.permitted?(options[:if], model, context, record)
       end
 
+      # Whether this column holds something the application already considers
+      # too sensitive to print (see `config.filtered_columns`). Such a column
+      # renders as a placeholder and reaches neither SQL nor a form.
+      def filtered?
+        return @filtered if defined?(@filtered)
+
+        @filtered = options.key?(:filtered) ? !!options[:filtered] : CrudComponents.filtered_column?(name)
+      end
+
       # ── filtering ────────────────────────────────────────────────────────
       def filterable?
+        return false if filtered?
         return false if facets[:filter] == false
         return false if CrudComponents::RESERVED_PARAMS.include?(name.to_s)
         return true if typed_filter || filter_facet
@@ -179,6 +190,7 @@ module CrudComponents
 
       # ── sorting ──────────────────────────────────────────────────────────
       def sortable?
+        return false if filtered?
         return false if facets[:sort] == false
         return false if CrudComponents::RESERVED_PARAMS.include?(name.to_s)
         return true if sort_facet
@@ -216,6 +228,8 @@ module CrudComponents
       # overrides; a symbol/Proc means "editable, subject to a can? check"
       # (see editable_permitted?).
       def editable?
+        return false if filtered?
+
         case options[:editable]
         when false then false
         when nil then default_editable?

@@ -47,6 +47,12 @@ module CrudTestHelpers
     CrudComponents::Structure.const_set(:RENDERER_GEMS, original)
   end
 
+  # Drop the memoized structure so it is rebuilt from the model's own block —
+  # unlike reset_crud_structure!, which drops the declaration too.
+  def rebuild_structure(model)
+    model.instance_variable_set(:@_crud_structure, nil)
+  end
+
   # Swap in a blank admin configuration (and a registry reading it) for the
   # duration of a test; #restore_admin_config! puts the app's own back.
   def reset_admin_config!

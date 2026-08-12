@@ -70,6 +70,16 @@ module CrudComponents
       Structure.for(model)
     end
 
+    # Whether a column name matches {Config#filtered_columns} — the values the
+    # application already keeps out of its logs. Strings match as substrings
+    # (Rails' own rule), Regexps as patterns.
+    def filtered_column?(name)
+      name = name.to_s
+      config.filtered_columns.any? do |pattern|
+        pattern.is_a?(Regexp) ? name.match?(pattern) : name.include?(pattern.to_s)
+      end
+    end
+
     # Safe case-insensitive contains-match on any relation, using the same
     # escaped-ILIKE machinery as `filter like:` / `search_in` — so you never
     # hand-write `where("col LIKE ?", "%#{value}%")` (which forgets to escape the

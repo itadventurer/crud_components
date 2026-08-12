@@ -32,7 +32,11 @@ class Book < ApplicationRecord
     attributes :purchase_price, :shop_margin, if: :manage   # visible only to managers
     attribute :slug, editable: false                        # shown in forms, but read-only
     attribute :active, editable: :manage                    # everyone sees it; only managers edit it
-    attribute :internal_token, if: ->(book) { book.active } # record-dependent visibility: only on active books
+    # Record-dependent visibility: only on active books. `filtered: false` opts
+    # the column out of the filtered-columns rule — the name matches, the value
+    # is not a secret. (`distributor_secret` next to it does match, and shows
+    # what the rule does.)
+    attribute :internal_token, if: ->(book) { book.active }, filtered: false
 
     attribute :author_names, preload: %i[authors] do   # render block reaches :authors → preload it
       render { |book| book.authors.map(&:name).to_sentence }

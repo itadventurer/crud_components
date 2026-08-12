@@ -3,6 +3,7 @@
 # und jederzeit in der eigenen config/locales/*.yml überschreibbar.
 de:
   crud_components:
+    filtered: "[GEFILTERT]"
     confirm: "Sind Sie sicher?"
     empty: "Keine Einträge"
     more: "+%{count} weitere"

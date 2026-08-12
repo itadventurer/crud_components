@@ -67,6 +67,34 @@ a `can?(action, subject)` method.
   authority to say "yes", the answer is "no". (Lambdas that don't call `can?` are
   unaffected.)
 
+## Columns that are never printed
+
+> **A column whose name matches `config.filtered_columns` renders as `[FILTERED]`, is not
+> filterable, not sortable, not searchable, and is neither editable nor in the permit list.**
+
+The default list is the application's own `config.filter_parameters` — what Rails already
+refuses to write to a log — minus `email` and `phone`, which are the point of a table
+rather than a secret. Without Rails, a small built-in list applies (`passw`, `secret`,
+`token`, `_key`, `crypt`, `salt`, …). Strings match as substrings, Regexps as patterns.
+
+```ruby
+CrudComponents.configure do |config|
+  config.filtered_columns += [/\Ainternal_/]   # more
+  config.filtered_columns = []                 # off
+end
+```
+
+Per column, when the name is misleading in either direction:
+
+```ruby
+attribute :internal_token, filtered: false   # matches the list, isn't a secret
+attribute :recovery_answer, filtered: true   # doesn't match, is one
+```
+
+This is deliberately *not* a permission: everyone sees `[FILTERED]`, including an admin.
+A value nobody should read off a screen is different from a value only some people may
+read — for the latter, use `if:`.
+
 ## The whitelist
 
 > **A URL param is applied only if it names a filterable field of the fieldset in play

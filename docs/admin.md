@@ -69,6 +69,14 @@ rather than rendering anything. For a public demo or a local playground, say so 
 config.allow_without_authentication!   # every visitor is an admin. Never in production.
 ```
 
+### Secrets
+
+The admin shows every column, so it is where a password hash or an API key would otherwise
+turn up on screen. It does not: a column whose name matches `config.filtered_columns` —
+by default the app's own `config.filter_parameters` — renders as `[FILTERED]`, and is
+neither filterable, sortable, searchable nor editable. See
+[Security → columns that are never printed](security.md#columns-that-are-never-printed).
+
 ### Per-record and per-column authorization
 
 Beyond the gate, the usual machinery applies, unchanged:

@@ -4,6 +4,7 @@
 # it in your own config/locales/*.yml.
 en:
   crud_components:
+    filtered: "[FILTERED]"
     confirm: "Are you sure?"
     empty: "No records"
     more: "+%{count} more"

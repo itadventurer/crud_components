@@ -28,6 +28,7 @@ ActiveRecord::Schema[7.1].define(version: 1) do
     t.integer :genre, default: 0
     t.json :metadata
     t.string :internal_token # exists, but never declared filterable anywhere
+    t.string :distributor_secret # matches config.filtered_columns → never printed
     t.references :publisher
     t.timestamps
   end
