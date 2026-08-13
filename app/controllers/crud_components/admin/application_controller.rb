@@ -38,9 +38,17 @@ module CrudComponents
 
       def admin_registry = CrudComponents::Admin.registry
 
-      # The registered models this user may open at all.
+      # The registered models this user may open at all. A model whose table is
+      # not there yet (a half-migrated database) is left out of the navigation
+      # rather than offered as a link that only errors.
       def admin_entries
-        @admin_entries ||= admin_registry.entries.select { |entry| readable?(entry) }
+        @admin_entries ||= admin_registry.entries.select { |entry| readable?(entry) && table?(entry) }
+      end
+
+      def table?(entry)
+        entry.model.table_exists?
+      rescue ActiveRecord::ActiveRecordError
+        true
       end
 
       def admin_entry_groups = admin_registry.groups(admin_entries)

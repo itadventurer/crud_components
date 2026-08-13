@@ -100,7 +100,14 @@ means to administer:
 | HABTM join models | they have no independent identity |
 | STI subclasses | the base class's index already lists them, `type` column and all. A subclass that wants its own entry declares `admin` itself |
 | anonymous classes | a route needs a name that resolves back to the same class |
-| models whose table is missing | a half-migrated database should not 500 the sidebar |
+| models whose table is missing | *not* dropped here — see below |
+
+**Discovery never asks the database.** Routes are drawn while the schema may not exist
+yet — a fresh checkout, a container that boots ahead of its migrations, a test run that
+loads its schema after boot — and a registry that quietly comes up empty in those moments
+is a far worse failure than a link that errors. A model whose table is missing is therefore
+registered and routed; it is left out of the sidebar and the dashboard at render time,
+where the database is definitely there to ask.
 
 Discovery loads the constants under your model directories — the app's and every engine's
 — which is what makes route generation possible at all (see [Trade-offs](#trade-offs)). A
