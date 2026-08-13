@@ -7,7 +7,7 @@ module CrudComponents
       attr_reader :record, :model, :structure, :fieldset, :param_prefix
 
       def initialize(view:, record:, fieldset: nil, actions: true, picked_columns: :auto,
-                     param_prefix: nil, extra_columns: nil, extra_actions: nil)
+                     param_prefix: nil, extra_columns: nil, extra_actions: nil, except_actions: nil)
         super(view: view)
         @record = record
         @model = record.class
@@ -15,6 +15,7 @@ module CrudComponents
         @fieldset = @structure.fieldset(fieldset || :show)
         @actions_enabled = actions
         @extra_actions = Array(extra_actions).select { |action| action.on == :row }
+        @except_actions = Array(except_actions).map(&:to_sym)
         @param_prefix = param_prefix
         # Dynamic columns work on a detail view too — user-defined properties
         # whose data lives outside the model's table, shown as extra rows.
@@ -50,8 +51,18 @@ module CrudComponents
         return nil unless @actions_enabled
 
         @actions ||= Actions.new(view: view, subject: record, structure: structure,
-                                 actions: structure.fieldset_actions(fieldset, on: :row) + @extra_actions,
+                                 actions: declared_row_actions + @extra_actions,
                                  suppress_show: true)
+      end
+
+      private
+
+      # Actions this render drops, whatever the model declares.
+      def declared_row_actions
+        actions = structure.fieldset_actions(fieldset, on: :row)
+        return actions if @except_actions.empty?
+
+        actions.reject { |action| @except_actions.include?(action.name) }
       end
     end
   end

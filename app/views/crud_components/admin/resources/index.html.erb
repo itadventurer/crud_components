@@ -19,6 +19,8 @@
   <div class="card-body">
     <%= crud_collection @records, query: @query, fieldset: @entry.fieldset, picker: true,
                         extra_actions: [admin_show_in_app_action,
-                                        admin_destroy_selected_action(@entry)].compact %>
+                                        admin_delete_action(@entry),
+                                        admin_destroy_selected_action(@entry)].compact,
+                        except_actions: %i[destroy] %>
   </div>
 </div>

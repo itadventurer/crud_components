@@ -40,6 +40,16 @@ module CrudComponents
         ) { public_send("destroy_selected_#{entry.route_key}_path") }
       end
 
+      # The delete button: a link to the confirmation page rather than a DELETE
+      # behind a browser dialog. Keeps the derived action's icon and label.
+      def admin_delete_action(entry)
+        return nil unless entry.allows?(:destroy)
+
+        CrudComponents::Action.new(:destroy, on: :row, method: :get, confirm: false) do |record|
+          public_send("delete_#{entry.singular_route_key}_path", record)
+        end
+      end
+
       # The row action linking a record to the host app's own page for it.
       # Resolves through crud_app_path, so it disappears when there is none.
       def admin_show_in_app_action
