@@ -64,6 +64,17 @@ class AdminRegistryTest < ActiveSupport::TestCase
     assert_not_includes names, 'AdminOptedOutModel'
   end
 
+  test 'discovery does not consult the database' do
+    Object.const_set(:AdminNotMigratedModel, Class.new(ApplicationRecord) do
+      self.table_name = 'not_migrated_yet'
+      include CrudComponents::Model
+    end)
+
+    assert_includes names, 'AdminNotMigratedModel'
+  ensure
+    Object.send(:remove_const, :AdminNotMigratedModel)
+  end
+
   test 'skips anonymous models' do
     define_model(name: 'GhostModel')
 
