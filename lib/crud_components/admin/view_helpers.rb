@@ -60,13 +60,7 @@ module CrudComponents
       end
 
       # Active Storage routes live in the application's route set, not in an
-      # isolated engine's. Attachment cells reach them through these three.
-      def url_for(options = nil)
-        return main_app.url_for(options) if active_storage_object?(options)
-
-        super
-      end
-
+      # isolated engine's; attachment cells reach them through these two.
       def polymorphic_url(record, options = {})
         return main_app.polymorphic_url(record, options) if active_storage_object?(record)
 

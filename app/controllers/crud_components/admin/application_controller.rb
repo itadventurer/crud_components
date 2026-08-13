@@ -38,12 +38,12 @@ module CrudComponents
 
       def admin_registry = CrudComponents::Admin.registry
 
-      # The registered models this user may open at all. A model whose table is
-      # not there yet (a half-migrated database) is left out of the navigation
-      # rather than offered as a link that only errors.
+      # The models the navigation offers: routed, allowed, and with a table
+      # behind them (a half-migrated database leaves one out rather than
+      # offering a link that only errors).
       def admin_entries
         @admin_entries ||= admin_registry.entries.select do |entry|
-          CrudComponents::Admin.routed?(entry) && readable?(entry) && table?(entry)
+          CrudComponents::Admin.path_for(entry.model, :index) && readable?(entry) && table?(entry)
         end
       end
 
