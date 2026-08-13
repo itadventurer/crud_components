@@ -59,14 +59,32 @@ module CrudComponents
       end
 
       def candidates
-        eager_load!
+        load_model_constants
         ActiveRecord::Base.descendants
       end
 
-      def eager_load!
+      # Resolves every constant under the model directories, and nothing else.
+      # Deliberately not `Rails.application.eager_load!`: routes are drawn in
+      # every process, including rake tasks and asset builds, which switch
+      # eager loading off on purpose — and where an app's own initializers may
+      # not have the credentials that eager loading would ask for.
+      def load_model_constants
         return unless defined?(Rails) && Rails.respond_to?(:application) && Rails.application
 
-        Rails.application.eager_load!
+        model_dirs.each do |dir|
+          Dir.glob(File.join(dir, '**', '*.rb')).sort.each do |file|
+            file.delete_prefix("#{dir}/").delete_suffix('.rb').camelize.safe_constantize
+          end
+        end
+      end
+
+      # The application's own model directories, and only those. An engine's
+      # app/models holds the framework's own tables — loading Active Storage's
+      # Blob, for one, builds the configured storage service on the spot, which
+      # an asset build has no credentials for. Registering a model from an
+      # engine is what `config.only` is for.
+      def model_dirs
+        Rails.application.config.paths['app/models'].existent
       end
 
       def excluded?(model)
@@ -80,14 +98,16 @@ module CrudComponents
       end
 
       # Anonymous and throwaway classes are skipped: a route and a controller
-      # need a name that resolves back to the same class.
+      # need a name that resolves back to the same class. Nothing here asks the
+      # database — routes are drawn before the schema exists often enough (a
+      # fresh checkout, a container that boots ahead of its migrations) that a
+      # registry which quietly comes up empty is the worse failure.
       def usable?(model)
         return false unless model.is_a?(Class) && model.name
         return false if model.abstract_class?
         return false if model == ActiveRecord::Base
-        return false unless model.name.safe_constantize.equal?(model)
 
-        table_available?(model)
+        model.name.safe_constantize.equal?(model)
       end
 
       def internal?(model)
@@ -99,26 +119,40 @@ module CrudComponents
 
       def sti_subclass?(model) = model.base_class != model
 
-      # The effective options, inherited from an STI parent's declaration too.
+      # The `admin` declaration, read from the DSL block rather than from a
+      # resolved Structure: routes are drawn before a model's columns can be
+      # asked for (there may be no database, and resolving an attachment field
+      # would build the storage service). Inherited from an STI parent.
       def admin_options(model)
-        Structure.for(model).admin_options
+        block = declaration_block(model)
+        return nil unless block
+
+        Builder.new(model, &block).admin_decl
       end
 
       # The options this very class declared, ignoring anything inherited.
       def own_admin_options(model)
-        block = model.instance_variable_defined?(:@_crud_structure_block) &&
-                model.instance_variable_get(:@_crud_structure_block)
-        return nil unless block
+        return nil unless own_declaration_block(model)
 
         admin_options(model)
       end
 
-      # A table that cannot be inspected (no database at boot, e.g. an asset
-      # build) counts as present; a missing one is decided at request time.
-      def table_available?(model)
-        model.table_exists?
-      rescue ActiveRecord::ActiveRecordError
-        true
+      def declaration_block(model)
+        klass = model
+        while klass.respond_to?(:instance_variable_defined?)
+          block = own_declaration_block(klass)
+          return block if block
+
+          klass = klass.superclass
+          break if klass.nil? || klass == ActiveRecord::Base
+        end
+        nil
+      end
+
+      def own_declaration_block(model)
+        return nil unless model.instance_variable_defined?(:@_crud_structure_block)
+
+        model.instance_variable_get(:@_crud_structure_block)
       end
 
       def except_names
@@ -138,6 +172,8 @@ module CrudComponents
         position = Array(config.groups).index { |name| name.to_s == group.to_s }
         position || Array(config.groups).size
       end
+
+
     end
   end
 end

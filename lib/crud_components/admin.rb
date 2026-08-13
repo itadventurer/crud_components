@@ -35,6 +35,15 @@ module CrudComponents
         @registry ||= Registry.new(config)
       end
 
+      # Whether the engine actually drew this entry's routes. The registry can
+      # resolve after the routes were drawn (a reload, a class defined later),
+      # and a navigation entry without a route would only raise.
+      def routed?(entry)
+        return false unless defined?(Engine)
+
+        Engine.routes.url_helpers.respond_to?("#{entry.route_key}_path")
+      end
+
       # Drops both the configuration and the resolved registry.
       def reset!
         @config = nil
