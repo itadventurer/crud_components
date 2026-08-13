@@ -94,8 +94,9 @@ module CrudComponents
 
       private
 
-      # Routes are drawn without a database in reach (an asset build), where
-      # asking for the primary key raises; assume the ordinary case.
+      # Routes are drawn without a database in reach often enough (an asset
+      # build, a container ahead of its migrations), and asking for the primary
+      # key raises there; assume the ordinary case.
       def primary_key?
         !model.primary_key.nil?
       rescue StandardError

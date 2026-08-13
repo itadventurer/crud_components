@@ -42,7 +42,9 @@ module CrudComponents
       # not there yet (a half-migrated database) is left out of the navigation
       # rather than offered as a link that only errors.
       def admin_entries
-        @admin_entries ||= admin_registry.entries.select { |entry| readable?(entry) && table?(entry) }
+        @admin_entries ||= admin_registry.entries.select do |entry|
+          CrudComponents::Admin.routed?(entry) && readable?(entry) && table?(entry)
+        end
       end
 
       def table?(entry)

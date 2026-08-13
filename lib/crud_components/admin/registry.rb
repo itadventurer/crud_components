@@ -174,7 +174,6 @@ module CrudComponents
         list.sort_by { |entry| [group_rank(entry.group), entry.group.to_s, entry.label.to_s] }
       end
 
-
     end
   end
 end
