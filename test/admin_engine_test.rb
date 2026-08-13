@@ -163,6 +163,16 @@ class AdminEngineTest < ActionDispatch::IntegrationTest
     assert Author.exists?(@tolkien.id)
   end
 
+  test 'the action that runs is the one authorized, not the one that drew the button' do
+    get '/admin/comments/new'
+
+    assert_response :success
+
+    post '/admin/comments', params: { comment: { body: 'Sneaked in.' } }
+
+    assert_response :forbidden
+  end
+
   test 'a column the ability hides stays hidden in the admin' do
     get '/admin/books'
 
