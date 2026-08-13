@@ -71,12 +71,21 @@ module CrudComponents
 
       private
 
+      # Routes are drawn without a database in reach often enough (an asset
+      # build, a container ahead of its migrations), and asking for the primary
+      # key raises there; assume the ordinary case.
+      def primary_key?
+        !model.primary_key.nil?
+      rescue StandardError
+        true
+      end
+
       def resolve_actions
         declared = options[:actions]
         list = declared ? Array(declared).map(&:to_sym) : ALL_ACTIONS.dup
         list |= list.filter_map { |action| ACTION_PAIRS[action] }
         list &= ALL_ACTIONS
-        list -= MEMBER_ACTIONS if model.primary_key.nil?
+        list -= MEMBER_ACTIONS unless primary_key?
         ALL_ACTIONS & list
       end
     end
