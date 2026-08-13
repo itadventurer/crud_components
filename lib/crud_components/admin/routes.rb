@@ -18,6 +18,7 @@ CrudComponents::Admin::Engine.routes.draw do
                                defaults: { crud_model: entry.name } do
       if entry.allows?(:destroy)
         collection { delete :destroy_selected, controller: 'resources' }
+        member { get :delete, controller: 'resources' }
       end
 
       # An index per to-many association pointing here, so the owner's

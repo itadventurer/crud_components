@@ -344,4 +344,52 @@ class AdminEngineTest < ActionDispatch::IntegrationTest
 
     assert_response :not_found
   end
+
+  # ── delete confirmation ──────────────────────────────────────────────────
+  test 'the delete button leads to a confirmation page, not straight to a DELETE' do
+    post '/toggle_admin'
+    get '/admin/books/hobbit'
+
+    assert_response :success
+    assert_select "a[href='/admin/books/hobbit/delete']"
+  end
+
+  test 'the confirmation page counts what goes with the record' do
+    post '/toggle_admin'
+    Review.create!(book: @hobbit, rating: 4, reviewer_name: 'Ada', body: 'A classic.')
+    Review.create!(book: @hobbit, rating: 5, reviewer_name: 'Bob', body: 'Also good.')
+
+    get '/admin/books/hobbit/delete'
+
+    assert_response :success
+    assert_select 'li', text: /2\s+Review/i
+  end
+
+  test 'the confirmation page says so when nothing else depends on the record' do
+    post '/toggle_admin'
+    get "/admin/authors/#{@tolkien.id}/delete"
+
+    assert_response :success
+    assert_select 'p', text: /Nothing else depends/
+  end
+
+  test 'the confirmation page posts the real DELETE' do
+    post '/toggle_admin'
+    get '/admin/books/hobbit/delete'
+
+    assert_response :success
+    assert_select "form[action='/admin/books/hobbit'] input[name=_method][value=delete]"
+  end
+
+  test 'a read-only model has no confirmation page either' do
+    get '/admin/property_values/1/delete'
+
+    assert_response :not_found
+  end
+
+  test 'the confirmation page is refused when the ability withholds destroy' do
+    get '/admin/books/hobbit/delete'
+
+    assert_response :forbidden
+  end
 end

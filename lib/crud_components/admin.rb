@@ -1,4 +1,5 @@
 require_relative 'admin/configuration'
+require_relative 'admin/dependents'
 require_relative 'admin/entry'
 require_relative 'admin/registry'
 require_relative 'admin/view_helpers'

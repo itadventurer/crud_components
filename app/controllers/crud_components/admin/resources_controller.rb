@@ -5,7 +5,7 @@ module CrudComponents
     # registry drew a route for.
     class ResourcesController < ApplicationController
       before_action :set_entry
-      before_action :set_record, only: %i[show edit update destroy]
+      before_action :set_record, only: %i[show edit update destroy delete]
       before_action :build_record, only: %i[new create]
       before_action :authorize_action!
 
@@ -36,6 +36,11 @@ module CrudComponents
         else
           render :edit, status: :unprocessable_entity
         end
+      end
+
+      # The confirmation step: what goes with it, before anything goes.
+      def delete
+        @dependents = Dependents.new(@record)
       end
 
       def destroy
@@ -111,7 +116,7 @@ module CrudComponents
       end
 
       # The engine's own actions, mapped to the RESTful one an ability knows.
-      ACTION_PERMISSIONS = { destroy_selected: :destroy }.freeze
+      ACTION_PERMISSIONS = { destroy_selected: :destroy, delete: :destroy }.freeze
 
       # Otherwise the action the request performs is the one authorized.
       # CanCanCan aliases :new to :create and :edit to :update, so a rule

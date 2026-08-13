@@ -303,12 +303,34 @@ filtering and sorting as the flat one. Two things follow from having those route
 Polymorphic and `:through` associations are skipped — there is no single target model to
 draw a route to.
 
-## Bulk delete
+## Deleting
+
+The trash button does **not** delete. It opens `/admin/books/the-hobbit/delete`, a page that
+says what the delete would take with it before anything happens:
+
+- **what goes** — every association declaring `dependent: :destroy` / `:destroy_async` /
+  `:delete_all`, counted, plus the record's Active Storage attachments. An association
+  whose own target destroys further records is marked as such: the count is the first
+  level only;
+- **what stays but loses its reference** — `dependent: :nullify`;
+- **what blocks it** — `dependent: :restrict_with_error` / `:restrict_with_exception` with
+  rows still attached. The Delete button is disabled while any of those hold.
+
+Only then does the page's own button issue the `DELETE`. A browser confirm dialog cannot
+say any of this, and "how much does this take with it" is exactly the question you have in
+front of a generic admin over someone else's schema.
+
+Counts are one query per association, on one record — the page is cheap, and it is a page
+you reach deliberately.
+
+### Bulk delete
 
 A model with a destroy route also gets `DELETE /admin/books/destroy_selected`, wired to the
 row checkboxes the gem already renders. Each ticked record is checked against the ability
 on its own before it is destroyed, so a bulk action can never delete more than the
-equivalent one-by-one clicks would.
+equivalent one-by-one clicks would. There is no per-record blast radius there — a
+selection of a hundred rows has no legible one — so that path keeps the plain confirm
+dialog.
 
 ## Trade-offs
 

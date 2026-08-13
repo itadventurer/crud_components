@@ -43,16 +43,19 @@ module CrudComponents
     # @param extra_actions [Array<CrudComponents::Action>, nil] row actions to append
     #   beyond the model's own — for a button that belongs to this surface rather
     #   than to the model. Subject to the same permission and route resolution.
+    # @param except_actions [Array<Symbol>, nil] action names this render drops,
+    #   whatever the model declares (e.g. replacing `:destroy` with a button of
+    #   your own). Applies to row, collection and selection actions.
     # @return [ActiveSupport::SafeBuffer] the rendered HTML.
     def crud_collection(records, fieldset: nil, layout: :table, query: :auto, param_prefix: nil,
                         actions: true, search_bar: true, group_by: nil, extra_columns: nil,
-                        picker: false, picked_columns: :auto, extra_actions: nil)
+                        picker: false, picked_columns: :auto, extra_actions: nil, except_actions: nil)
       presenter = Presenters::Collection.new(view: self, records: records, fieldset: fieldset,
                                              query: query, layout: layout, param_prefix: param_prefix,
                                              actions: actions, search_bar: search_bar, group_by: group_by,
                                              extra_columns: extra_columns,
                                              picker: picker, picked_columns: picked_columns,
-                                             extra_actions: extra_actions)
+                                             extra_actions: extra_actions, except_actions: except_actions)
       render "crud_components/layouts/#{presenter.layout}", collection: presenter
     end
 
@@ -77,12 +80,15 @@ module CrudComponents
     #   (same as {#crud_collection}'s `extra_columns:`, for a detail view).
     # @param extra_actions [Array<CrudComponents::Action>, nil] actions to append
     #   beyond the model's own (same as {#crud_collection}'s `extra_actions:`).
+    # @param except_actions [Array<Symbol>, nil] action names this render drops
+    #   (same as {#crud_collection}'s `except_actions:`).
     # @return [ActiveSupport::SafeBuffer] the rendered HTML.
     def crud_record(record, fieldset: nil, actions: true, layout: :record, picked_columns: :auto,
-                    param_prefix: nil, extra_columns: nil, extra_actions: nil)
+                    param_prefix: nil, extra_columns: nil, extra_actions: nil, except_actions: nil)
       presenter = Presenters::Record.new(view: self, record: record, fieldset: fieldset, actions: actions,
                                          picked_columns: picked_columns, param_prefix: param_prefix,
-                                         extra_columns: extra_columns, extra_actions: extra_actions)
+                                         extra_columns: extra_columns, extra_actions: extra_actions,
+                                         except_actions: except_actions)
       render "crud_components/#{layout}", record_presenter: presenter
     end
 
