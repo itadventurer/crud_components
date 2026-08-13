@@ -74,13 +74,13 @@ module CrudComponents
         found
       end
 
-      # Writes are checked against the permission that shows their button, so a
-      # hidden Edit button and a forged PATCH agree.
-      ACTION_PERMISSIONS = { create: :new, update: :edit }.freeze
-
+      # The action the request actually performs is the one authorized. CanCanCan
+      # aliases :new to :create and :edit to :update, so a rule written either
+      # way still applies; an ability that tells them apart is asked the
+      # narrower question of the two.
       def authorize_action!
         subject = @record || @model
-        permission = ACTION_PERMISSIONS.fetch(action_name.to_sym, action_name.to_sym)
+        permission = action_name.to_sym
 
         authorize!(permission, subject) if respond_to?(:authorize!, true)
 
