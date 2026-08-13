@@ -102,6 +102,31 @@ A single record and a standalone filter form work the same way:
 The rest of this README is a short "now I want to…" tour. Every step is optional; nothing below is
 required for any view above to work. Each section links to its in-depth reference.
 
+## …and a whole admin, if you want one
+
+The same one-line idea, one level up: mount the optional admin engine and **every** model
+has a backend — index, record view, forms, delete.
+
+```ruby
+# config/routes.rb
+mount CrudComponents::Admin::Engine => '/admin'
+```
+
+![The admin dashboard: a sidebar listing every model, grouped and iconed, and a card per model with its record count](docs/screenshots/admin-dashboard.png)
+
+It renders from the same `crud_structure` your own pages use — no scaffold per model, no
+second rendering path — and it **serves nothing until you say who may in**:
+
+```ruby
+CrudComponents::Admin.configure do |config|
+  config.authorize_with { head :forbidden unless current_user&.admin? }
+end
+```
+
+`admin false` keeps a model out, `admin actions: %i[index show]` makes it read-only (the
+write routes are never drawn), and every record links back to the page a visitor would see.
+→ [The admin UI](docs/admin.md)
+
 ## The tour
 
 ### Choose the columns
@@ -396,40 +421,6 @@ stream-friendly out of the box. Add Rails' `broadcasts_refreshes` + a `turbo_str
 subscription and a collection updates live — only changed rows morph. The gem ships no
 streaming machinery; it just guarantees the markup a broadcast needs. (The dummy app's
 "Live" page demonstrates it.)
-
-## An admin UI, if you want one
-
-Everything above renders inside pages you write. The one exception is optional and is one
-line:
-
-```ruby
-# config/routes.rb
-mount CrudComponents::Admin::Engine => '/admin'
-```
-
-![The admin: a sidebar of every registered model (grouped, iconed, counted) beside the Book index — the same filterable, sortable table the gem renders anywhere else](docs/screenshots/admin-table.png)
-
-Every model gets an index, a record view and working forms, derived from the same
-`crud_structure` your app-side pages use — no scaffold per model, and no second rendering
-path. Models are discovered automatically (framework tables and STI subclasses skipped),
-and `admin false` or `admin actions: %i[index show]` in a model's `crud_structure` turns it
-off or makes it read-only — read-only meaning *the write routes are never drawn*, not that
-the buttons are hidden.
-
-It **refuses to serve a request until you say who may in**, since it exposes every table:
-
-```ruby
-CrudComponents::Admin.configure do |config|
-  config.authorize_with { head :forbidden unless current_user&.admin? }
-end
-```
-
-Beyond that gate, your existing permissions carry over unchanged: `accessible_by` scopes
-the indexes, `if:`/`editable:` hide what they always hide, and a write is checked against
-the same permission that renders its button.
-
-Each record links back to the page a visitor would see (**Show in app**) when such a page
-exists, and `crud_admin_path(record)` is the way back in. → [The admin UI](docs/admin.md)
 
 ## Styling
 
