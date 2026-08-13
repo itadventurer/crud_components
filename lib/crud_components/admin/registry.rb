@@ -104,14 +104,16 @@ module CrudComponents
       end
 
       # Anonymous and throwaway classes are skipped: a route and a controller
-      # need a name that resolves back to the same class.
+      # need a name that resolves back to the same class. Nothing here asks the
+      # database — routes are drawn before the schema exists often enough (a
+      # fresh checkout, a container that boots ahead of its migrations) that a
+      # registry which quietly comes up empty is the worse failure.
       def usable?(model)
         return false unless model.is_a?(Class) && model.name
         return false if model.abstract_class?
         return false if model == ActiveRecord::Base
-        return false unless model.name.safe_constantize.equal?(model)
 
-        table_available?(model)
+        model.name.safe_constantize.equal?(model)
       end
 
       def internal?(model)
@@ -157,14 +159,6 @@ module CrudComponents
         return nil unless model.instance_variable_defined?(:@_crud_structure_block)
 
         model.instance_variable_get(:@_crud_structure_block)
-      end
-
-      # A table that cannot be inspected (no database at boot, e.g. an asset
-      # build) counts as present; a missing one is decided at request time.
-      def table_available?(model)
-        model.table_exists?
-      rescue ActiveRecord::ActiveRecordError
-        true
       end
 
       def except_names
