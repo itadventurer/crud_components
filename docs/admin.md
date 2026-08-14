@@ -185,7 +185,7 @@ readable, and one that is not is your call to make.
 
 The trash button opens a confirmation page rather than firing a `DELETE`:
 
-![The delete page for a publisher: what goes with it, what merely loses its reference, and a red Delete button](screenshots/admin-delete.png)
+![The delete page for a publisher: what goes with it, what merely loses its reference — each named, linked, and with a link to the rest — and a red Delete button](screenshots/admin-delete.png)
 
 It lists, from what the model declares:
 
@@ -195,6 +195,12 @@ It lists, from what the model declares:
 - **what stays but loses the reference** — `dependent: :nullify`;
 - **what blocks it** — `:restrict_with_error` / `:restrict_with_exception` with rows still
   attached. The Delete button stays disabled while any of those hold.
+
+Each group **names its records**, not just their number: the first ten, each linking to its
+own admin page, and past that a link to the index holding the rest — the nested index under
+the record (`/admin/publishers/tor-books/books`), else that model's index filtered by it. An
+attachment names its file and links to it, opened in a new tab. A count tells you how much
+goes; the names tell you what.
 
 Ticking rows in the index and using **Delete selected** skips the page (a hundred rows have
 no legible blast radius) but still checks each record against the ability on its own.
