@@ -82,11 +82,20 @@ module CrudComponents
         return [] unless record.class.respond_to?(:reflect_on_all_attachments)
 
         record.class.reflect_on_all_attachments.map do |reflection|
-          attached = record.public_send(reflection.name)
-          count = attached.respond_to?(:count) ? attached.count : (attached.attached? ? 1 : 0)
-          Item.new(name: reflection.name, model: nil, count: count, behavior: :destroy, cascades: false,
-                   records: [])
+          attachments = attachments_of(record.public_send(reflection.name))
+          Item.new(name: reflection.name, model: nil, count: attachments.size, behavior: :destroy,
+                   cascades: false, records: attachments.first(PREVIEW))
         end
+      end
+
+      # The attachments behind `has_one_attached` / `has_many_attached`, each of
+      # which names a file the delete takes.
+      def attachments_of(attached)
+        return attached.attachments.to_a if attached.respond_to?(:attachments)
+
+        attached.attached? ? [attached.attachment] : []
+      rescue ActiveRecord::ActiveRecordError
+        []
       end
 
       def target_of(reflection)

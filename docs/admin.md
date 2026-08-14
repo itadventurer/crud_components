@@ -146,8 +146,9 @@ It lists, from what the model declares:
 
 Each group **names its records**, not just their number: the first ten, each linking to its
 own admin page, and past that a link to the index holding the rest — the nested index under
-the record (`/admin/publishers/tor-books/books`), else that model's index filtered by it. A
-count tells you how much goes; the names tell you what.
+the record (`/admin/publishers/tor-books/books`), else that model's index filtered by it. An
+attachment names its file and links to it, opened in a new tab. A count tells you how much
+goes; the names tell you what.
 
 A cascade can reach further than you: `dependent: :destroy` takes records the ability would
 not let you delete one by one. That is not blocked — the database does it either way — but the

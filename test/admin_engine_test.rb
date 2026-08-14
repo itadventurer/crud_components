@@ -451,6 +451,16 @@ class AdminEngineTest < ActionDispatch::IntegrationTest
     assert_select "a[href='#{CrudComponents::Admin.path_for(review)}']", text: /Ada/
   end
 
+  test 'an attachment names its file and links to it' do
+    post '/toggle_admin'
+    @hobbit.cover.attach(io: StringIO.new('cover'), filename: 'hobbit-cover.png', content_type: 'image/png')
+
+    get '/admin/books/hobbit/delete'
+
+    assert_response :success
+    assert_select "a[target=_blank]", text: 'hobbit-cover.png'
+  end
+
   test 'past the tenth it links to the index holding the rest' do
     post '/toggle_admin'
     12.times { |i| Review.create!(book: @hobbit, rating: 3, reviewer_name: "Reviewer #{i}", body: 'Fine.') }
