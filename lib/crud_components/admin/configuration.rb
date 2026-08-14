@@ -3,7 +3,7 @@ module CrudComponents
     # What the mounted admin needs to know that the models don't say themselves.
     #
     #   CrudComponents::Admin.configure do |config|
-    #     config.authorize_with { head :forbidden unless current_user&.admin? }
+    #     config.auth_with { head :forbidden unless current_user&.admin? }
     #     config.title = 'Bookstore admin'
     #   end
     class Configuration
@@ -54,8 +54,15 @@ module CrudComponents
       # a layout of your own.
       attr_accessor :stylesheets
 
-      # The `before_action` body that decides who gets in. See {#authorize_with}.
-      attr_reader :authorize_block
+      # How the admin decides who gets in: :cancan, :none, or :block when
+      # `auth_with` was given one. See {#auth_with}.
+      attr_reader :auth_mode
+
+      # The `before_action` body that decides who gets in, for `auth_with { … }`.
+      attr_reader :auth_block
+
+      # The ability action the :cancan mode asks about, everywhere it asks.
+      attr_accessor :auth_action
 
       def initialize
         @title = nil
@@ -68,8 +75,9 @@ module CrudComponents
         @parent_controller = '::ApplicationController'
         @per_page = 50
         @stylesheets = DEFAULT_STYLESHEETS.dup
-        @authorize_block = nil
-        @allow_without_authentication = false
+        @auth_mode = :cancan
+        @auth_action = :crud_admin
+        @auth_block = nil
       end
 
       # The resolved parent controller class, falling back to ActionController::Base
@@ -78,36 +86,42 @@ module CrudComponents
         @parent_controller.to_s.safe_constantize || ActionController::Base
       end
 
-      # The gate. Runs as a `before_action` in the engine's controller, in that
+      # Who gets in. Three forms:
+      #
+      #   config.auth_with :cancan                 # the default: `can :crud_admin, :all`
+      #   config.auth_with :cancan, action: :backend
+      #   config.auth_with :none                   # no gate at all — a demo, a playground
+      #   config.auth_with { redirect_to main_app.root_path unless current_user&.admin? }
+      #
+      # A block runs as a `before_action` in the engine's controller, in that
       # controller's own context — `current_user`, `redirect_to`, `head` and
       # your `rescue_from`s all work as usual.
-      #
-      #   config.authorize_with { redirect_to main_app.root_path unless current_user&.admin? }
-      def authorize_with(&block)
-        raise ArgumentError, 'authorize_with requires a block' unless block
+      def auth_with(mode = nil, action: nil, &block)
+        raise ArgumentError, 'auth_with takes a mode or a block, not both' if mode && block
 
-        @authorize_block = block
+        @auth_action = action if action
+        @auth_mode = block ? :block : normalized_mode(mode)
+        @auth_block = block
       end
 
-      # Serve the admin with no gate at all — a public demo, a local playground.
-      def allow_without_authentication!
-        @allow_without_authentication = true
-      end
+      def cancan_gate? = @auth_mode == :cancan
 
-      def allow_without_authentication?
-        @allow_without_authentication
-      end
-
-      # Whether a request may be served at all.
-      def authorized_access_configured?
-        !@authorize_block.nil? || @allow_without_authentication
-      end
+      def open_gate? = @auth_mode == :none
 
       def resolved_title
         @title || default_title
       end
 
       private
+
+      MODES = %i[cancan cancancan ability none].freeze
+
+      def normalized_mode(mode)
+        raise ArgumentError, "auth_with: unknown mode #{mode.inspect}, one of #{MODES.inspect}" unless
+          MODES.include?(mode)
+
+        mode == :none ? :none : :cancan
+      end
 
       def default_title
         app = defined?(Rails) && Rails.respond_to?(:application) && Rails.application

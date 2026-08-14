@@ -15,24 +15,74 @@ with it.
 mount CrudComponents::Admin::Engine => '/admin'
 ```
 
-**2. Say who may in.** The admin exposes every model, so it serves nothing until you do:
+**2. Say who may in** — in the ability, where the rest of your permissions live:
+
+```ruby
+class Ability
+  include CanCan::Ability
+
+  def initialize(user)
+    can :crud_admin, :all if user&.admin?
+  end
+end
+```
+
+That is the whole gate. No initializer, no second place to look.
+
+**3. Visit `/admin`.** Every model with a table is there.
+
+## The gate
+
+`:crud_admin` is one action that answers for the whole admin: the way in, which models the
+sidebar offers, the scope each index renders, and every write. Inside the admin it stands in
+for the finer action a request would otherwise be asked about, so `can :crud_admin, :all`
+grants index, show, create, update and destroy on everything without listing them.
+
+That makes the useful ability lines short:
+
+```ruby
+can :crud_admin, :all                       # a full admin
+can :crud_admin, [Book, Author]             # a limited one: those two models, full CRUD
+can :crud_admin, Book, publisher: user.publisher  # …and only their publisher's books
+can :manage, :all                           # already grants it — `:manage` matches any action
+```
+
+Note the subject: `can :crud_admin` alone raises `CanCan::Error: Subject is required`.
+
+Rules of your own still grant on their own, so a read-only admin is the ordinary CanCanCan
+you would write anyway — as long as something grants `:crud_admin`, or nobody gets in:
+
+```ruby
+can :crud_admin, Book      # in, and full CRUD on books
+can %i[index show], Author # …plus read-only access to authors
+```
+
+**Denied** requests go through your `authorize!`, so an app that rescues
+`CanCan::AccessDenied` (a redirect to the login page, a flash) keeps doing that; without such
+a handler the admin renders 403.
+
+### Without CanCanCan
+
+`auth_with` takes a gate of your own. The block runs as a `before_action` in the admin's
+controller, so `current_user`, `redirect_to`, `head :forbidden` and your `rescue_from`s all
+work as usual:
 
 ```ruby
 # config/initializers/crud_components.rb
 CrudComponents::Admin.configure do |config|
-  config.authorize_with { redirect_to main_app.root_path unless current_user&.admin? }
+  config.auth_with { redirect_to main_app.root_path unless current_user&.admin? }
 end
 ```
 
-The block runs as a `before_action` in the admin's controller, so `current_user`,
-`redirect_to`, `head :forbidden` and your `rescue_from`s all work as usual. Without it (or
-without the explicit `config.allow_without_authentication!`) every request raises
-`CrudComponents::Admin::UnauthorizedError`.
+Anything else that answers `can?(action, subject)` works as the default gate does — the gem
+depends on no authorization library. With neither (nothing answers `can?`, no block) every
+request raises `CrudComponents::Admin::UnauthorizedError`, naming both ways out.
+
+`config.auth_with :none` serves the admin with no gate at all — a public demo, a local
+playground. `config.auth_with :cancan, action: :backend` renames the action asked about.
 
 If your app already gates routes — a Devise `authenticate` block, a constraint — put the
-mount inside it and keep `authorize_with` as the second lock.
-
-**3. Visit `/admin`.** That is the whole setup. Every model with a table is there.
+mount inside it and keep the ability as the second lock.
 
 ## What each model gets
 
@@ -197,8 +247,10 @@ override rule as the rest of the gem ([Extending](extending.md)).
 
 ```ruby
 CrudComponents::Admin.configure do |config|
-  config.authorize_with { head :forbidden unless current_user&.admin? }
-  config.allow_without_authentication!   # no gate at all — a demo, a local playground
+  config.auth_with :cancan               # the default: `can :crud_admin, :all` in the ability
+  config.auth_with :cancan, action: :backend  # …asking about another action
+  config.auth_with { head :forbidden unless current_user&.admin? }  # a gate of your own
+  config.auth_with :none                 # no gate at all — a demo, a local playground
 
   config.title  = 'Bookstore admin'        # brand line
   config.layout = 'crud_components/admin'  # the bundled shell, or one of yours

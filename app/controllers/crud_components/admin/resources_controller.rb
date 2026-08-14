@@ -52,7 +52,7 @@ module CrudComponents
 
       # The ticked rows, each checked against the ability on its own.
       def destroy_selected
-        records = CrudComponents.selected(base_scope, params).select { |record| allowed?(:destroy, record) }
+        records = CrudComponents.selected(base_scope, params).select { |record| admin_allowed?(:destroy, record) }
         records.each(&:destroy!)
         redirect_to index_path,
                     notice: t('crud_components.admin.notices.destroyed_selected', count: records.size,
@@ -91,7 +91,7 @@ module CrudComponents
         return @owner = nil unless entry
 
         record = find_record(admin_scope(entry), params["#{entry.singular_route_key}_id"], entry)
-        raise ForbiddenError, "not allowed to show this #{entry.model.model_name.human}" unless allowed?(:show, record)
+        raise ForbiddenError, "not allowed to show this #{entry.model.model_name.human}" unless admin_allowed?(:show, record)
 
         @owner = record
       end
@@ -125,17 +125,12 @@ module CrudComponents
       def authorize_action!
         subject = @record || @model
         permission = ACTION_PERMISSIONS.fetch(action_name.to_sym, action_name.to_sym)
+        return if admin_allowed?(permission, subject)
 
+        # Through the host's `authorize!` first, so its own `rescue_from` decides.
         authorize!(permission, subject) if respond_to?(:authorize!, true)
 
-        return if allowed?(permission, subject)
-
         raise ForbiddenError, "not allowed to #{permission} this #{@model.model_name.human}"
-      end
-
-      def allowed?(permission, subject)
-        ability = admin_ability
-        ability.nil? || ability.can?(permission, subject)
       end
 
       def record_params(action)

@@ -23,7 +23,6 @@ module CrudComponents
         end
       end
 
-      before_action :ensure_admin_gate_configured!
       before_action :run_admin_gate!
 
       rescue_from CrudComponents::Admin::ForbiddenError do |error|
@@ -31,6 +30,14 @@ module CrudComponents
       end
 
       helper_method :admin_config, :admin_registry, :admin_entries, :admin_entry_groups
+
+      # Whether the ability grants this, the admin's own action standing in for
+      # every finer one. The single seam every permission question here goes
+      # through — the controller's, the presenters', the views'.
+      def admin_allowed?(permission, subject)
+        ability = admin_ability
+        ability.nil? || ability.can?(permission, subject)
+      end
 
       private
 
@@ -55,41 +62,56 @@ module CrudComponents
 
       def admin_entry_groups = admin_registry.groups(admin_entries)
 
-      def readable?(entry)
-        ability = admin_ability
-        ability.nil? || ability.can?(:index, entry.model)
-      end
+      def readable?(entry) = admin_allowed?(:index, entry.model)
 
       # The entry's relation, narrowed by the ability when one can scope.
       def admin_scope(entry)
         scope = entry.scope
         ability = cancan_ability
         return scope unless ability && scope.respond_to?(:accessible_by)
+        return scope.accessible_by(ability, admin_permission) if granted_wholesale?(ability, entry.model)
 
         scope.accessible_by(ability)
       end
 
-      def ensure_admin_gate_configured!
-        return if admin_config.authorized_access_configured?
+      def admin_permission = admin_config.auth_action
 
-        raise UnauthorizedError,
-              'The admin exposes every registered model. Configure a gate before mounting it: ' \
-              'CrudComponents::Admin.configure { |c| c.authorize_with { … } } — ' \
-              'or say `c.allow_without_authentication!` on purpose.'
+      def granted_wholesale?(ability, model)
+        admin_config.cancan_gate? && ability.can?(admin_permission, model)
       end
 
       def run_admin_gate!
-        block = admin_config.authorize_block
-        instance_exec(&block) if block
+        gate = Gate.new(admin_config, host_ability, admin_registry.entries)
+
+        case gate.verdict
+        when :block then instance_exec(&admin_config.auth_block)
+        when :unauthorized then raise UnauthorizedError, gate.unauthorized_message
+        when :forbidden
+          # Through the host's `authorize!` first, so its own `rescue_from` decides.
+          authorize!(admin_permission, :all) if respond_to?(:authorize!, true)
+          raise ForbiddenError, gate.forbidden_message
+        end
       end
 
       # Whatever answers `can?` here: a CanCanCan ability, else the controller
       # itself when the host defined `can?` on it, else nothing.
+      def host_ability
+        return @host_ability if defined?(@host_ability)
+
+        @host_ability = if respond_to?(:current_ability, true) then current_ability
+                        elsif respond_to?(:can?, true) then self
+                        end
+      end
+
+      # What the admin asks: in :cancan mode wrapped, so the admin's own action
+      # answers for every finer one.
       def admin_ability
         return @admin_ability if defined?(@admin_ability)
 
-        @admin_ability = if respond_to?(:current_ability, true) then current_ability
-                         elsif respond_to?(:can?, true) then self
+        @admin_ability = if host_ability && admin_config.cancan_gate?
+                           Ability.new(host_ability, admin_permission)
+                         else
+                           host_ability
                          end
       end
 

@@ -10,6 +10,12 @@ module CrudComponents
         CrudComponents::Admin.path_for(entry.model, :index)
       end
 
+      # Shadows the host's own `can?` inside the engine's views, so `if:` and
+      # `editable:` are asked through the admin's ability.
+      def can?(action, subject) = controller.admin_allowed?(action, subject)
+
+      def cannot?(action, subject) = !can?(action, subject)
+
       def admin_icon(name, css_class: nil)
         return nil unless name
 
