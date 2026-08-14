@@ -365,6 +365,27 @@ class AdminEngineTest < ActionDispatch::IntegrationTest
     assert_select 'li', text: /2\s+Review/i
   end
 
+  test 'the confirmation page names them, each linking to its own page' do
+    post '/toggle_admin'
+    review = Review.create!(book: @hobbit, rating: 4, reviewer_name: 'Ada', body: 'A classic.')
+
+    get '/admin/books/hobbit/delete'
+
+    assert_response :success
+    assert_select "a[href='#{CrudComponents::Admin.path_for(review)}']", text: /Ada/
+  end
+
+  test 'past the tenth it links to the index holding the rest' do
+    post '/toggle_admin'
+    12.times { |i| Review.create!(book: @hobbit, rating: 3, reviewer_name: "Reviewer #{i}", body: 'Fine.') }
+
+    get '/admin/books/hobbit/delete'
+
+    assert_response :success
+    assert_select 'li ul li', count: 11   # ten named, and the link to the rest
+    assert_select "a[href='/admin/books/hobbit/reviews']", text: /2 more/
+  end
+
   test 'the confirmation page says so when nothing else depends on the record' do
     post '/toggle_admin'
     get "/admin/authors/#{@tolkien.id}/delete"

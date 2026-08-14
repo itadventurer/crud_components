@@ -1,0 +1,19 @@
+<%# Locals: owner, item — the records this item stands for, named: the first
+    few as links, then the index holding the rest. %>
+<%- if item.records.present? -%>
+  <ul class="list-unstyled small ms-3 mb-0">
+    <%- item.records.each do |dependent| -%>
+      <% path = crud_record_path(dependent, owner: owner) %>
+      <li>
+        <%= path ? link_to(crud_label(dependent), path, data: { turbo_action: 'advance' }) : crud_label(dependent) %>
+      </li>
+    <%- end -%>
+    <%- if item.unnamed.positive? -%>
+      <% more = t('crud_components.more', count: item.unnamed, default: '+%{count} more') %>
+      <% index_path = admin_dependents_path(owner, item) %>
+      <li>
+        <%= index_path ? link_to(more, index_path, class: 'text-muted') : tag.span(more, class: 'text-muted') %>
+      </li>
+    <%- end -%>
+  </ul>
+<%- end -%>

@@ -6,8 +6,14 @@ module CrudComponents
       DESTROYING = %i[destroy destroy_async delete_all].freeze
       BLOCKING = %i[restrict_with_error restrict_with_exception].freeze
 
-      Item = Struct.new(:name, :model, :count, :behavior, :cascades, keyword_init: true) do
+      # How many of an item's records the confirmation page names.
+      PREVIEW = 10
+
+      Item = Struct.new(:name, :model, :count, :behavior, :cascades, :records, keyword_init: true) do
         def destroys? = DESTROYING.include?(behavior)
+
+        # What is left over once the named ones are shown.
+        def unnamed = count - Array(records).size
 
         def blocks? = BLOCKING.include?(behavior) && count.positive?
 
@@ -47,7 +53,7 @@ module CrudComponents
           next if support.include?(reflection.name)
 
           Item.new(name: reflection.name, model: target_of(reflection), count: count_for(reflection),
-                   behavior: behavior, cascades: cascades?(reflection))
+                   behavior: behavior, cascades: cascades?(reflection), records: preview_of(reflection))
         end
       end
 
@@ -59,7 +65,8 @@ module CrudComponents
         record.class.reflect_on_all_attachments.map do |reflection|
           attached = record.public_send(reflection.name)
           count = attached.respond_to?(:count) ? attached.count : (attached.attached? ? 1 : 0)
-          Item.new(name: reflection.name, model: nil, count: count, behavior: :destroy, cascades: false)
+          Item.new(name: reflection.name, model: nil, count: count, behavior: :destroy, cascades: false,
+                   records: [])
         end
       end
 
@@ -76,6 +83,16 @@ module CrudComponents
         value.nil? ? 0 : 1
       rescue ActiveRecord::ActiveRecordError, NameError
         0
+      end
+
+      # The first records the delete would reach, for naming them.
+      def preview_of(reflection)
+        value = record.public_send(reflection.name)
+        return Array(value) unless value.respond_to?(:limit)
+
+        value.limit(PREVIEW).to_a
+      rescue ActiveRecord::ActiveRecordError, NameError
+        []
       end
 
       # Whether the target itself destroys further records — the count shown is

@@ -10,6 +10,14 @@ module CrudComponents
         CrudComponents::Admin.path_for(entry.model, :index)
       end
 
+      # The index holding the rest of a dependent item: nested under the owner,
+      # else the target's index filtered by it, else nil.
+      def admin_dependents_path(owner, item)
+        return nil unless item.model
+
+        CrudComponents::RouteResolver.collection_index_path(self, item.model, owner, item.name)
+      end
+
       def admin_icon(name, css_class: nil)
         return nil unless name
 
