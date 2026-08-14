@@ -7,16 +7,27 @@ module CrudComponents
     module_function
 
     def action_path(view, action, record: nil, model: nil, owner: nil)
-      if action.path_block
-        subject = record || model
-        return view.instance_exec(subject, &action.path_block)
-      end
+      return safe_block(view, record || model, action.path_block) if action.path_block
 
       if action.collection?
         collection_path(view, action, model, owner)
       else
         member_path(view, action, record, owner)
       end
+    end
+
+    # The host application's own page for a record — the same candidate logic,
+    # resolved against `main_app` instead of the current route set. A declared
+    # `app_path` block wins. nil when nothing resolves.
+    def app_path(view, record)
+      structure = Structure.for(record.class)
+      if (block = structure.app_path_block)
+        return safe_block(view, record, block)
+      end
+
+      return nil unless view.respond_to?(:main_app)
+
+      try_helpers(view.main_app, member_candidates(nil, record, nil))
     end
 
     # The plain link to a record (label cells, association cells):
@@ -79,6 +90,24 @@ module CrudComponents
       nil
     end
 
+    # A path block naming a route helper that does not exist here — the same
+    # page rendered under a mount that lacks it — yields nil, so the button is
+    # omitted. Anything else the block gets wrong is the app's own error and
+    # stays loud.
+    def safe_block(view, subject, block)
+      view.instance_exec(subject, &block)
+    rescue ActionController::UrlGenerationError
+      nil
+    rescue NameError => e
+      raise unless missing_route_helper?(e)
+
+      nil
+    end
+
+    def missing_route_helper?(error)
+      error.name.to_s.end_with?('_path', '_url')
+    end
+
     def safe_url(view, helper, *args, **kwargs)
       kwargs.empty? ? view.public_send(helper, *args) : view.public_send(helper, *args, **kwargs)
     rescue ActionController::UrlGenerationError, NoMethodError
@@ -107,12 +136,13 @@ module CrudComponents
       candidates
     end
 
-    def try_helpers(view, candidates)
+    # `helpers` is anything exposing route helpers — the view, or `main_app`.
+    def try_helpers(helpers, candidates)
       candidates.each do |helper, args|
-        next unless view.respond_to?(helper)
+        next unless helpers.respond_to?(helper)
 
         begin
-          return view.public_send(helper, *args)
+          return helpers.public_send(helper, *args)
         rescue ActionController::UrlGenerationError, NoMethodError
           next
         end

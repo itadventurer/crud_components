@@ -45,3 +45,22 @@ en:
       next: "›"
       previous_label: "Previous"
       next_label: "Next"
+    admin:
+      models: "Models"
+      show_in_app: "Show in app"
+      destroy_selected: "Delete selected"
+      delete:
+        title: "Delete this %{model}?"
+        blocked: "This cannot be deleted while it still has:"
+        also_deleted: "These go with it:"
+        cascades: "(and whatever depends on those)"
+        kept: "These stay, but lose the reference:"
+        nothing_else: "Nothing else depends on it."
+        cancel: "Cancel"
+      notices:
+        created: "%{model} created."
+        updated: "%{model} updated."
+        destroyed: "%{model} deleted."
+        destroyed_selected:
+          one: "1 record deleted."
+          other: "%{count} records deleted."

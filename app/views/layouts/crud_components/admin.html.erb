@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title><%= [content_for(:title), admin_title].compact.join(' · ') %></title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <%= csrf_meta_tags %>
+    <%= csp_meta_tag %>
+    <% admin_config.stylesheets.each do |href| %>
+      <%= stylesheet_link_tag href %>
+    <% end %>
+    <%= crud_components_styles %>
+    <%= admin_styles %>
+  </head>
+  <body class="bg-body-tertiary">
+    <nav class="navbar navbar-dark bg-dark">
+      <div class="container-fluid">
+        <%= link_to admin_title, root_path, class: 'navbar-brand mb-0 h1 fs-6' %>
+      </div>
+    </nav>
+
+    <div class="container-fluid">
+      <div class="row">
+        <aside class="crud-admin-sidebar col-12 col-md-3 col-xl-2 border-end bg-white py-3">
+          <div class="crud-admin-sidebar-inner">
+            <%= render 'crud_components/admin/sidebar' %>
+          </div>
+        </aside>
+
+        <main class="crud-admin-main col py-3">
+          <% %i[notice alert].each do |level| %>
+            <% next unless flash[level] %>
+            <div class="alert alert-<%= level == :notice ? 'success' : 'danger' %>"><%= flash[level] %></div>
+          <% end %>
+
+          <%= yield %>
+        </main>
+      </div>
+    </div>
+  </body>
+</html>

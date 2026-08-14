@@ -7,6 +7,9 @@ class Document < ApplicationRecord
 
   crud_structure do
     label :title
+    # The app lists documents on one page instead of routing to each — so the
+    # admin's "show in app" link points at the anchor there.
+    app_path { |document| main_app.documents_path(anchor: dom_id(document)) }
 
     attribute :body, as: :asciidoc   # soft-dependency renderer (asciidoctor)
 

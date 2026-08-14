@@ -232,6 +232,20 @@ Resolution tries the most specific conventional route first and falls back outwa
   if it resolves, else the target's filtered index (`books_path(publisher: owner)`), else
   plain text.
 
+### Per-surface actions
+
+A button that belongs to *this page* rather than to the model goes in `extra_actions:`,
+appended to the row actions of that one render:
+
+```erb
+<%= crud_collection @books, extra_actions: [my_action] %>
+<%= crud_record @book,      extra_actions: [my_action] %>
+```
+
+They are ordinary `CrudComponents::Action` objects and go through the same permission
+check and route resolution as declared ones — one that does not resolve is omitted. The
+[admin UI](admin.md#how-the-button-gets-there) uses this for its "Show in app" button.
+
 ### Declaring actions
 
 ```ruby

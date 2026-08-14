@@ -47,6 +47,23 @@ module CrudTestHelpers
     CrudComponents::Structure.const_set(:RENDERER_GEMS, original)
   end
 
+  # Swap in a blank admin configuration (and a registry reading it) for the
+  # duration of a test; #restore_admin_config! puts the app's own back.
+  def reset_admin_config!
+    @original_admin_config ||= CrudComponents::Admin.config
+    swap_admin_config(CrudComponents::Admin::Configuration.new)
+  end
+
+  def restore_admin_config!
+    swap_admin_config(@original_admin_config) if @original_admin_config
+    @original_admin_config = nil
+  end
+
+  def swap_admin_config(config)
+    CrudComponents::Admin.instance_variable_set(:@config, config)
+    CrudComponents::Admin.instance_variable_set(:@registry, nil)
+  end
+
   # A can?-shaped ability granting everything (for permission tests).
   class AllowAll
     def can?(*) = true

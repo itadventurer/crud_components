@@ -1,0 +1,22 @@
+<h1 class="h4 mb-3"><%= admin_title %></h1>
+
+<% admin_entry_groups.each do |group, entries| %>
+  <% if group %>
+    <h2 class="h6 text-uppercase text-muted mt-4"><%= group %></h2>
+  <% end %>
+
+  <div class="row row-cols-1 row-cols-sm-2 row-cols-lg-4 g-3">
+    <% entries.each do |entry| %>
+      <div class="col">
+        <%= link_to admin_index_path(entry), class: 'card h-100 text-decoration-none text-reset' do %>
+          <div class="card-body d-flex justify-content-between align-items-center gap-2">
+            <span><%= admin_icon(entry.icon, css_class: 'me-1') %><%= entry.label %></span>
+            <% if (count = @counts&.dig(entry.name)) %>
+              <span class="badge text-bg-light"><%= number_with_delimiter(count) %></span>
+            <% end %>
+          </div>
+        <% end %>
+      </div>
+    <% end %>
+  </div>
+<% end %>

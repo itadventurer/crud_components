@@ -44,3 +44,22 @@ de:
       next: "›"
       previous_label: "Zurück"
       next_label: "Weiter"
+    admin:
+      models: "Modelle"
+      show_in_app: "In der App ansehen"
+      destroy_selected: "Auswahl löschen"
+      delete:
+        title: "%{model} wirklich löschen?"
+        blocked: "Solange daran noch etwas hängt, geht das nicht:"
+        also_deleted: "Das geht mit:"
+        cascades: "(und was daran wiederum hängt)"
+        kept: "Das bleibt, verliert aber die Zuordnung:"
+        nothing_else: "Es hängt nichts weiter daran."
+        cancel: "Abbrechen"
+      notices:
+        created: "%{model} angelegt."
+        updated: "%{model} gespeichert."
+        destroyed: "%{model} gelöscht."
+        destroyed_selected:
+          one: "1 Datensatz gelöscht."
+          other: "%{count} Datensätze gelöscht."

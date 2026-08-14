@@ -1,0 +1,16 @@
+<% content_for :title, crud_label(@record) %>
+
+<nav aria-label="breadcrumb">
+  <ol class="breadcrumb">
+    <li class="breadcrumb-item"><%= link_to @entry.label, admin_index_path(@entry) %></li>
+    <li class="breadcrumb-item active" aria-current="page"><%= crud_label(@record) %></li>
+  </ol>
+</nav>
+
+<div class="card">
+  <div class="card-body">
+    <%= crud_record @record, fieldset: @entry.fieldset,
+                    extra_actions: [admin_show_in_app_action, admin_delete_action(@entry)].compact,
+                    except_actions: %i[destroy] %>
+  </div>
+</div>

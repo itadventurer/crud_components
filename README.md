@@ -397,6 +397,40 @@ subscription and a collection updates live — only changed rows morph. The gem 
 streaming machinery; it just guarantees the markup a broadcast needs. (The dummy app's
 "Live" page demonstrates it.)
 
+## An admin UI, if you want one
+
+Everything above renders inside pages you write. The one exception is optional and is one
+line:
+
+```ruby
+# config/routes.rb
+mount CrudComponents::Admin::Engine => '/admin'
+```
+
+![The admin: a sidebar of every registered model (grouped, iconed, counted) beside the Book index — the same filterable, sortable table the gem renders anywhere else](docs/screenshots/admin-table.png)
+
+Every model gets an index, a record view and working forms, derived from the same
+`crud_structure` your app-side pages use — no scaffold per model, and no second rendering
+path. Models are discovered automatically (framework tables and STI subclasses skipped),
+and `admin false` or `admin actions: %i[index show]` in a model's `crud_structure` turns it
+off or makes it read-only — read-only meaning *the write routes are never drawn*, not that
+the buttons are hidden.
+
+It **refuses to serve a request until you say who may in**, since it exposes every table:
+
+```ruby
+CrudComponents::Admin.configure do |config|
+  config.authorize_with { head :forbidden unless current_user&.admin? }
+end
+```
+
+Beyond that gate, your existing permissions carry over unchanged: `accessible_by` scopes
+the indexes, `if:`/`editable:` hide what they always hide, and a write is checked against
+the same permission that renders its button.
+
+Each record links back to the page a visitor would see (**Show in app**) when such a page
+exists, and `crud_admin_path(record)` is the way back in. → [The admin UI](docs/admin.md)
+
 ## Styling
 
 ![A custom cards layout: the same collection presenter rendered as a responsive card grid (cover pulled out, fields below), reusing the gem's search, filter sidebar and row actions](docs/screenshots/cards.png)
@@ -411,11 +445,15 @@ map plus a few partials, never a fork. → [Extending → styling](docs/extendin
 
 ```ruby
 crud_collection(records, fieldset: nil, layout: :table, query: :auto, param_prefix: nil,
-                actions: true, group_by: nil, extra_columns: nil, picker: false, picked_columns: :auto)
-crud_record(record, fieldset: nil, actions: true, layout: :record, picked_columns: :auto)
+                actions: true, group_by: nil, extra_columns: nil, picker: false, picked_columns: :auto,
+                extra_actions: nil)
+crud_record(record, fieldset: nil, actions: true, layout: :record, picked_columns: :auto,
+            extra_actions: nil)
 crud_filter(model, fieldset: nil, query: nil, param_prefix: nil, layout: :filter)
 crud_form(record, fieldset: nil, action: nil, url: nil, method: nil, layout: :form)
 crud_actions(record_or_model, fieldset: nil)
+crud_app_path(record)                 # the host app's own page for a record, or nil
+crud_admin_path(record, :show)        # the mounted admin's page for it, or nil
 ```
 
 `crud_collection` takes a **relation** (`@books`, `Book.all`, or an authorized scope),
@@ -475,6 +513,7 @@ CrudComponents.configure { |config| … }     # css/icon maps, select_limit, def
 | [docs/security.md](docs/security.md)       | Permissions (`if:`/`editable:`), the whitelist, and the injection-safe URL model |
 | [docs/extending.md](docs/extending.md)     | Partials/renderers/layouts, progressive enhancement, styling, i18n               |
 | [docs/performance.md](docs/performance.md) | Eager-loading, the belongs_to select→text threshold, pagination                  |
+| [docs/admin.md](docs/admin.md)             | The optional mountable admin UI: discovery, authorization, Show in App           |
 
 
 ## Dependencies

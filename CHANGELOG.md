@@ -5,8 +5,19 @@ This project follows [semantic versioning](https://semver.org).
 
 ## Unreleased
 
+### Added
+
+- **An optional, mountable admin UI.** `mount CrudComponents::Admin::Engine => '/admin'` gives every model an index, a record view and working forms, derived from the same `crud_structure` your own pages use — no scaffold per model and no second rendering path. The engine draws real conventional `resources` routes per model, which is why every existing link (derived actions, association links, `+n more`, `crud_form`'s inferred URL) resolves inside it unchanged. Models are discovered automatically; framework tables, HABTM join models and STI subclasses are skipped. It **refuses to serve a request** until `authorize_with` (or an explicit `allow_without_authentication!`) is configured, and beyond that gate `accessible_by`, `if:`/`editable:` and the derived permit list apply exactly as they do elsewhere. Includes a sidebar with groups and counts, nested indexes per to-many association, bulk delete, and German/English strings. ([#45](https://github.com/itadventurer/crud_components/issues/45)–[#51](https://github.com/itadventurer/crud_components/issues/51))
+- `admin` in `crud_structure` — the per-model half of that: `admin false` keeps a model out entirely, `admin actions: %i[index show]` makes it read-only (the write routes are never drawn, so a hand-crafted `POST` 404s), plus `group:`, `label:`, `fieldset:` and `scope:`. Inert when the admin engine isn't loaded.
+- `app_path { |book| … }` in `crud_structure`, and the `crud_app_path(record)` helper: the host application's own page for a record, for when it is not the conventional route. Backs the admin's "Show in app" button.
+- `crud_admin_path(record, action = :show)` — the way back in, from an ordinary page to the mounted admin. Finds the mount point itself; nil when the admin isn't mounted or that action isn't enabled for the model.
+- **The admin's delete goes through a confirmation page** that counts what the delete would take with it: associations declaring `dependent: :destroy`/`:delete_all` (with a marker when those cascade further), Active Storage attachments, what `:nullify` would orphan, and what `:restrict_with_*` blocks — the Delete button stays disabled while anything blocks. A browser dialog cannot say any of that.
+- `crud_collection` and `crud_record` take `except_actions:` — action names one render drops, whatever the model declares. The admin uses it to replace the derived `:destroy` button with a link to that page.
+- `crud_collection` and `crud_record` take `extra_actions:` — row (or selection) actions appended for one render, for a button that belongs to the surface rather than to the model. Same permission check and route resolution as declared actions.
+
 ### Fixed
 
+- A declared action whose `path` block names a route helper that does not exist in the current route set now omits the button instead of raising — the rule derived actions already followed. Only for names ending in `_path`/`_url`, so a typo in an app's own block still raises loudly.
 - The bundled playground (`test/dummy`) boots on hosts without the native libvips — the demo image is one, and so is any checkout that installed the gems but not the library. Active Storage's variant processor is switched off when libvips is missing, so attachments show as icon + filename instead of aborting the boot with `LoadError: Could not open library 'libvips.so.42'`. Nothing in the gem itself changes.
 
 ## v0.2.1 — 2026-08-01

@@ -41,6 +41,9 @@
       desc: "Two independent auto collections on one page, each with isolated filter/sort/search params." },
     { icon: "shield-lock", title: "Permissions", path: books_path, code: "attribute :price, if: :manage",
       desc: "if:/editable: gate columns and actions by can?. Toggle “Become admin” to watch gated fields appear." },
+    { icon: "sliders", title: "Admin UI", path: crud_components_admin.root_path,
+      code: "mount CrudComponents::Admin::Engine => '/admin'",
+      desc: "One mount line, and every model in this playground has a full CRUD backend — with “Show in app” back to these pages." },
   ]],
 ] %>
 

@@ -1,0 +1,13 @@
+/* crud_components admin — the few rules the bundled layout needs beyond
+ * Bootstrap. Loaded only inside the mounted admin.
+ */
+
+/* A wide table scrolls inside the content column instead of pushing the
+ * sidebar out of the row. */
+.crud-admin-main { min-width: 0; }
+.crud-admin-main .card-body { overflow-x: auto; }
+
+.crud-admin-sidebar { --crud-admin-sidebar-top: 1rem; }
+.crud-admin-sidebar > .crud-admin-sidebar-inner { position: sticky; top: var(--crud-admin-sidebar-top); }
+
+.crud-admin-nav .nav-link { border-radius: .25rem; }

@@ -18,7 +18,8 @@ module CrudComponents
   class Builder
     attr_reader :model, :declarations, :actions, :fieldsets,
                 :label_decl, :identify_by_decl, :search_decl,
-                :label_preload_decl, :preload_decl, :icon_decl
+                :label_preload_decl, :preload_decl, :icon_decl, :admin_decl,
+                :app_path_decl
 
     # @param model [Class] the ActiveRecord model being described.
     # @yield the `crud_structure` block, evaluated against this Builder.
@@ -151,7 +152,61 @@ module CrudComponents
       @fieldsets[name] = Fieldset.new(name, fields, actions: actions, filters: filters)
     end
 
+    # The host application's own page for a record, when it is not the
+    # conventional route (`main_app.book_path(book)`). Runs in the view
+    # context; return nil to suppress the link for a record.
+    #   app_path { |book| main_app.publisher_book_path(book.publisher, book) }
+    # @yield [record] the record to link to.
+    # @return [void]
+    def app_path(&block)
+      raise DefinitionError, "#{model}: app_path requires a block" unless block
+      raise DefinitionError, "#{model}: app_path declared twice" if defined?(@app_path_decl) && @app_path_decl
+
+      @app_path_decl = block
+    end
+
+    # How this model appears in the mounted admin UI (inert without it).
+    # @param enabled [Boolean] `false` keeps the model out of the admin entirely.
+    # @param options [Hash] `actions:` (a subset of
+    #   `%i[index show new create edit update destroy]`), `group:`, `label:`,
+    #   `fieldset:`, `scope:` (a callable narrowing the base relation).
+    # @return [void]
+    def admin(enabled = true, **options)
+      raise DefinitionError, "#{model}: admin declared twice" if defined?(@admin_decl) && !@admin_decl.nil?
+
+      unless [true, false].include?(enabled)
+        raise DefinitionError, "#{model}: admin takes true or false, got #{enabled.inspect}"
+      end
+
+      if enabled == false && options.any?
+        raise DefinitionError, "#{model}: `admin false` takes no options — #{options.keys.map(&:inspect).join(', ')} " \
+                               'would never apply'
+      end
+
+      validate_admin_options!(options)
+      @admin_decl = enabled ? options : false
+    end
+
     private
+
+    ADMIN_OPTIONS = %i[actions group label fieldset scope].freeze
+
+    def validate_admin_options!(options)
+      unknown = options.keys - ADMIN_OPTIONS
+      unless unknown.empty?
+        raise DefinitionError, "#{model}: admin got unknown option(s) #{unknown.map(&:inspect).join(', ')} — " \
+                               "known: #{ADMIN_OPTIONS.map(&:inspect).join(', ')}"
+      end
+
+      actions = options[:actions]
+      return if actions.nil?
+
+      bad = Array(actions).map(&:to_sym) - Admin::Entry::ALL_ACTIONS
+      return if bad.empty?
+
+      raise DefinitionError, "#{model}: admin actions #{bad.map(&:inspect).join(', ')} are not RESTful actions — " \
+                             "known: #{Admin::Entry::ALL_ACTIONS.map(&:inspect).join(', ')}"
+    end
 
     # Normalize a preload value to an array of includes-specs, leaving a nested
     # hash (`{ publisher: :books }`) intact (Array() would split it).

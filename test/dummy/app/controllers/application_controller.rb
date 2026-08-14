@@ -3,8 +3,17 @@ class ApplicationController < ActionController::Base
 
   # A deliberately tiny can?-shaped "ability" — the gem integrates with
   # anything that quacks like this (CanCanCan in real apps).
-  def can?(action, _subject)
+  def can?(action, subject)
     return true if admin?
+    # Only admins may even open the property definitions — the admin UI drops a
+    # model you cannot :index from its sidebar and dashboard.
+    return false if action.to_sym == :index && subject == PropertyDefinition
+
+    # :new and :create are separate questions for an ability that is not
+    # CanCanCan (which aliases one to the other): everyone may open the comment
+    # form, only admins may save it.
+    model = subject.is_a?(Class) ? subject : subject.class
+    return false if action.to_sym == :create && model == Comment
 
     !%i[manage destroy].include?(action.to_sym)
   end
