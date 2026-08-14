@@ -135,12 +135,30 @@ end
 | --- | --- |
 | `false` | keeps the model out entirely |
 | `actions:` | which of `%i[index show new create edit update destroy]` exist. What you leave out has **no route** — a hand-crafted `POST` 404s |
-| `group:` | the sidebar heading (defaults to the model's namespace, if any) |
+| `group:` | the sidebar heading (defaults to the model's namespace, if any) — [translatable](#translating-the-group-headings) |
 | `label:` | the sidebar label (defaults to the model's human name — translate `activerecord.models.*` and it follows) |
 | `fieldset:` | which fieldset the admin renders (default: `:admin` if you declare one, else every field) |
 | `scope:` | narrows the base relation, e.g. `scope: -> { where(archived: false) }` |
 
 **Read-only** is `actions: %i[index show]`.
+
+### Translating the group headings
+
+The declared name is the default, not the last word. Each heading is looked up under its own
+key — the declared name parameterized, so `group: 'Custom properties'` reads
+`crud_components.admin.groups.custom_properties`:
+
+```yaml
+de:
+  crud_components:
+    admin:
+      groups:
+        custom_properties: "Eigene Felder"
+```
+
+`config.groups` orders by the **declared** name, so the order holds in every locale:
+`config.groups = ['Custom properties']` still puts that group first when its heading reads
+"Eigene Felder". Groups it does not name follow, alphabetically by heading.
 
 **A different column set for the backend** than for your app: declare an `:admin` fieldset.
 Without one the admin shows every field, which is usually what you want from a backend —
@@ -258,7 +276,7 @@ CrudComponents::Admin.configure do |config|
 
   config.only   = nil                    # Array of model names, or nil for all
   config.except = []                     # Array of model names (or the classes)
-  config.groups = ['Catalog', 'People']  # sidebar group order; the rest follow alphabetically
+  config.groups = ['Catalog', 'People']  # group order, by declared name; the rest follow alphabetically
   config.excluded_namespaces << 'Legacy' # more model-name prefixes to skip
 
   config.counts   = true                 # record counts on the dashboard

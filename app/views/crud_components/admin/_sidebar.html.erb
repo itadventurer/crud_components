@@ -2,9 +2,9 @@
     (`render 'crud_components/admin/sidebar'`) when the admin runs in a layout
     of your own. %>
 <nav class="crud-admin-nav" aria-label="<%= t('crud_components.admin.models', default: 'Models') %>">
-  <% admin_entry_groups.each do |group, entries| %>
-    <% if group %>
-      <div class="text-uppercase text-muted small fw-semibold px-2 mt-3 mb-1"><%= group %></div>
+  <% admin_entry_groups.each do |heading, entries| %>
+    <% if heading %>
+      <div class="text-uppercase text-muted small fw-semibold px-2 mt-3 mb-1"><%= heading %></div>
     <% end %>
     <ul class="nav nav-pills flex-column mb-1">
       <% entries.each do |entry| %>

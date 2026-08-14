@@ -41,6 +41,19 @@ module CrudComponents
         namespace.presence&.demodulize&.underscore&.humanize
       end
 
+      # The declared group as a locale-independent key: what the heading is
+      # looked up under, and what `config.groups` orders by.
+      def self.group_key(value) = value.to_s.parameterize.underscore.presence
+
+      def group_key = self.class.group_key(group)
+
+      # The sidebar heading: translated when the app says so, else as declared.
+      def group_label
+        return nil unless group
+
+        I18n.t("crud_components.admin.groups.#{group_key}", default: group)
+      end
+
       def actions
         @actions ||= resolve_actions
       end

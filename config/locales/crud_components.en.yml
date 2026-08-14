@@ -49,6 +49,10 @@ en:
       models: "Models"
       show_in_app: "Show in app"
       destroy_selected: "Delete selected"
+      # Sidebar group headings, keyed by the declared group parameterized
+      # (`admin group: 'Custom properties'` → custom_properties):
+      # groups:
+      #   custom_properties: "Extra fields"
       delete:
         title: "Delete this %{model}?"
         blocked: "This cannot be deleted while it still has:"
