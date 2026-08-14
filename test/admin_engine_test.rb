@@ -258,6 +258,13 @@ class AdminEngineTest < ActionDispatch::IntegrationTest
     assert_select "a[href='/admin/property_definitions']"
   end
 
+  test 'the bundled shell brings its own Bootstrap' do
+    get '/admin'
+
+    assert_response :success
+    assert_select "link[href*='bootstrap']", 2
+  end
+
   test 'the admin renders in the host layout when configured to' do
     with_admin_config do |config|
       config.auth_with :none

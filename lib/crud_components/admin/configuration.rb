@@ -14,12 +14,6 @@ module CrudComponents
         Delayed GoodJob Que Noticed PgSearch FriendlyId
       ].freeze
 
-      # Bootstrap 5 + Bootstrap Icons, what the bundled layout's markup expects.
-      DEFAULT_STYLESHEETS = [
-        'https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css',
-        'https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css'
-      ].freeze
-
       # Sidebar brand line; defaults to the application's name.
       attr_accessor :title
 
@@ -50,10 +44,6 @@ module CrudComponents
       # Rows per index page, when a pagination gem is present.
       attr_accessor :per_page
 
-      # Stylesheet URLs the bundled layout loads. Irrelevant when `layout` names
-      # a layout of your own.
-      attr_accessor :stylesheets
-
       # How the admin decides who gets in: :cancan, :none, or :block when
       # `auth_with` was given one. See {#auth_with}.
       attr_reader :auth_mode
@@ -74,7 +64,6 @@ module CrudComponents
         @counts = true
         @parent_controller = '::ApplicationController'
         @per_page = 50
-        @stylesheets = DEFAULT_STYLESHEETS.dup
         @auth_mode = :cancan
         @auth_action = :crud_admin
         @auth_block = nil
