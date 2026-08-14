@@ -199,18 +199,6 @@ class AdminEngineTest < ActionDispatch::IntegrationTest
     assert_select 'th', text: /Purchase price/, count: 0
   end
 
-  # `if: :manage` on purchase_price is denied here; the admin's own action
-  # (:index for this test) stands in for it — in the views too.
-  test 'the admin action answers for a finer one the rendering asks about' do
-    with_admin_config do |config|
-      config.auth_with :cancan, action: :index
-      get '/admin/books?fieldset=catalog'
-
-      assert_response :success
-      assert_select 'th', text: /Purchase price/
-    end
-  end
-
   # ── chrome ───────────────────────────────────────────────────────────────
   test 'every page carries the sidebar, with the current model marked' do
     get '/admin/books'

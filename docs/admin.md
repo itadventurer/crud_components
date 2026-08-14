@@ -22,7 +22,7 @@ class Ability
   include CanCan::Ability
 
   def initialize(user)
-    can :crud_admin, :all if user&.admin?
+    can :access, :crud_admin if user&.admin?
   end
 end
 ```
@@ -33,29 +33,32 @@ That is the whole gate. No initializer, no second place to look.
 
 ## The gate
 
-`:crud_admin` is one action that answers for the whole admin: the way in, which models the
-sidebar offers, the scope each index renders, and every write. Inside the admin it stands in
-for the finer action a request would otherwise be asked about, so `can :crud_admin, :all`
-grants index, show, create, update and destroy on everything without listing them.
+`can :access, :crud_admin` decides one thing: whether this visitor may open the admin at
+all. `:crud_admin` is not a model — it is a plain symbol standing for the backend itself.
 
-That makes the useful ability lines short:
-
-```ruby
-can :crud_admin, :all                       # a full admin
-can :crud_admin, [Book, Author]             # a limited one: those two models, full CRUD
-can :crud_admin, Book, publisher: user.publisher  # …and only their publisher's books
-can :manage, :all                           # already grants it — `:manage` matches any action
-```
-
-Note the subject: `can :crud_admin` alone raises `CanCan::Error: Subject is required`.
-
-Rules of your own still grant on their own, so a read-only admin is the ordinary CanCanCan
-you would write anyway — as long as something grants `:crud_admin`, or nobody gets in:
+**Past the door, nothing changes.** Your ability keeps deciding, model by model and action
+by action, exactly as it does on your own pages: a model you may not `:index` is not in the
+sidebar and its URL is refused, indexes go through `accessible_by`, each write is authorized
+as the action it performs, and `if:`/`editable:` still hide and freeze columns. The gate
+grants entry, not permission.
 
 ```ruby
-can :crud_admin, Book      # in, and full CRUD on books
-can %i[index show], Author # …plus read-only access to authors
+class Ability
+  include CanCan::Ability
+
+  def initialize(user)
+    return unless user
+
+    can :access, :crud_admin if user.staff?      # may open the admin
+    can :manage, Book                            # …and inside it, may do everything with books
+    can %i[index show], Author                   # …and only look at authors
+    # no rule for Review → no Review in the sidebar, /admin/reviews refused
+  end
+end
 ```
+
+So an operator who may open the admin but has no rule for a model sees an admin without it.
+That is the point: one ability, one answer, wherever it is asked.
 
 **Denied** requests go through your `authorize!`, so an app that rescues
 `CanCan::AccessDenied` (a redirect to the login page, a flash) keeps doing that; without such
@@ -79,7 +82,8 @@ depends on no authorization library. With neither (nothing answers `can?`, no bl
 request raises `CrudComponents::Admin::UnauthorizedError`, naming both ways out.
 
 `config.auth_with :none` serves the admin with no gate at all — a public demo, a local
-playground. `config.auth_with :cancan, action: :backend` renames the action asked about.
+playground. `config.auth_with :cancan, subject: :backend` asks about a symbol of your own,
+for an app that already has one (`can :access, :backend`).
 
 If your app already gates routes — a Devise `authenticate` block, a constraint — put the
 mount inside it and keep the ability as the second lock.
@@ -248,8 +252,8 @@ override rule as the rest of the gem ([Extending](extending.md)).
 
 ```ruby
 CrudComponents::Admin.configure do |config|
-  config.auth_with :cancan               # the default: `can :crud_admin, :all` in the ability
-  config.auth_with :cancan, action: :backend  # …asking about another action
+  config.auth_with :cancan               # the default: `can :access, :crud_admin` in the ability
+  config.auth_with :cancan, subject: :backend # …asking about a symbol of your own
   config.auth_with { head :forbidden unless current_user&.admin? }  # a gate of your own
   config.auth_with :none                 # no gate at all — a demo, a local playground
 

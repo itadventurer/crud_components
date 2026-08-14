@@ -51,8 +51,8 @@ module CrudComponents
       # The `before_action` body that decides who gets in, for `auth_with { … }`.
       attr_reader :auth_block
 
-      # The ability action the :cancan mode asks about, everywhere it asks.
-      attr_accessor :auth_action
+      # What the :cancan gate asks about: `can?(:access, auth_subject)`.
+      attr_accessor :auth_subject
 
       def initialize
         @title = nil
@@ -65,7 +65,7 @@ module CrudComponents
         @parent_controller = '::ApplicationController'
         @per_page = 50
         @auth_mode = :cancan
-        @auth_action = :crud_admin
+        @auth_subject = :crud_admin
         @auth_block = nil
       end
 
@@ -77,18 +77,18 @@ module CrudComponents
 
       # Who gets in. Three forms:
       #
-      #   config.auth_with :cancan                 # the default: `can :crud_admin, :all`
-      #   config.auth_with :cancan, action: :backend
+      #   config.auth_with :cancan                 # the default: `can :access, :crud_admin`
+      #   config.auth_with :cancan, subject: :backend
       #   config.auth_with :none                   # no gate at all — a demo, a playground
       #   config.auth_with { redirect_to main_app.root_path unless current_user&.admin? }
       #
       # A block runs as a `before_action` in the engine's controller, in that
       # controller's own context — `current_user`, `redirect_to`, `head` and
       # your `rescue_from`s all work as usual.
-      def auth_with(mode = nil, action: nil, &block)
+      def auth_with(mode = nil, subject: nil, &block)
         raise ArgumentError, 'auth_with takes a mode or a block, not both' if mode && block
 
-        @auth_action = action if action
+        @auth_subject = subject if subject
         @auth_mode = block ? :block : normalized_mode(mode)
         @auth_block = block
       end

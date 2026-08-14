@@ -115,14 +115,15 @@ mount CrudComponents::Admin::Engine => '/admin'
 ![The admin dashboard: a sidebar listing every model, grouped and iconed, and a card per model with its record count](docs/screenshots/admin-dashboard.png)
 
 It renders from the same `crud_structure` your own pages use — no scaffold per model, no
-second rendering path — and who may in is **one line in the ability you already have**:
+second rendering path — and who may in is **one line in the ability you already have**
+(past the door your ordinary rules keep deciding, model by model):
 
 ```ruby
 class Ability
   include CanCan::Ability
 
   def initialize(user)
-    can :crud_admin, :all if user&.admin?   # the whole admin, and nothing else grants it
+    can :access, :crud_admin if user&.admin?   # may open the admin
   end
 end
 ```
