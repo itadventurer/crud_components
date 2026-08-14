@@ -394,6 +394,75 @@ class AdminEngineTest < ActionDispatch::IntegrationTest
     assert_response :not_found
   end
 
+  test 'the bulk action leads to the confirmation page, not straight to a DELETE' do
+    post '/toggle_admin'
+    get '/admin/authors'
+
+    assert_response :success
+    assert_select "button[formaction='/admin/authors/delete'][formmethod=get]"
+  end
+
+  test 'the bulk action is absent when the ability withholds destroy' do
+    get '/admin/authors'
+
+    assert_response :success
+    assert_select "button[formaction='/admin/authors/delete']", count: 0
+  end
+
+  # One page for both: the member route is a selection of one.
+  test 'one record and a selection reach the same page' do
+    post '/toggle_admin'
+
+    get '/admin/books/hobbit/delete'
+
+    assert_select 'h1', text: /Delete this Book\?/
+    assert_select 'li a', text: /The Hobbit/
+
+    get '/admin/books/delete', params: { selected: %w[hobbit dispossessed] }
+
+    assert_select 'h1', text: /Delete these 2 Books\?/
+    assert_select 'li a', text: /The Hobbit/
+  end
+
+  test 'the bulk confirmation names the ticked rows and what goes with them' do
+    post '/toggle_admin'
+    Review.create!(book: @hobbit, rating: 4, reviewer_name: 'Ada', body: 'A classic.')
+
+    get '/admin/books/delete', params: { selected: %w[hobbit dispossessed] }
+
+    assert_response :success
+    assert_select 'a', text: /The Hobbit/
+    assert_select 'a', text: /The Dispossessed/
+    assert_select 'li', text: /1\s+Review/i
+    assert_select "form[action='/admin/books/destroy_selected'] input[name='selected[]'][value=hobbit]"
+  end
+
+  test 'the bulk confirmation counts the dependents of the whole selection' do
+    post '/toggle_admin'
+    2.times { |i| Review.create!(book: @hobbit, rating: 4, reviewer_name: "A#{i}", body: 'x') }
+    Review.create!(book: @dispossessed, rating: 3, reviewer_name: 'B', body: 'y')
+
+    get '/admin/books/delete', params: { selected: %w[hobbit dispossessed] }
+
+    assert_response :success
+    assert_select 'li', text: /3\s+Review/i
+  end
+
+  test 'the bulk confirmation says so when nothing was ticked' do
+    post '/toggle_admin'
+    get '/admin/books/delete'
+
+    assert_response :success
+    assert_select 'p', text: /Nothing was selected/
+    assert_select "form[action='/admin/books/destroy_selected']", count: 0
+  end
+
+  test 'the bulk confirmation is refused when the ability withholds destroy' do
+    get '/admin/books/delete', params: { selected: %w[hobbit] }
+
+    assert_response :forbidden
+  end
+
   # ── delete confirmation ──────────────────────────────────────────────────
   test 'the delete button leads to a confirmation page, not straight to a DELETE' do
     post '/toggle_admin'
@@ -412,6 +481,28 @@ class AdminEngineTest < ActionDispatch::IntegrationTest
 
     assert_response :success
     assert_select 'li', text: /2\s+Review/i
+  end
+
+  # The playground's ability lets an admin delete a book but never a review on
+  # its own — a cascade takes them either way.
+  test 'the confirmation page marks what the cascade takes beyond your reach' do
+    post '/toggle_admin'
+    Review.create!(book: @hobbit, rating: 4, reviewer_name: 'Ada', body: 'A classic.')
+
+    get '/admin/books/hobbit/delete'
+
+    assert_response :success
+    assert_select 'li', text: /Review.*not deletable on their own/m
+  end
+
+  test 'what the ability does let you delete is not marked' do
+    post '/toggle_admin'
+    Review.create!(book: @hobbit, rating: 4, reviewer_name: 'Ada', body: 'A classic.')
+
+    get '/admin/publishers/tor-books/delete'
+
+    assert_response :success
+    assert_select 'li', text: /not deletable on their own/, count: 0
   end
 
   test 'the confirmation page names them, each linking to its own page' do

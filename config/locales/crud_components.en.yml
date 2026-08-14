@@ -54,12 +54,20 @@ en:
       # groups:
       #   custom_properties: "Extra fields"
       delete:
-        title: "Delete this %{model}?"
-        blocked: "This cannot be deleted while it still has:"
+        title:
+          one: "Delete this %{model}?"
+          other: "Delete these %{count} %{model}?"
+        blocked:
+          one: "This cannot be deleted while it still has:"
+          other: "These cannot be deleted while they still have:"
+        none_selected: "Nothing was selected."
         also_deleted: "These go with it:"
         cascades: "(and whatever depends on those)"
+        beyond_you: "(not deletable on their own)"
         kept: "These stay, but lose the reference:"
-        nothing_else: "Nothing else depends on it."
+        nothing_else:
+          one: "Nothing else depends on it."
+          other: "Nothing else depends on them."
         cancel: "Cancel"
       notices:
         created: "%{model} created."

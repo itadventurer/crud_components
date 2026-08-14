@@ -53,12 +53,20 @@ de:
       # groups:
       #   custom_properties: "Eigene Felder"
       delete:
-        title: "%{model} wirklich löschen?"
-        blocked: "Solange daran noch etwas hängt, geht das nicht:"
+        title:
+          one: "%{model} wirklich löschen?"
+          other: "Diese %{count} %{model} wirklich löschen?"
+        blocked:
+          one: "Solange daran noch etwas hängt, geht das nicht:"
+          other: "Solange daran noch etwas hängt, geht das nicht:"
+        none_selected: "Es war nichts ausgewählt."
         also_deleted: "Das geht mit:"
         cascades: "(und was daran wiederum hängt)"
+        beyond_you: "(einzeln nicht löschbar)"
         kept: "Das bleibt, verliert aber die Zuordnung:"
-        nothing_else: "Es hängt nichts weiter daran."
+        nothing_else:
+          one: "Es hängt nichts weiter daran."
+          other: "Es hängt nichts weiter daran."
         cancel: "Abbrechen"
       notices:
         created: "%{model} angelegt."

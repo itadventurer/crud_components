@@ -20,10 +20,29 @@ module CrudComponents
         def nullifies? = behavior == :nullify
 
         def human_name
-          return name.to_s.humanize unless model
-
-          human = model.model_name.human(count: count)
+          human = model ? model.model_name.human(count: count) : name.to_s.humanize
           count == 1 ? human : human.pluralize(I18n.locale)
+        end
+      end
+
+      # The same overview for several records at once: one item per association,
+      # counts summed, names taken across the selection.
+      class Selection
+        def initialize(records) = @records = records
+
+        def items
+          @items ||= @records.flat_map { |record| Dependents.new(record).items }
+                             .group_by(&:name).map { |name, items| merged(name, items) }
+        end
+
+        def blockers = items.select(&:blocks?)
+
+        private
+
+        def merged(name, items)
+          Item.new(name: name, model: items.first.model, behavior: items.first.behavior,
+                   count: items.sum(&:count), cascades: items.any?(&:cascades),
+                   records: items.flat_map(&:records).first(PREVIEW))
         end
       end
 

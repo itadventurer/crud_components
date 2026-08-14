@@ -10,6 +10,28 @@ module CrudComponents
         CrudComponents::Admin.path_for(entry.model, :index)
       end
 
+      # Whether these could be deleted on their own. A cascade takes them either
+      # way; the confirmation page says so. No ability means no opinion.
+      def admin_may_destroy?(model)
+        return true unless model && respond_to?(:can?)
+
+        can?(:destroy, model)
+      end
+
+      # The ticked rows as one dependent item, so the confirmation page names
+      # them the same way it names everything else that goes.
+      def admin_selection_item(model, records)
+        CrudComponents::Admin::Dependents::Item.new(
+          name: nil, model: model, count: records.size, behavior: :destroy, cascades: false,
+          records: records.first(CrudComponents::Admin::Dependents::PREVIEW)
+        )
+      end
+
+      # What the ticked rows are identified by, for the form that deletes them.
+      def admin_selected_values(records)
+        records.map { |record| record.public_send(CrudComponents::Structure.for(record.class).identify_by).to_s }
+      end
+
       # One record a delete would take, named: an attachment names its file and
       # opens it, anything else links to its own admin page.
       def admin_dependent_link(record, owner: nil)
@@ -46,15 +68,15 @@ module CrudComponents
         tag.style(CrudComponents::Admin.bundled_css.html_safe, type: 'text/css', nonce: nonce)
       end
 
-      # The bulk action deleting the ticked rows, or nil for a model that has
-      # no destroy route.
+      # The bulk action, or nil for a model with no destroy route. Like the row's
+      # delete it leads to the confirmation page, not straight to a DELETE.
       def admin_destroy_selected_action(entry)
         return nil unless entry.allows?(:destroy)
 
         CrudComponents::Action.new(
-          :destroy_selected, on: :selection, method: :delete, confirm: true, icon: 'trash',
-          title: t('crud_components.admin.destroy_selected', default: 'Delete selected')
-        ) { public_send("destroy_selected_#{entry.route_key}_path") }
+          :destroy_selected, on: :selection, method: :get, confirm: false, icon: 'trash',
+          if: :destroy, title: t('crud_components.admin.destroy_selected', default: 'Delete selected')
+        ) { public_send("delete_#{entry.route_key}_path") }
       end
 
       # The delete button: a link to the confirmation page rather than a DELETE

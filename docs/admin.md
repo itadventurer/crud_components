@@ -182,6 +182,8 @@ Beyond the gate, your existing permissions apply unchanged:
   as `:destroy`. A model you may not `:index` is not even listed in the sidebar.
 - **`if:` and `editable:`** hide and freeze columns exactly as they do elsewhere, in the
   query layer too — see [Security](security.md).
+- **Buttons follow the ability**: no `:destroy` on a record, no delete button on its row; none
+  on the model, no **Delete selected** in the toolbar. What is refused is not offered.
 - **Forms** permit exactly `CrudComponents.permitted_attributes`, the same list the form
   renders from.
 
@@ -220,8 +222,17 @@ the record (`/admin/publishers/tor-books/books`), else that model's index filter
 attachment names its file and links to it, opened in a new tab. A count tells you how much
 goes; the names tell you what.
 
-Ticking rows in the index and using **Delete selected** skips the page (a hundred rows have
-no legible blast radius) but still checks each record against the ability on its own.
+A cascade can reach further than you: `dependent: :destroy` takes records the ability would
+not let you delete one by one. That is not blocked — the database does it either way — but the
+group is **marked** on the page, so the delete is a decision rather than a surprise.
+
+Ticking rows in the index and using **Delete selected** reaches **the same page**, for the
+whole selection (`/admin/books/delete` rather than `/admin/books/hobbit/delete`): one record
+is a selection of one. The ticked records are named, and what goes with them is counted
+across all of them at once. Each record is still checked against the ability on its own —
+what the ability withholds is neither listed nor deleted.
+
+![The delete page for three ticked books: the three named, then the ten reviews and the attachments that go with them](screenshots/admin-delete-selected.png)
 
 ## Between the admin and your app
 

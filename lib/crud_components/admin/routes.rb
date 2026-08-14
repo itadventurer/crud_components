@@ -17,7 +17,11 @@ CrudComponents::Admin::Engine.routes.draw do
     resources entry.route_key, controller: 'resources', only: entry.actions,
                                defaults: { crud_model: entry.name } do
       if entry.allows?(:destroy)
-        collection { delete :destroy_selected, controller: 'resources' }
+        collection do
+          # /books/delete confirms the selection, /books/<id>/delete one record.
+          get :delete, action: :delete_selected, controller: 'resources'
+          delete :destroy_selected, controller: 'resources'
+        end
         member { get :delete, controller: 'resources' }
       end
 
