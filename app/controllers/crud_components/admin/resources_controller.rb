@@ -50,9 +50,15 @@ module CrudComponents
         redirect_to after_save_path(@record), alert: e.message
       end
 
-      # The ticked rows, each checked against the ability on its own.
+      # The confirmation step for the ticked rows: which they are, and what goes
+      # with them.
+      def delete_selected
+        @records = selected_records
+        @dependents = Dependents::Selection.new(@records)
+      end
+
       def destroy_selected
-        records = CrudComponents.selected(base_scope, params).select { |record| allowed?(:destroy, record) }
+        records = selected_records
         records.each(&:destroy!)
         redirect_to index_path,
                     notice: t('crud_components.admin.notices.destroyed_selected', count: records.size,
@@ -62,6 +68,11 @@ module CrudComponents
       end
 
       private
+
+      # The ticked rows, each checked against the ability on its own.
+      def selected_records
+        CrudComponents.selected(base_scope, params).select { |record| allowed?(:destroy, record) }
+      end
 
       def set_entry
         @entry = admin_registry[params[:crud_model]]
@@ -116,7 +127,7 @@ module CrudComponents
       end
 
       # The engine's own actions, mapped to the RESTful one an ability knows.
-      ACTION_PERMISSIONS = { destroy_selected: :destroy, delete: :destroy }.freeze
+      ACTION_PERMISSIONS = { destroy_selected: :destroy, delete_selected: :destroy, delete: :destroy }.freeze
 
       # Otherwise the action the request performs is the one authorized.
       # CanCanCan aliases :new to :create and :edit to :update, so a rule

@@ -147,8 +147,12 @@ own admin page, and past that a link to the index holding the rest — the neste
 the record (`/admin/publishers/tor-books/books`), else that model's index filtered by it. A
 count tells you how much goes; the names tell you what.
 
-Ticking rows in the index and using **Delete selected** skips the page (a hundred rows have
-no legible blast radius) but still checks each record against the ability on its own.
+Ticking rows in the index and using **Delete selected** reaches the same page for the whole
+selection (`/admin/books/delete`): the ticked records named, and what goes with them counted
+across all of them at once. Each record is still checked against the ability on its own — what
+the ability withholds is neither listed nor deleted.
+
+![The delete page for three ticked books: the three named, then the ten reviews and the attachments that go with them](screenshots/admin-delete-selected.png)
 
 ## Between the admin and your app
 

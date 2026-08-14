@@ -50,7 +50,12 @@ de:
       destroy_selected: "Auswahl löschen"
       delete:
         title: "%{model} wirklich löschen?"
+        selected_title:
+          one: "%{model} wirklich löschen?"
+          other: "Diese %{count} %{model} wirklich löschen?"
         blocked: "Solange daran noch etwas hängt, geht das nicht:"
+        blocked_selected: "Solange daran noch etwas hängt, geht das nicht:"
+        none_selected: "Es war nichts ausgewählt."
         also_deleted: "Das geht mit:"
         cascades: "(und was daran wiederum hängt)"
         kept: "Das bleibt, verliert aber die Zuordnung:"

@@ -1,0 +1,80 @@
+<% selection = admin_selection_item(@model, @records) %>
+<% title = t('crud_components.admin.delete.selected_title', count: @records.size,
+              model: selection.human_name, default: 'Delete %{count} %{model}?') %>
+<% content_for :title, title %>
+
+<nav aria-label="breadcrumb">
+  <ol class="breadcrumb">
+    <li class="breadcrumb-item"><%= link_to @entry.label, admin_index_path(@entry) %></li>
+    <li class="breadcrumb-item active" aria-current="page"><%= t('crud_components.admin.destroy_selected', default: 'Delete selected') %></li>
+  </ol>
+</nav>
+
+<div class="card border-danger">
+  <div class="card-body">
+    <h1 class="h5 mb-3"><%= title %></h1>
+
+    <%- if @records.empty? -%>
+      <p class="text-muted"><%= t('crud_components.admin.delete.none_selected', default: 'Nothing was selected.') %></p>
+    <%- else -%>
+      <%= render 'crud_components/admin/resources/dependent_records', owner: nil, item: selection %>
+
+      <% blockers = @dependents.blockers %>
+      <%- if blockers.any? -%>
+        <div class="alert alert-warning mt-3">
+          <p class="mb-1"><%= t('crud_components.admin.delete.blocked_selected', default: 'These cannot be deleted while they still have:') %></p>
+          <ul class="mb-0">
+            <%- blockers.each do |item| -%>
+              <li>
+                <%= item.count %> <%= item.human_name %>
+                <%= render 'crud_components/admin/resources/dependent_records', owner: nil, item: item %>
+              </li>
+            <%- end -%>
+          </ul>
+        </div>
+      <%- end -%>
+
+      <% goes = @dependents.items.select(&:destroys?) %>
+      <% nullified = @dependents.items.select(&:nullifies?) %>
+
+      <%- if goes.any? -%>
+        <p class="mb-1 mt-3"><%= t('crud_components.admin.delete.also_deleted', default: 'These go with it:') %></p>
+        <ul>
+          <%- goes.each do |item| -%>
+            <li>
+              <strong><%= number_with_delimiter(item.count) %></strong> <%= item.human_name %>
+              <%- if item.cascades -%>
+                <span class="text-muted"><%= t('crud_components.admin.delete.cascades',
+                                               default: '(and whatever depends on those)') %></span>
+              <%- end -%>
+              <%= render 'crud_components/admin/resources/dependent_records', owner: nil, item: item %>
+            </li>
+          <%- end -%>
+        </ul>
+      <%- end -%>
+
+      <%- if nullified.any? -%>
+        <p class="mb-1 mt-3"><%= t('crud_components.admin.delete.kept', default: 'These stay, but lose the reference:') %></p>
+        <ul>
+          <%- nullified.each do |item| -%>
+            <li>
+              <strong><%= number_with_delimiter(item.count) %></strong> <%= item.human_name %>
+              <%= render 'crud_components/admin/resources/dependent_records', owner: nil, item: item %>
+            </li>
+          <%- end -%>
+        </ul>
+      <%- end -%>
+    <%- end -%>
+
+    <div class="d-flex gap-2 mt-4">
+      <%- if @records.any? -%>
+        <%= button_to t('crud_components.actions.destroy', default: 'Delete'),
+                      public_send("destroy_selected_#{@entry.route_key}_path"),
+                      method: :delete, class: 'btn btn-danger', disabled: blockers.any?,
+                      params: { selected: admin_selected_values(@records) } %>
+      <%- end -%>
+      <%= link_to t('crud_components.admin.delete.cancel', default: 'Cancel'), admin_index_path(@entry),
+                  class: 'btn btn-outline-secondary' %>
+    </div>
+  </div>
+</div>

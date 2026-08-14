@@ -51,7 +51,12 @@ en:
       destroy_selected: "Delete selected"
       delete:
         title: "Delete this %{model}?"
+        selected_title:
+          one: "Delete this %{model}?"
+          other: "Delete these %{count} %{model}?"
         blocked: "This cannot be deleted while it still has:"
+        blocked_selected: "These cannot be deleted while they still have:"
+        none_selected: "Nothing was selected."
         also_deleted: "These go with it:"
         cascades: "(and whatever depends on those)"
         kept: "These stay, but lose the reference:"
