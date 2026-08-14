@@ -23,7 +23,6 @@ module CrudComponents
         end
       end
 
-      before_action :ensure_admin_gate_configured!
       before_action :run_admin_gate!
 
       rescue_from CrudComponents::Admin::ForbiddenError do |error|
@@ -38,12 +37,12 @@ module CrudComponents
 
       def admin_registry = CrudComponents::Admin.registry
 
-      # The registered models this user may open at all. A model whose table is
-      # not there yet (a half-migrated database) is left out of the navigation
-      # rather than offered as a link that only errors.
+      # The models the navigation offers: routed, allowed, and with a table
+      # behind them (a half-migrated database leaves one out rather than
+      # offering a link that only errors).
       def admin_entries
         @admin_entries ||= admin_registry.entries.select do |entry|
-          CrudComponents::Admin.routed?(entry) && readable?(entry) && table?(entry)
+          CrudComponents::Admin.path_for(entry.model, :index) && readable?(entry) && table?(entry)
         end
       end
 
@@ -69,18 +68,17 @@ module CrudComponents
         scope.accessible_by(ability)
       end
 
-      def ensure_admin_gate_configured!
-        return if admin_config.authorized_access_configured?
-
-        raise UnauthorizedError,
-              'The admin exposes every registered model. Configure a gate before mounting it: ' \
-              'CrudComponents::Admin.configure { |c| c.authorize_with { … } } — ' \
-              'or say `c.allow_without_authentication!` on purpose.'
-      end
-
       def run_admin_gate!
-        block = admin_config.authorize_block
-        instance_exec(&block) if block
+        gate = Gate.new(admin_config, admin_ability)
+
+        case gate.verdict
+        when :block then instance_exec(&admin_config.auth_block)
+        when :unauthorized then raise UnauthorizedError, gate.unauthorized_message
+        when :forbidden
+          # Through the host's `authorize!` first, so its own `rescue_from` decides.
+          authorize!(Gate::ACTION, admin_config.auth_subject) if respond_to?(:authorize!, true)
+          raise ForbiddenError, gate.forbidden_message
+        end
       end
 
       # Whatever answers `can?` here: a CanCanCan ability, else the controller

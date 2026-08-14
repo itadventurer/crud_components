@@ -1,6 +1,7 @@
 require_relative 'admin/configuration'
 require_relative 'admin/dependents'
 require_relative 'admin/entry'
+require_relative 'admin/gate'
 require_relative 'admin/registry'
 require_relative 'admin/view_helpers'
 
@@ -13,8 +14,8 @@ module CrudComponents
   module Admin
     class Error < CrudComponents::Error; end
 
-    # Raised when a request reaches the engine before `authorize_with` (or the
-    # explicit `allow_without_authentication!`) has been configured.
+    # Raised when the admin has no way to tell who may in: `auth_with :cancan`
+    # and nothing that answers `can?`.
     class UnauthorizedError < Error; end
 
     # Raised when the ability denies the action behind the request. Rendered as
@@ -36,15 +37,6 @@ module CrudComponents
         @registry ||= Registry.new(config)
       end
 
-      # Whether the engine actually drew this entry's routes. The registry can
-      # resolve after the routes were drawn (a reload, a class defined later),
-      # and a navigation entry without a route would only raise.
-      def routed?(entry)
-        return false unless defined?(Engine)
-
-        Engine.routes.url_helpers.respond_to?("#{entry.route_key}_path")
-      end
-
       # Drops both the configuration and the resolved registry.
       def reset!
         @config = nil
@@ -61,7 +53,7 @@ module CrudComponents
 
       # Where the host mounted the engine, or nil when it did not.
       def mount_path
-        return @mount_path if defined?(@mount_path) && !@mount_path.nil?
+        return @mount_path if @mount_path
         return nil unless defined?(Engine) && defined?(Rails) && Rails.application
 
         route = Rails.application.routes.routes.find do |candidate|

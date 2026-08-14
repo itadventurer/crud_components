@@ -22,8 +22,6 @@ module CrudComponents
 
       def name = model.name
 
-      def structure = Structure.for(model)
-
       def route_key = model.model_name.route_key
 
       def singular_route_key = model.model_name.singular_route_key
@@ -49,8 +47,6 @@ module CrudComponents
 
       def allows?(action) = actions.include?(action.to_sym)
 
-      def read_only? = (actions & %i[new create edit update destroy]).empty?
-
       # The base relation the admin renders, before filtering and sorting.
       def scope
         base = model.all
@@ -67,32 +63,21 @@ module CrudComponents
         structure.declared_fieldset_names.include?(:admin) ? :admin : :default
       end
 
-      # The registered targets of this model's to-many associations, as
-      # [association, entry] pairs — the nested indexes drawn under it.
-      NestedAssociation = Struct.new(:association, :entry) do
-        def name = entry.name
-
-        def route_key = entry.route_key
-      end
-
+      # This model's to-many associations that point at another registered
+      # model, as [association name, entry] — one nested index each.
       def nested_associations(registry)
-        model.reflect_on_all_associations
-             .select { |reflection| reflection.collection? }
-             .filter_map do |reflection|
-               target = safe_target(reflection)
-               next unless target
+        model.reflect_on_all_associations.select(&:collection?).filter_map do |reflection|
+          target = safe_target(reflection)
+          nested = target && registry[target]
+          next unless nested&.allows?(:index) && nested.model != model
 
-               nested = registry[target]
-               next unless nested&.allows?(:index) && nested.model != model
-
-               NestedAssociation.new(reflection.name, nested)
-             end
-             .uniq(&:route_key)
+          [reflection.name, nested]
+        end.uniq { |_, nested| nested.route_key }
       end
-
-      def to_s = name
 
       private
+
+      def structure = Structure.for(model)
 
       # Routes are drawn without a database in reach often enough (an asset
       # build, a container ahead of its migrations), and asking for the primary

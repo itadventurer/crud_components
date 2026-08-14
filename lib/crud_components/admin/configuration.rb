@@ -3,7 +3,7 @@ module CrudComponents
     # What the mounted admin needs to know that the models don't say themselves.
     #
     #   CrudComponents::Admin.configure do |config|
-    #     config.authorize_with { head :forbidden unless current_user&.admin? }
+    #     config.auth_with { head :forbidden unless current_user&.admin? }
     #     config.title = 'Bookstore admin'
     #   end
     class Configuration
@@ -12,12 +12,6 @@ module CrudComponents
         ActiveRecord ActiveStorage ActionText ActionMailbox
         SolidQueue SolidCache SolidCable
         Delayed GoodJob Que Noticed PgSearch FriendlyId
-      ].freeze
-
-      # Bootstrap 5 + Bootstrap Icons, what the bundled layout's markup expects.
-      DEFAULT_STYLESHEETS = [
-        'https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css',
-        'https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css'
       ].freeze
 
       # Sidebar brand line; defaults to the application's name.
@@ -50,12 +44,15 @@ module CrudComponents
       # Rows per index page, when a pagination gem is present.
       attr_accessor :per_page
 
-      # Stylesheet URLs the bundled layout loads. Irrelevant when `layout` names
-      # a layout of your own.
-      attr_accessor :stylesheets
+      # How the admin decides who gets in: :cancan, :none, or :block when
+      # `auth_with` was given one. See {#auth_with}.
+      attr_reader :auth_mode
 
-      # The `before_action` body that decides who gets in. See {#authorize_with}.
-      attr_reader :authorize_block
+      # The `before_action` body that decides who gets in, for `auth_with { … }`.
+      attr_reader :auth_block
+
+      # What the :cancan gate asks about: `can?(:access, auth_subject)`.
+      attr_accessor :auth_subject
 
       def initialize
         @title = nil
@@ -67,9 +64,9 @@ module CrudComponents
         @counts = true
         @parent_controller = '::ApplicationController'
         @per_page = 50
-        @stylesheets = DEFAULT_STYLESHEETS.dup
-        @authorize_block = nil
-        @allow_without_authentication = false
+        @auth_mode = :cancan
+        @auth_subject = :crud_admin
+        @auth_block = nil
       end
 
       # The resolved parent controller class, falling back to ActionController::Base
@@ -78,36 +75,42 @@ module CrudComponents
         @parent_controller.to_s.safe_constantize || ActionController::Base
       end
 
-      # The gate. Runs as a `before_action` in the engine's controller, in that
+      # Who gets in. Three forms:
+      #
+      #   config.auth_with :cancan                 # the default: `can :access, :crud_admin`
+      #   config.auth_with :cancan, subject: :backend
+      #   config.auth_with :none                   # no gate at all — a demo, a playground
+      #   config.auth_with { redirect_to main_app.root_path unless current_user&.admin? }
+      #
+      # A block runs as a `before_action` in the engine's controller, in that
       # controller's own context — `current_user`, `redirect_to`, `head` and
       # your `rescue_from`s all work as usual.
-      #
-      #   config.authorize_with { redirect_to main_app.root_path unless current_user&.admin? }
-      def authorize_with(&block)
-        raise ArgumentError, 'authorize_with requires a block' unless block
+      def auth_with(mode = nil, subject: nil, &block)
+        raise ArgumentError, 'auth_with takes a mode or a block, not both' if mode && block
 
-        @authorize_block = block
+        @auth_subject = subject if subject
+        @auth_mode = block ? :block : normalized_mode(mode)
+        @auth_block = block
       end
 
-      # Serve the admin with no gate at all — a public demo, a local playground.
-      def allow_without_authentication!
-        @allow_without_authentication = true
-      end
+      def cancan_gate? = @auth_mode == :cancan
 
-      def allow_without_authentication?
-        @allow_without_authentication
-      end
-
-      # Whether a request may be served at all.
-      def authorized_access_configured?
-        !@authorize_block.nil? || @allow_without_authentication
-      end
+      def open_gate? = @auth_mode == :none
 
       def resolved_title
         @title || default_title
       end
 
       private
+
+      MODES = %i[cancan cancancan ability none].freeze
+
+      def normalized_mode(mode)
+        raise ArgumentError, "auth_with: unknown mode #{mode.inspect}, one of #{MODES.inspect}" unless
+          MODES.include?(mode)
+
+        mode == :none ? :none : :cancan
+      end
 
       def default_title
         app = defined?(Rails) && Rails.respond_to?(:application) && Rails.application

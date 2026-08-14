@@ -35,6 +35,7 @@ module CrudComponents
         @entries = nil
         @index = nil
         @except_names = nil
+        @admin_options = nil
         self
       end
 
@@ -98,7 +99,7 @@ module CrudComponents
         return true if internal?(model)
         return true if admin_options(model) == false
         return true if except_names.include?(model.name)
-        return true if sti_subclass?(model) && own_admin_options(model).nil?
+        return true if sti_subclass?(model) && !declares_admin?(model)
 
         false
       end
@@ -130,35 +131,30 @@ module CrudComponents
       # asked for (there may be no database, and resolving an attachment field
       # would build the storage service). Inherited from an STI parent.
       def admin_options(model)
-        block = declaration_block(model)
-        return nil unless block
+        @admin_options ||= {}
+        return @admin_options[model] if @admin_options.key?(model)
 
-        Builder.new(model, &block).admin_decl
+        @admin_options[model] = declaration_of(model, inherited: true)
       end
 
-      # The options this very class declared, ignoring anything inherited.
-      def own_admin_options(model)
-        return nil unless own_declaration_block(model)
-
-        admin_options(model)
+      # Whether this very class declared `admin`, ignoring an STI parent's.
+      def declares_admin?(model)
+        !declaration_of(model, inherited: false).nil?
       end
 
-      def declaration_block(model)
+      def declaration_of(model, inherited:)
         klass = model
         while klass.respond_to?(:instance_variable_defined?)
-          block = own_declaration_block(klass)
-          return block if block
+          if klass.instance_variable_defined?(:@_crud_structure_block) &&
+             (block = klass.instance_variable_get(:@_crud_structure_block))
+            return Builder.new(model, &block).admin_decl
+          end
+          break unless inherited
 
           klass = klass.superclass
           break if klass.nil? || klass == ActiveRecord::Base
         end
         nil
-      end
-
-      def own_declaration_block(model)
-        return nil unless model.instance_variable_defined?(:@_crud_structure_block)
-
-        model.instance_variable_get(:@_crud_structure_block)
       end
 
       def except_names
@@ -173,7 +169,6 @@ module CrudComponents
       def sort(list)
         list.sort_by { |entry| [group_rank(entry.group), entry.group.to_s, entry.label.to_s] }
       end
-
     end
   end
 end

@@ -23,11 +23,10 @@ CrudComponents::Admin::Engine.routes.draw do
 
       # An index per to-many association pointing here, so the owner's
       # "+n more" links and its association cells resolve.
-      entry.nested_associations(registry).each do |association|
-        resources association.route_key, controller: 'resources', only: :index,
-                                         defaults: { crud_model: association.name,
-                                                     crud_association: association.association.to_s,
-                                                     crud_owner: entry.name }
+      entry.nested_associations(registry).each do |association, nested|
+        resources nested.route_key, controller: 'resources', only: :index,
+                                    defaults: { crud_model: nested.name, crud_owner: entry.name,
+                                                crud_association: association.to_s }
       end
     end
   end
