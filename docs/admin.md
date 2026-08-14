@@ -225,8 +225,9 @@ action isn't enabled for it.
 ## Making it fit your app
 
 **Its own shell** (the default) is a plain Bootstrap 5 page with the model sidebar. It loads
-Bootstrap and Bootstrap Icons from a CDN; point `config.stylesheets` at your own build to
-change that.
+Bootstrap and Bootstrap Icons from a CDN; to load a build of your own instead, override the
+layout — `app/views/layouts/crud_components/admin.html.erb` in your app wins over the
+bundled one, the same override rule as every other view here.
 
 **Your layout** instead:
 
@@ -254,7 +255,6 @@ CrudComponents::Admin.configure do |config|
 
   config.title  = 'Bookstore admin'        # brand line
   config.layout = 'crud_components/admin'  # the bundled shell, or one of yours
-  config.stylesheets = [...]               # what that shell loads (Bootstrap 5 + icons)
 
   config.only   = nil                    # Array of model names, or nil for all
   config.except = []                     # Array of model names (or the classes)
