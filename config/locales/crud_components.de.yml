@@ -48,6 +48,10 @@ de:
       models: "Modelle"
       show_in_app: "In der App ansehen"
       destroy_selected: "Auswahl löschen"
+      # Überschriften der Sidebar-Gruppen, Schlüssel ist die deklarierte
+      # Gruppe parametrisiert (`admin group: 'Custom properties'` → custom_properties):
+      # groups:
+      #   custom_properties: "Eigene Felder"
       delete:
         title:
           one: "%{model} wirklich löschen?"

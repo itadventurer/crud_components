@@ -1,6 +1,7 @@
 require_relative 'admin/configuration'
 require_relative 'admin/dependents'
 require_relative 'admin/entry'
+require_relative 'admin/gate'
 require_relative 'admin/registry'
 require_relative 'admin/view_helpers'
 
@@ -13,8 +14,8 @@ module CrudComponents
   module Admin
     class Error < CrudComponents::Error; end
 
-    # Raised when a request reaches the engine before `authorize_with` (or the
-    # explicit `allow_without_authentication!`) has been configured.
+    # Raised when the admin has no way to tell who may in: `auth_with :cancan`
+    # and nothing that answers `can?`.
     class UnauthorizedError < Error; end
 
     # Raised when the ability denies the action behind the request. Rendered as

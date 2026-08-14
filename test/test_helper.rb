@@ -47,6 +47,14 @@ module CrudTestHelpers
     CrudComponents::Structure.const_set(:RENDERER_GEMS, original)
   end
 
+  # A translated sidebar group heading for the duration of the block.
+  def with_group_translation(heading, key: :custom_properties)
+    I18n.backend.store_translations(:en, crud_components: { admin: { groups: { key => heading } } })
+    yield
+  ensure
+    I18n.backend.reload!
+  end
+
   # Swap in a blank admin configuration (and a registry reading it) for the
   # duration of a test; #restore_admin_config! puts the app's own back.
   def reset_admin_config!
