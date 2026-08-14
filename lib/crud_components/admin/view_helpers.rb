@@ -10,6 +10,14 @@ module CrudComponents
         CrudComponents::Admin.path_for(entry.model, :index)
       end
 
+      # Whether these could be deleted on their own. A cascade takes them either
+      # way; the confirmation page says so. No ability means no opinion.
+      def admin_may_destroy?(model)
+        return true unless model && respond_to?(:can?)
+
+        can?(:destroy, model)
+      end
+
       # The ticked rows as one dependent item, so the confirmation page names
       # them the same way it names everything else that goes.
       def admin_selection_item(model, records)
@@ -58,7 +66,7 @@ module CrudComponents
 
         CrudComponents::Action.new(
           :destroy_selected, on: :selection, method: :get, confirm: false, icon: 'trash',
-          title: t('crud_components.admin.destroy_selected', default: 'Delete selected')
+          if: :destroy, title: t('crud_components.admin.destroy_selected', default: 'Delete selected')
         ) { public_send("delete_#{entry.route_key}_path") }
       end
 

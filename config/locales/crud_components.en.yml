@@ -59,6 +59,7 @@ en:
         none_selected: "Nothing was selected."
         also_deleted: "These go with it:"
         cascades: "(and whatever depends on those)"
+        beyond_you: "(not deletable on their own)"
         kept: "These stay, but lose the reference:"
         nothing_else: "Nothing else depends on it."
         cancel: "Cancel"

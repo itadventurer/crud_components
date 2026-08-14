@@ -58,6 +58,7 @@ de:
         none_selected: "Es war nichts ausgewählt."
         also_deleted: "Das geht mit:"
         cascades: "(und was daran wiederum hängt)"
+        beyond_you: "(einzeln nicht löschbar)"
         kept: "Das bleibt, verliert aber die Zuordnung:"
         nothing_else: "Es hängt nichts weiter daran."
         cancel: "Abbrechen"

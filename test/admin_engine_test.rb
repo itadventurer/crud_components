@@ -353,6 +353,13 @@ class AdminEngineTest < ActionDispatch::IntegrationTest
     assert_select "button[formaction='/admin/authors/delete'][formmethod=get]"
   end
 
+  test 'the bulk action is absent when the ability withholds destroy' do
+    get '/admin/authors'
+
+    assert_response :success
+    assert_select "button[formaction='/admin/authors/delete']", count: 0
+  end
+
   test 'the bulk confirmation names the ticked rows and what goes with them' do
     post '/toggle_admin'
     Review.create!(book: @hobbit, rating: 4, reviewer_name: 'Ada', body: 'A classic.')
@@ -410,6 +417,28 @@ class AdminEngineTest < ActionDispatch::IntegrationTest
 
     assert_response :success
     assert_select 'li', text: /2\s+Review/i
+  end
+
+  # The playground's ability lets an admin delete a book but never a review on
+  # its own — a cascade takes them either way.
+  test 'the confirmation page marks what the cascade takes beyond your reach' do
+    post '/toggle_admin'
+    Review.create!(book: @hobbit, rating: 4, reviewer_name: 'Ada', body: 'A classic.')
+
+    get '/admin/books/hobbit/delete'
+
+    assert_response :success
+    assert_select 'li', text: /Review.*not deletable on their own/m
+  end
+
+  test 'what the ability does let you delete is not marked' do
+    post '/toggle_admin'
+    Review.create!(book: @hobbit, rating: 4, reviewer_name: 'Ada', body: 'A classic.')
+
+    get '/admin/publishers/tor-books/delete'
+
+    assert_response :success
+    assert_select 'li', text: /not deletable on their own/, count: 0
   end
 
   test 'the confirmation page names them, each linking to its own page' do

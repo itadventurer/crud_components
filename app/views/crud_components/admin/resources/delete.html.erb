@@ -43,6 +43,10 @@
               <span class="text-muted"><%= t('crud_components.admin.delete.cascades',
                                              default: '(and whatever depends on those)') %></span>
             <% end %>
+            <%- unless admin_may_destroy?(item.model) -%>
+              <span class="text-warning-emphasis"><%= t('crud_components.admin.delete.beyond_you',
+                                                  default: '(not deletable on their own)') %></span>
+            <%- end -%>
             <%= render 'crud_components/admin/resources/dependent_records', owner: @record, item: item %>
           </li>
         <% end %>
