@@ -4,6 +4,11 @@ class ApplicationController < ActionController::Base
   # A deliberately tiny can?-shaped "ability" — the gem integrates with
   # anything that quacks like this (CanCanCan in real apps).
   def can?(action, subject)
+    # Reviews are never deleted one by one, not even by an admin — deleting the
+    # book they belong to takes them along all the same, which is what the
+    # confirmation page points out.
+    return false if action.to_sym == :destroy && (subject.is_a?(Review) || subject == Review)
+
     return true if admin?
     # Only admins may even open the property definitions — the admin UI drops a
     # model you cannot :index from its sidebar and dashboard.
