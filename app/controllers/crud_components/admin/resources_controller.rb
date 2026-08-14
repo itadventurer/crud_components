@@ -125,10 +125,10 @@ module CrudComponents
       def authorize_action!
         subject = @record || @model
         permission = ACTION_PERMISSIONS.fetch(action_name.to_sym, action_name.to_sym)
-
-        authorize!(permission, subject) if respond_to?(:authorize!, true)
-
         return if allowed?(permission, subject)
+
+        # Through the host's `authorize!` first, so its own `rescue_from` decides.
+        authorize!(permission, subject) if respond_to?(:authorize!, true)
 
         raise ForbiddenError, "not allowed to #{permission} this #{@model.model_name.human}"
       end

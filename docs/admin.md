@@ -15,24 +15,78 @@ with it.
 mount CrudComponents::Admin::Engine => '/admin'
 ```
 
-**2. Say who may in.** The admin exposes every model, so it serves nothing until you do:
+**2. Say who may in** — in the ability, where the rest of your permissions live:
+
+```ruby
+class Ability
+  include CanCan::Ability
+
+  def initialize(user)
+    can :access, :crud_admin if user&.admin?
+  end
+end
+```
+
+That is the whole gate. No initializer, no second place to look.
+
+**3. Visit `/admin`.** Every model with a table is there.
+
+## The gate
+
+`can :access, :crud_admin` decides one thing: whether this visitor may open the admin at
+all. `:crud_admin` is not a model — it is a plain symbol standing for the backend itself.
+
+**Past the door, nothing changes.** Your ability keeps deciding, model by model and action
+by action, exactly as it does on your own pages: a model you may not `:index` is not in the
+sidebar and its URL is refused, indexes go through `accessible_by`, each write is authorized
+as the action it performs, and `if:`/`editable:` still hide and freeze columns. The gate
+grants entry, not permission.
+
+```ruby
+class Ability
+  include CanCan::Ability
+
+  def initialize(user)
+    return unless user
+
+    can :access, :crud_admin if user.staff?      # may open the admin
+    can :manage, Book                            # …and inside it, may do everything with books
+    can %i[index show], Author                   # …and only look at authors
+    # no rule for Review → no Review in the sidebar, /admin/reviews refused
+  end
+end
+```
+
+So an operator who may open the admin but has no rule for a model sees an admin without it.
+That is the point: one ability, one answer, wherever it is asked.
+
+**Denied** requests go through your `authorize!`, so an app that rescues
+`CanCan::AccessDenied` (a redirect to the login page, a flash) keeps doing that; without such
+a handler the admin renders 403.
+
+### Without CanCanCan
+
+`auth_with` takes a gate of your own. The block runs as a `before_action` in the admin's
+controller, so `current_user`, `redirect_to`, `head :forbidden` and your `rescue_from`s all
+work as usual:
 
 ```ruby
 # config/initializers/crud_components.rb
 CrudComponents::Admin.configure do |config|
-  config.authorize_with { redirect_to main_app.root_path unless current_user&.admin? }
+  config.auth_with { redirect_to main_app.root_path unless current_user&.admin? }
 end
 ```
 
-The block runs as a `before_action` in the admin's controller, so `current_user`,
-`redirect_to`, `head :forbidden` and your `rescue_from`s all work as usual. Without it (or
-without the explicit `config.allow_without_authentication!`) every request raises
-`CrudComponents::Admin::UnauthorizedError`.
+Anything else that answers `can?(action, subject)` works as the default gate does — the gem
+depends on no authorization library. With neither (nothing answers `can?`, no block) every
+request raises `CrudComponents::Admin::UnauthorizedError`, naming both ways out.
+
+`config.auth_with :none` serves the admin with no gate at all — a public demo, a local
+playground. `config.auth_with :cancan, subject: :backend` asks about a symbol of your own,
+for an app that already has one (`can :access, :backend`).
 
 If your app already gates routes — a Devise `authenticate` block, a constraint — put the
-mount inside it and keep `authorize_with` as the second lock.
-
-**3. Visit `/admin`.** That is the whole setup. Every model with a table is there.
+mount inside it and keep the ability as the second lock.
 
 ## What each model gets
 
@@ -175,8 +229,9 @@ action isn't enabled for it.
 ## Making it fit your app
 
 **Its own shell** (the default) is a plain Bootstrap 5 page with the model sidebar. It loads
-Bootstrap and Bootstrap Icons from a CDN; point `config.stylesheets` at your own build to
-change that.
+Bootstrap and Bootstrap Icons from a CDN; to load a build of your own instead, override the
+layout — `app/views/layouts/crud_components/admin.html.erb` in your app wins over the
+bundled one, the same override rule as every other view here.
 
 **Your layout** instead:
 
@@ -197,12 +252,13 @@ override rule as the rest of the gem ([Extending](extending.md)).
 
 ```ruby
 CrudComponents::Admin.configure do |config|
-  config.authorize_with { head :forbidden unless current_user&.admin? }
-  config.allow_without_authentication!   # no gate at all — a demo, a local playground
+  config.auth_with :cancan               # the default: `can :access, :crud_admin` in the ability
+  config.auth_with :cancan, subject: :backend # …asking about a symbol of your own
+  config.auth_with { head :forbidden unless current_user&.admin? }  # a gate of your own
+  config.auth_with :none                 # no gate at all — a demo, a local playground
 
   config.title  = 'Bookstore admin'        # brand line
   config.layout = 'crud_components/admin'  # the bundled shell, or one of yours
-  config.stylesheets = [...]               # what that shell loads (Bootstrap 5 + icons)
 
   config.only   = nil                    # Array of model names, or nil for all
   config.except = []                     # Array of model names (or the classes)

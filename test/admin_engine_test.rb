@@ -23,25 +23,44 @@ class AdminEngineTest < ActionDispatch::IntegrationTest
   end
 
   # ── the gate ─────────────────────────────────────────────────────────────
-  test 'an unconfigured gate refuses to serve anything' do
+  test 'the default gate asks the ability, and turns away who it denies' do
     with_admin_config do
-      error = assert_raises(CrudComponents::Admin::UnauthorizedError) { get '/admin' }
-      assert_match(/authorize_with/, error.message)
-    end
-  end
-
-  test 'the gate runs in the controller and can turn a request away' do
-    with_admin_config do |config|
-      config.authorize_with { head :forbidden }
       get '/admin'
 
       assert_response :forbidden
     end
   end
 
-  test 'a configured gate that lets the request through renders' do
+  test 'the default gate lets in whoever the ability grants the action' do
+    with_admin_config do
+      post '/toggle_admin'
+      get '/admin'
+
+      assert_response :success
+    end
+  end
+
+  test 'a gate block runs in the controller and can turn a request away' do
     with_admin_config do |config|
-      config.authorize_with { nil }
+      config.auth_with { head :forbidden }
+      get '/admin'
+
+      assert_response :forbidden
+    end
+  end
+
+  test 'a gate block that lets the request through renders' do
+    with_admin_config do |config|
+      config.auth_with { nil }
+      get '/admin'
+
+      assert_response :success
+    end
+  end
+
+  test 'auth_with :none serves without asking anything' do
+    with_admin_config do |config|
+      config.auth_with :none
       get '/admin'
 
       assert_response :success
@@ -206,7 +225,7 @@ class AdminEngineTest < ActionDispatch::IntegrationTest
 
   test 'counts can be switched off' do
     with_admin_config do |config|
-      config.allow_without_authentication!
+      config.auth_with :none
       config.counts = false
       get '/admin'
 
@@ -227,9 +246,16 @@ class AdminEngineTest < ActionDispatch::IntegrationTest
     assert_select "a[href='/admin/property_definitions']"
   end
 
+  test 'the bundled shell brings its own Bootstrap' do
+    get '/admin'
+
+    assert_response :success
+    assert_select "link[href*='bootstrap']", 2
+  end
+
   test 'the admin renders in the host layout when configured to' do
     with_admin_config do |config|
-      config.allow_without_authentication!
+      config.auth_with :none
       config.layout = 'host_chrome'
       get '/admin'
 

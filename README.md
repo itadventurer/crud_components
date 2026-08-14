@@ -115,13 +115,20 @@ mount CrudComponents::Admin::Engine => '/admin'
 ![The admin dashboard: a sidebar listing every model, grouped and iconed, and a card per model with its record count](docs/screenshots/admin-dashboard.png)
 
 It renders from the same `crud_structure` your own pages use — no scaffold per model, no
-second rendering path — and it **serves nothing until you say who may in**:
+second rendering path — and who may in is **one line in the ability you already have**
+(past the door your ordinary rules keep deciding, model by model):
 
 ```ruby
-CrudComponents::Admin.configure do |config|
-  config.authorize_with { head :forbidden unless current_user&.admin? }
+class Ability
+  include CanCan::Ability
+
+  def initialize(user)
+    can :access, :crud_admin if user&.admin?   # may open the admin
+  end
 end
 ```
+
+No CanCanCan? `config.auth_with { … }` takes a gate of your own.
 
 `admin false` keeps a model out, `admin actions: %i[index show]` makes it read-only (the
 write routes are never drawn), and every record links back to the page a visitor would see.

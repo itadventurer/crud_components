@@ -23,7 +23,6 @@ module CrudComponents
         end
       end
 
-      before_action :ensure_admin_gate_configured!
       before_action :run_admin_gate!
 
       rescue_from CrudComponents::Admin::ForbiddenError do |error|
@@ -69,18 +68,17 @@ module CrudComponents
         scope.accessible_by(ability)
       end
 
-      def ensure_admin_gate_configured!
-        return if admin_config.authorized_access_configured?
-
-        raise UnauthorizedError,
-              'The admin exposes every registered model. Configure a gate before mounting it: ' \
-              'CrudComponents::Admin.configure { |c| c.authorize_with { … } } — ' \
-              'or say `c.allow_without_authentication!` on purpose.'
-      end
-
       def run_admin_gate!
-        block = admin_config.authorize_block
-        instance_exec(&block) if block
+        gate = Gate.new(admin_config, admin_ability)
+
+        case gate.verdict
+        when :block then instance_exec(&admin_config.auth_block)
+        when :unauthorized then raise UnauthorizedError, gate.unauthorized_message
+        when :forbidden
+          # Through the host's `authorize!` first, so its own `rescue_from` decides.
+          authorize!(Gate::ACTION, admin_config.auth_subject) if respond_to?(:authorize!, true)
+          raise ForbiddenError, gate.forbidden_message
+        end
       end
 
       # Whatever answers `can?` here: a CanCanCan ability, else the controller
