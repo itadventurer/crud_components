@@ -216,6 +216,29 @@ class AdminEngineTest < ActionDispatch::IntegrationTest
     assert_select '.crud-admin-nav', text: /Custom properties/
   end
 
+  test 'a group heading is translated when the app says so' do
+    with_group_translation('Extra fields') do
+      get '/admin'
+
+      assert_response :success
+      assert_select '.crud-admin-nav', text: /Extra fields/
+      assert_select '.crud-admin-nav', text: /Custom properties/, count: 0
+    end
+  end
+
+  test 'the configured order names the declared group, not the translated heading' do
+    with_group_translation('Zzz, last alphabetically') do
+      with_admin_config do |config|
+        config.auth_with :none
+        config.groups = ['Custom properties']
+        get '/admin'
+
+        assert_response :success
+        assert_select '.crud-admin-nav > div', text: /Zzz, last alphabetically/
+      end
+    end
+  end
+
   test 'the dashboard counts the records' do
     get '/admin'
 
