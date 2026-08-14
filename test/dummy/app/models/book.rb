@@ -52,6 +52,8 @@ class Book < ApplicationRecord
 
     fieldset :index, %i[cover title author_names genre price publisher active],
              actions: %i[preview edit destroy]
+    # Every column, but not the storefront's bulk delete — the admin has its own.
+    fieldset :admin, actions: %i[preview edit export_selected]
     fieldset :catalog, %i[cover title subtitle author_names genre price purchase_price
                           shop_margin pages published_on publisher reviews active manual created_at],
              filters: %i[blurb]

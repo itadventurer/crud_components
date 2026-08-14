@@ -424,6 +424,25 @@ class AdminEngineTest < ActionDispatch::IntegrationTest
     assert_select 'li a', text: /The Hobbit/
   end
 
+  # The storefront declares its own bulk delete; only the admin's may show here.
+  test 'the index offers one bulk delete, the one that asks first' do
+    post '/toggle_admin'
+
+    get '/admin/books'
+
+    assert_response :success
+    assert_select "button[formaction='/admin/books/delete']", count: 1
+    assert_select "button[formaction='/books/delete_selected']", count: 0
+    assert_select "button[formaction='/books/export_selected']", count: 1
+  end
+
+  test 'the storefront keeps its own bulk delete' do
+    get '/books'
+
+    assert_response :success
+    assert_select "button[formaction='/books/delete_selected']"
+  end
+
   test 'the bulk confirmation names the ticked rows and what goes with them' do
     post '/toggle_admin'
     Review.create!(book: @hobbit, rating: 4, reviewer_name: 'Ada', body: 'A classic.')

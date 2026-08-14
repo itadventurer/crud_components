@@ -180,7 +180,7 @@ class AdminRegistryTest < ActiveSupport::TestCase
 
   test 'an admin fieldset is picked up when declared, else every field' do
     assert_equal :admin, registry['AdminScopedModel'].fieldset
-    assert_equal :default, registry['Book'].fieldset
+    assert_equal :default, registry['Publisher'].fieldset
   end
 
   # ── lookup and grouping ──────────────────────────────────────────────────
