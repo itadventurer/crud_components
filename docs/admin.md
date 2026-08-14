@@ -144,8 +144,9 @@ It lists, from what the model declares:
 
 Each group **names its records**, not just their number: the first ten, each linking to its
 own admin page, and past that a link to the index holding the rest — the nested index under
-the record (`/admin/publishers/tor-books/books`), else that model's index filtered by it. A
-count tells you how much goes; the names tell you what.
+the record (`/admin/publishers/tor-books/books`), else that model's index filtered by it. An
+attachment names its file and links to it, opened in a new tab. A count tells you how much
+goes; the names tell you what.
 
 Ticking rows in the index and using **Delete selected** skips the page (a hundred rows have
 no legible blast radius) but still checks each record against the ability on its own.

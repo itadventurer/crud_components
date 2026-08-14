@@ -10,6 +10,15 @@ module CrudComponents
         CrudComponents::Admin.path_for(entry.model, :index)
       end
 
+      # One record a delete would take, named: an attachment names its file and
+      # opens it, anything else links to its own admin page.
+      def admin_dependent_link(record, owner: nil)
+        return admin_attachment_link(record) if admin_attachment?(record)
+
+        path = crud_record_path(record, owner: owner)
+        path ? link_to(crud_label(record), path, data: { turbo_action: 'advance' }) : crud_label(record)
+      end
+
       # The index holding the rest of a dependent item: nested under the owner,
       # else the target's index filtered by it, else nil.
       def admin_dependents_path(owner, item)
@@ -101,6 +110,20 @@ module CrudComponents
         return false unless respond_to?(:main_app)
 
         main_app.respond_to?(name)
+      end
+
+      def admin_attachment?(record)
+        defined?(ActiveStorage) && record.is_a?(ActiveStorage::Attachment)
+      end
+
+      # The filename, linked to the file itself; a blob that is gone is named
+      # but not linked.
+      def admin_attachment_link(attachment)
+        blob = attachment.blob
+        return attachment.name.to_s.humanize unless blob
+
+        link_to(blob.filename.to_s, rails_blob_path(attachment, disposition: :inline),
+                target: '_blank', rel: 'noopener')
       end
 
       def active_storage_object?(object)

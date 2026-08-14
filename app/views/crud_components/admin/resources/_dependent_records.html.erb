@@ -3,10 +3,7 @@
 <%- if item.records.present? -%>
   <ul class="list-unstyled small ms-3 mb-0">
     <%- item.records.each do |dependent| -%>
-      <% path = crud_record_path(dependent, owner: owner) %>
-      <li>
-        <%= path ? link_to(crud_label(dependent), path, data: { turbo_action: 'advance' }) : crud_label(dependent) %>
-      </li>
+      <li><%= admin_dependent_link(dependent, owner: owner) %></li>
     <%- end -%>
     <%- if item.unnamed.positive? -%>
       <% more = t('crud_components.more', count: item.unnamed, default: '+%{count} more') %>
