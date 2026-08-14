@@ -21,7 +21,10 @@
         <p class="mb-1"><%= t('crud_components.admin.delete.blocked', default: 'This cannot be deleted while it still has:') %></p>
         <ul class="mb-0">
           <% blockers.each do |item| %>
-            <li><%= item.count %> <%= item.human_name %></li>
+            <li>
+              <%= item.count %> <%= item.human_name %>
+              <%= render 'crud_components/admin/resources/dependent_records', owner: @record, item: item %>
+            </li>
           <% end %>
         </ul>
       </div>
@@ -40,6 +43,7 @@
               <span class="text-muted"><%= t('crud_components.admin.delete.cascades',
                                              default: '(and whatever depends on those)') %></span>
             <% end %>
+            <%= render 'crud_components/admin/resources/dependent_records', owner: @record, item: item %>
           </li>
         <% end %>
       </ul>
@@ -49,7 +53,10 @@
       <p class="mb-1"><%= t('crud_components.admin.delete.kept', default: 'These stay, but lose the reference:') %></p>
       <ul>
         <% nullified.each do |item| %>
-          <li><strong><%= number_with_delimiter(item.count) %></strong> <%= item.human_name %></li>
+          <li>
+            <strong><%= number_with_delimiter(item.count) %></strong> <%= item.human_name %>
+            <%= render 'crud_components/admin/resources/dependent_records', owner: @record, item: item %>
+          </li>
         <% end %>
       </ul>
     <% end %>

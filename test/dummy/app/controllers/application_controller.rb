@@ -5,6 +5,9 @@ class ApplicationController < ActionController::Base
   # anything that quacks like this (CanCanCan in real apps).
   def can?(action, subject)
     return true if admin?
+    # The admin's gate, what the default `auth_with :cancan` asks.
+    return false if action.to_sym == :access && subject == :crud_admin
+
     # Only admins may even open the property definitions — the admin UI drops a
     # model you cannot :index from its sidebar and dashboard.
     return false if action.to_sym == :index && subject == PropertyDefinition

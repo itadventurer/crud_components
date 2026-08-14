@@ -125,14 +125,12 @@ class AdminRegistryTest < ActiveSupport::TestCase
     entry = registry['Author']
 
     assert_equal CrudComponents::Admin::Entry::ALL_ACTIONS, entry.actions
-    assert_not entry.read_only?
   end
 
   test 'declared actions are honoured and stay in RESTful order' do
     entry = registry['AdminReadOnlyModel']
 
     assert_equal %i[index show], entry.actions
-    assert entry.read_only?
     assert entry.allows?(:index)
     assert_not entry.allows?(:destroy)
   end

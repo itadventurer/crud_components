@@ -23,25 +23,44 @@ class AdminEngineTest < ActionDispatch::IntegrationTest
   end
 
   # ── the gate ─────────────────────────────────────────────────────────────
-  test 'an unconfigured gate refuses to serve anything' do
+  test 'the default gate asks the ability, and turns away who it denies' do
     with_admin_config do
-      error = assert_raises(CrudComponents::Admin::UnauthorizedError) { get '/admin' }
-      assert_match(/authorize_with/, error.message)
-    end
-  end
-
-  test 'the gate runs in the controller and can turn a request away' do
-    with_admin_config do |config|
-      config.authorize_with { head :forbidden }
       get '/admin'
 
       assert_response :forbidden
     end
   end
 
-  test 'a configured gate that lets the request through renders' do
+  test 'the default gate lets in whoever the ability grants the action' do
+    with_admin_config do
+      post '/toggle_admin'
+      get '/admin'
+
+      assert_response :success
+    end
+  end
+
+  test 'a gate block runs in the controller and can turn a request away' do
     with_admin_config do |config|
-      config.authorize_with { nil }
+      config.auth_with { head :forbidden }
+      get '/admin'
+
+      assert_response :forbidden
+    end
+  end
+
+  test 'a gate block that lets the request through renders' do
+    with_admin_config do |config|
+      config.auth_with { nil }
+      get '/admin'
+
+      assert_response :success
+    end
+  end
+
+  test 'auth_with :none serves without asking anything' do
+    with_admin_config do |config|
+      config.auth_with :none
       get '/admin'
 
       assert_response :success
@@ -197,6 +216,29 @@ class AdminEngineTest < ActionDispatch::IntegrationTest
     assert_select '.crud-admin-nav', text: /Custom properties/
   end
 
+  test 'a group heading is translated when the app says so' do
+    with_group_translation('Extra fields') do
+      get '/admin'
+
+      assert_response :success
+      assert_select '.crud-admin-nav', text: /Extra fields/
+      assert_select '.crud-admin-nav', text: /Custom properties/, count: 0
+    end
+  end
+
+  test 'the configured order names the declared group, not the translated heading' do
+    with_group_translation('Zzz, last alphabetically') do
+      with_admin_config do |config|
+        config.auth_with :none
+        config.groups = ['Custom properties']
+        get '/admin'
+
+        assert_response :success
+        assert_select '.crud-admin-nav > div', text: /Zzz, last alphabetically/
+      end
+    end
+  end
+
   test 'the dashboard counts the records' do
     get '/admin'
 
@@ -206,7 +248,7 @@ class AdminEngineTest < ActionDispatch::IntegrationTest
 
   test 'counts can be switched off' do
     with_admin_config do |config|
-      config.allow_without_authentication!
+      config.auth_with :none
       config.counts = false
       get '/admin'
 
@@ -227,9 +269,16 @@ class AdminEngineTest < ActionDispatch::IntegrationTest
     assert_select "a[href='/admin/property_definitions']"
   end
 
+  test 'the bundled shell brings its own Bootstrap' do
+    get '/admin'
+
+    assert_response :success
+    assert_select "link[href*='bootstrap']", 2
+  end
+
   test 'the admin renders in the host layout when configured to' do
     with_admin_config do |config|
-      config.allow_without_authentication!
+      config.auth_with :none
       config.layout = 'host_chrome'
       get '/admin'
 
@@ -363,6 +412,37 @@ class AdminEngineTest < ActionDispatch::IntegrationTest
 
     assert_response :success
     assert_select 'li', text: /2\s+Review/i
+  end
+
+  test 'the confirmation page names them, each linking to its own page' do
+    post '/toggle_admin'
+    review = Review.create!(book: @hobbit, rating: 4, reviewer_name: 'Ada', body: 'A classic.')
+
+    get '/admin/books/hobbit/delete'
+
+    assert_response :success
+    assert_select "a[href='#{CrudComponents::Admin.path_for(review)}']", text: /Ada/
+  end
+
+  test 'an attachment names its file and links to it' do
+    post '/toggle_admin'
+    @hobbit.cover.attach(io: StringIO.new('cover'), filename: 'hobbit-cover.png', content_type: 'image/png')
+
+    get '/admin/books/hobbit/delete'
+
+    assert_response :success
+    assert_select "a[target=_blank]", text: 'hobbit-cover.png'
+  end
+
+  test 'past the tenth it links to the index holding the rest' do
+    post '/toggle_admin'
+    12.times { |i| Review.create!(book: @hobbit, rating: 3, reviewer_name: "Reviewer #{i}", body: 'Fine.') }
+
+    get '/admin/books/hobbit/delete'
+
+    assert_response :success
+    assert_select 'li ul li', count: 11   # ten named, and the link to the rest
+    assert_select "a[href='/admin/books/hobbit/reviews']", text: /2 more/
   end
 
   test 'the confirmation page says so when nothing else depends on the record' do
