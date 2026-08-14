@@ -38,9 +38,17 @@ module CrudComponents
         end
       end
 
-      # The confirmation step: what goes with it, before anything goes.
+      # The confirmation step, for one record or for the ticked rows: which they
+      # are, and what goes with them.
       def delete
-        @dependents = Dependents.new(@record)
+        @records = [@record]
+        @dependents = Dependents::Selection.new(@records)
+      end
+
+      def delete_selected
+        @records = selected_records
+        @dependents = Dependents::Selection.new(@records)
+        render :delete
       end
 
       def destroy
@@ -48,13 +56,6 @@ module CrudComponents
         redirect_to index_path, notice: saved_notice(:destroyed)
       rescue ActiveRecord::InvalidForeignKey, ActiveRecord::DeleteRestrictionError => e
         redirect_to after_save_path(@record), alert: e.message
-      end
-
-      # The confirmation step for the ticked rows: which they are, and what goes
-      # with them.
-      def delete_selected
-        @records = selected_records
-        @dependents = Dependents::Selection.new(@records)
       end
 
       def destroy_selected

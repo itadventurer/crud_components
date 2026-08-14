@@ -154,10 +154,11 @@ A cascade can reach further than you: `dependent: :destroy` takes records the ab
 not let you delete one by one. That is not blocked — the database does it either way — but the
 group is **marked** on the page, so the delete is a decision rather than a surprise.
 
-Ticking rows in the index and using **Delete selected** reaches the same page for the whole
-selection (`/admin/books/delete`): the ticked records named, and what goes with them counted
-across all of them at once. Each record is still checked against the ability on its own — what
-the ability withholds is neither listed nor deleted.
+Ticking rows in the index and using **Delete selected** reaches **the same page**, for the
+whole selection (`/admin/books/delete` rather than `/admin/books/hobbit/delete`): one record
+is a selection of one. The ticked records are named, and what goes with them is counted
+across all of them at once. Each record is still checked against the ability on its own —
+what the ability withholds is neither listed nor deleted.
 
 ![The delete page for three ticked books: the three named, then the ten reviews and the attachments that go with them](screenshots/admin-delete-selected.png)
 

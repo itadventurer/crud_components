@@ -360,6 +360,21 @@ class AdminEngineTest < ActionDispatch::IntegrationTest
     assert_select "button[formaction='/admin/authors/delete']", count: 0
   end
 
+  # One page for both: the member route is a selection of one.
+  test 'one record and a selection reach the same page' do
+    post '/toggle_admin'
+
+    get '/admin/books/hobbit/delete'
+
+    assert_select 'h1', text: /Delete this Book\?/
+    assert_select 'li a', text: /The Hobbit/
+
+    get '/admin/books/delete', params: { selected: %w[hobbit dispossessed] }
+
+    assert_select 'h1', text: /Delete these 2 Books\?/
+    assert_select 'li a', text: /The Hobbit/
+  end
+
   test 'the bulk confirmation names the ticked rows and what goes with them' do
     post '/toggle_admin'
     Review.create!(book: @hobbit, rating: 4, reviewer_name: 'Ada', body: 'A classic.')
