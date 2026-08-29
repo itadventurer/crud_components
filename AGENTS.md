@@ -5,6 +5,10 @@ model + tour); `docs/` holds the in-depth reference (`fields`, `views`, `forms`,
 `security`, `extending`, `admin`). Together they are the spec — written before/with
 the implementation and kept in sync.
 
+`CLAUDE.md` in this directory is a symlink to this file, and so is every
+`CLAUDE.md` next to a nested `AGENTS.md`: Claude Code discovers `CLAUDE.md`,
+other tools discover `AGENTS.md`, and there is only one file to maintain.
+
 ## Layout
 
 | Where | What |
