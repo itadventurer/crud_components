@@ -7,7 +7,10 @@ Rails.application.routes.draw do
       delete :delete_selected
       get :export_selected
     end
-    member { get :preview }
+    member do
+      get :preview
+      post :reserve
+    end
   end
   resources :publishers do
     resources :books, only: %i[index edit]

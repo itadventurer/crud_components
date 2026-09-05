@@ -5,6 +5,10 @@ This project follows [semantic versioning](https://semver.org).
 
 ## Unreleased
 
+### Added
+
+- `action ..., data: { … }` in `crud_structure` — data attributes for one action, on the element you click: the `<a>` of a GET action, the `<button>` of any other. A Stimulus controller (`data: { controller: 'clipboard', action: 'click->clipboard#copy' }`) or a `data-turbo-frame` breakout no longer needs a hand-written actions partial for the whole cell. What the gem sets itself stays unless you name the same key, so a GET action keeps `data-turbo-action="advance"` and `confirm:` keeps writing `data-turbo-confirm`.
+
 ## v0.3.0 — 2026-08-13
 
 ### Added
