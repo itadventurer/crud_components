@@ -18,6 +18,13 @@ group :development, :test do
   gem 'minitest'
   gem 'puma'
   gem 'rails', rails_version ? "~> #{rails_version}.0" : '>= 7.1'
+  # json 3.0.0 dropped the second positional argument of JSON.parse, which
+  # ActiveSupport::JSON.decode still passes (active_support/json/decoding.rb).
+  # Every Rails 8.1 request that reads a signed or encrypted cookie therefore
+  # raises ArgumentError, the session included. Not ours to fix and not ours to
+  # constrain for the people who install the gem, so the pin lives here in the
+  # development bundle. Drop it once Rails ships a compatible ActiveSupport.
+  gem 'json', '< 3'
   gem 'rake'
   gem 'sqlite3' # unconstrained: bundler picks a version compatible with the Rails above
 end
