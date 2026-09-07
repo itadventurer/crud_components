@@ -66,8 +66,8 @@ class PropertyDefinition < ApplicationRecord
     when 'date'
       lambda do |scope, geq:, leq:|
         rows = values_for(subject_model)
-        rows = rows.where('value >= ?', geq.iso8601) if geq # ISO dates sort lexically
-        rows = rows.where('value <= ?', leq.iso8601) if leq
+        rows = rows.where(value: geq.iso8601..) if geq # ISO dates sort lexically
+        rows = rows.where(value: ..leq.iso8601) if leq
         scope.where(id: rows.select(:subject_id))
       end
     when 'number'

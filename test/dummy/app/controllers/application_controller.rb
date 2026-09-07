@@ -25,7 +25,7 @@ class ApplicationController < ActionController::Base
     model = subject.is_a?(Class) ? subject : subject.class
     return false if action.to_sym == :create && model == Comment
 
-    !%i[manage destroy].include?(action.to_sym)
+    %i[manage destroy].exclude?(action.to_sym)
   end
 
   def admin?

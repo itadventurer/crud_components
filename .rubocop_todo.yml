@@ -13,23 +13,12 @@ Lint/ConstantDefinitionInBlock:
   Exclude:
     - 'test/structure_test.rb'
 
-# Offense count: 1
-# This cop supports unsafe autocorrection (--autocorrect-all).
-Lint/RedundantDirGlobSort:
-  Exclude:
-    - 'lib/crud_components/admin/registry.rb'
 
 # Offense count: 1
 Lint/StructNewOverride:
   Exclude:
     - 'lib/crud_components/admin/dependents.rb'
 
-# Offense count: 9
-# This cop supports safe autocorrection (--autocorrect).
-# Configuration parameters: IgnoreEmptyBlocks, AllowUnusedKeywordArguments.
-Lint/UnusedBlockArgument:
-  Exclude:
-    - 'test/dynamic_columns_test.rb'
 
 # Offense count: 7
 Lint/UselessConstantScoping:
@@ -172,35 +161,9 @@ Performance/CollectionLiteralInLoop:
     - 'lib/crud_components/fields/base.rb'
     - 'lib/crud_components/typed_filter.rb'
 
-# Offense count: 1
-# This cop supports unsafe autocorrection (--autocorrect-all).
-# Configuration parameters: SafeMultiline.
-Performance/DeletePrefix:
-  Exclude:
-    - 'test/like_spec_test.rb'
 
-# Offense count: 1
-# This cop supports unsafe autocorrection (--autocorrect-all).
-# Configuration parameters: NilOrEmpty, NotPresent, UnlessPresent.
-Rails/Blank:
-  Exclude:
-    - 'lib/crud_components.rb'
 
-# Offense count: 2
-# This cop supports unsafe autocorrection (--autocorrect-all).
-Rails/CompactBlank:
-  Exclude:
-    - 'lib/crud_components.rb'
-    - 'lib/crud_components/fields/path_field.rb'
 
-# Offense count: 2
-# This cop supports unsafe autocorrection (--autocorrect-all).
-# Configuration parameters: EnforcedStyle, AllowToTime.
-# SupportedStyles: strict, flexible
-Rails/Date:
-  Exclude:
-    - 'test/dummy/db/seeds.rb'
-    - 'test/dynamic_columns_test.rb'
 
 # Offense count: 2
 Rails/HasAndBelongsToMany:
@@ -223,22 +186,7 @@ Rails/I18nLocaleTexts:
     - 'test/dummy/app/controllers/reviews_controller.rb'
     - 'test/dummy/app/models/review.rb'
 
-# Offense count: 3
-# This cop supports unsafe autocorrection (--autocorrect-all).
-Rails/IndexWith:
-  Exclude:
-    - 'lib/crud_components/config.rb'
-    - 'lib/crud_components/structure.rb'
 
-# Offense count: 5
-# This cop supports unsafe autocorrection (--autocorrect-all).
-Rails/NegateInclude:
-  Exclude:
-    - 'lib/crud_components/fields/date_field.rb'
-    - 'lib/crud_components/fields/numeric_field.rb'
-    - 'lib/crud_components/fields/string_field.rb'
-    - 'lib/crud_components/typed_filter.rb'
-    - 'test/dummy/app/controllers/application_controller.rb'
 
 # Offense count: 4
 Rails/OutputSafety:
@@ -247,48 +195,11 @@ Rails/OutputSafety:
     - 'lib/crud_components/helpers.rb'
     - 'test/dummy/app/helpers/playground_helper.rb'
 
-# Offense count: 1
-# This cop supports unsafe autocorrection (--autocorrect-all).
-# Configuration parameters: AllowedReceivers.
-# AllowedReceivers: ActionMailer::Preview, ActiveSupport::TimeZone
-Rails/RedundantActiveRecordAllMethod:
-  Exclude:
-    - 'test/like_spec_test.rb'
 
-# Offense count: 5
-# This cop supports unsafe autocorrection (--autocorrect-all).
-Rails/StrongParametersExpect:
-  Exclude:
-    - 'app/controllers/crud_components/admin/resources_controller.rb'
-    - 'test/dummy/app/controllers/authors_controller.rb'
-    - 'test/dummy/app/controllers/books_controller.rb'
-    - 'test/dummy/app/controllers/publishers_controller.rb'
-    - 'test/dummy/app/controllers/reviews_controller.rb'
 
-# Offense count: 2
-# This cop supports unsafe autocorrection (--autocorrect-all).
-Rails/WhereRange:
-  Exclude:
-    - 'test/dummy/app/models/property_definition.rb'
 
-# Offense count: 1
-# This cop supports unsafe autocorrection (--autocorrect-all).
-Style/ArrayIntersect:
-  Exclude:
-    - 'lib/crud_components/typed_filter.rb'
 
-# Offense count: 2
-# This cop supports unsafe autocorrection (--autocorrect-all).
-Style/CollectionQuerying:
-  Exclude:
-    - 'lib/crud_components/admin/dependents.rb'
-    - 'script/demo.rb'
 
-# Offense count: 1
-# This cop supports unsafe autocorrection (--autocorrect-all).
-Style/ComparableBetween:
-  Exclude:
-    - 'lib/crud_components/presenters/collection.rb'
 
 # Offense count: 7
 # Configuration parameters: AllowedConstants.
@@ -302,21 +213,8 @@ Style/Documentation:
     - 'lib/generators/crud_components/install/install_generator.rb'
     - 'lib/generators/crud_components/views/views_generator.rb'
 
-# Offense count: 1
-# This cop supports unsafe autocorrection (--autocorrect-all).
-# Configuration parameters: EnforcedStyle.
-# SupportedStyles: allowed_in_returns, forbidden
-Style/DoubleNegation:
-  Exclude:
-    - 'lib/crud_components/permission_context.rb'
 
 
-# Offense count: 4
-# This cop supports unsafe autocorrection (--autocorrect-all).
-Style/HashExcept:
-  Exclude:
-    - 'lib/crud_components/presenters/collection.rb'
-    - 'lib/crud_components/presenters/filter.rb'
 
 # Offense count: 1
 Style/MultilineBlockChain:
@@ -330,13 +228,6 @@ Style/OptionalBooleanParameter:
   Exclude:
     - 'lib/crud_components/builder.rb'
 
-# Offense count: 3
-# This cop supports unsafe autocorrection (--autocorrect-all).
-# Configuration parameters: ConvertCodeThatCanStartToReturnNil, AllowedMethods, MaxChainLength.
-# AllowedMethods: present?, blank?, presence, try, try!
-Style/SafeNavigation:
-  Exclude:
-    - 'lib/crud_components/presenters/collection.rb'
 
 # Offense count: 1
 # Configuration parameters: Max.
@@ -344,23 +235,4 @@ Style/SafeNavigationChainLength:
   Exclude:
     - 'lib/crud_components/admin/entry.rb'
 
-# Offense count: 4
-# This cop supports unsafe autocorrection (--autocorrect-all).
-# Configuration parameters: AllowMethodsWithArguments, AllowedMethods, AllowedPatterns, AllowComments.
-# AllowedMethods: define_method, mail, respond_to
-Style/SymbolProc:
-  Exclude:
-    - 'lib/crud_components/admin/registry.rb'
-    - 'test/dsl_validation_test.rb'
 
-# Offense count: 5
-# This cop supports safe autocorrection (--autocorrect).
-# Configuration parameters: Max, AllowHeredoc, AllowURI, AllowQualifiedName, URISchemes, IgnoreCopDirectives, AllowedPatterns, SplitStrings.
-# URISchemes: http, https
-Layout/LineLength:
-  Exclude:
-    - 'lib/crud_components/admin/view_helpers.rb'
-    - 'lib/crud_components/presenters/collection.rb'
-    - 'test/dummy/config/initializers/simple_form.rb'
-    - 'test/dummy/config/initializers/simple_form_bootstrap.rb'
-    - 'test/full_integration_test.rb'

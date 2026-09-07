@@ -240,11 +240,11 @@ module CrudComponents
     # ── actions ──────────────────────────────────────────────────────────────
     def actions
       @actions ||= begin
-        derived = %i[new show edit destroy].to_h { |name| [name, Action.new(name, derived: true)] }
+        derived = %i[new show edit destroy].index_with { |name| Action.new(name, derived: true) }
         merged = derived.merge(@declared_actions)
         custom = @declared_actions.keys - derived.keys
         order = [:new, :show, :edit, *custom, :destroy]
-        order.to_h { |name| [name, merged.fetch(name)] }
+        order.index_with { |name| merged.fetch(name) }
       end
     end
 

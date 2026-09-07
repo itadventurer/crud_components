@@ -51,7 +51,7 @@ module CrudComponents
     # keyword the block declared; a value that doesn't cast becomes nil, so junk
     # never reaches SQL.
     def apply(scope, value: nil, geq: nil, leq: nil)
-      single = @keywords.include?(:contains) && !@keywords.include?(:eq) ? :contains : :eq
+      single = @keywords.include?(:contains) && @keywords.exclude?(:eq) ? :contains : :eq
       values = { single => cast(value), geq: cast(geq), leq: cast(leq), choices: @choices }
       @apply.call(scope, **values.slice(*@keywords))
     end
@@ -74,7 +74,7 @@ module CrudComponents
     TRUE_VALUES = %w[true t 1 yes on].freeze
     FALSE_VALUES = %w[false f 0 no off].freeze
 
-    def range? = (@keywords & %i[geq leq]).any?
+    def range? = @keywords.intersect?(%i[geq leq])
 
     # The keywords the block declared. A block with `**` (keyrest) takes everything.
     def declared_keywords(apply)

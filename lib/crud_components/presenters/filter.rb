@@ -59,7 +59,7 @@ module CrudComponents
         end
         own += [param_name('q'), param_name('page'), param_name('per')]
         own += [param_name('sort'), param_name('dir')] if sort_control?
-        view.request.query_parameters.reject { |key, _| own.include?(key) }
+        view.request.query_parameters.except(*own)
       end
     end
   end

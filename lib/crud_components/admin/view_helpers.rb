@@ -76,8 +76,8 @@ module CrudComponents
         return nil unless entry.allows?(:destroy)
 
         CrudComponents::Action.new(
-          :destroy_selected, on: :selection, method: :get, confirm: false, icon: 'trash',
-                             if: :destroy, title: t('crud_components.admin.destroy_selected', default: 'Delete selected')
+          :destroy_selected, on: :selection, method: :get, confirm: false, icon: 'trash', if: :destroy,
+                             title: t('crud_components.admin.destroy_selected', default: 'Delete selected')
         ) { public_send("delete_#{entry.route_key}_path") }
       end
 

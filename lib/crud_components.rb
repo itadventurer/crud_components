@@ -115,7 +115,7 @@ module CrudComponents
                raw.is_a?(String) ? raw.split(',') : nil
              end
       names = list&.map { |n| n.to_s.strip }&.reject(&:blank?)
-      names = nil if names.nil? || names.empty?
+      names = nil if names.blank?
       yield names if block_given? && names
       names
     end
@@ -161,7 +161,7 @@ module CrudComponents
     #   CrudComponents.selected(Book, params)
     def selected(scope, params, param: :selected)
       model = scope.respond_to?(:klass) ? scope.klass : scope
-      values = Array(params[param]).flat_map { |v| v.to_s.split(',') }.map(&:strip).reject(&:blank?)
+      values = Array(params[param]).flat_map { |v| v.to_s.split(',') }.map(&:strip).compact_blank
       scope.where(Structure.for(model).identify_by => values)
     end
 
