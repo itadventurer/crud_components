@@ -10,6 +10,10 @@ module CrudComponents
       asciidoc: %w[asciidoctor]
     }.freeze
 
+    # The fieldsets form_fieldset can pick, minus :default. Those are the ones
+    # whose fields have to be renderable as a form.
+    FORM_FIELDSET_NAMES = %i[form new edit create update].freeze
+
     class << self
       def for(model)
         unless model.respond_to?(:columns_hash)
@@ -302,7 +306,26 @@ module CrudComponents
           raise DefinitionError, "#{model}: fieldset :#{fs.name} lists :#{name} under filters:, " \
                                  'but that field is not filterable — give it a filter facet first'
         end
+        validate_form_fieldset!(fs)
         fs.action_names&.each { |name| action(name) }
+      end
+    end
+
+    # A field without a form control cannot appear in a form at all — not as an
+    # input, not read-only, because Presenters::Form drops it. Listing one in a
+    # form fieldset used to do nothing whatsoever, which reads like a rendering
+    # bug from the outside. :default is left alone: it is the catch-all every
+    # model has, and it legitimately holds computed fields for the other views.
+    def validate_form_fieldset!(fieldset)
+      return unless FORM_FIELDSET_NAMES.include?(fieldset.name)
+      return if fieldset.all_fields?
+
+      fieldset.field_names.each do |name|
+        next if field(name).form_control
+
+        raise DefinitionError, "#{model}: fieldset :#{fieldset.name} lists :#{name}, but that field " \
+                               'has no form control, so it can never appear in the form. Drop it from ' \
+                               'the fieldset, or back it with a column, association, enum or attachment.'
       end
     end
 

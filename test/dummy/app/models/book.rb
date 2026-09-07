@@ -42,7 +42,12 @@ class Book < ApplicationRecord
       sort { |scope, dir| scope.left_joins(:authors).order(Author.arel_table[:name].public_send(dir)) }
     end
 
-    action :preview, icon: 'eye'
+    # data: lands on the element you click — the <a> of a GET action, the
+    # <button> of any other. Here: a Stimulus controller and a frame breakout.
+    action :preview, icon: 'eye', data: { controller: 'book-preview' }
+    action :reserve, icon: 'bookmark', method: :post, data: { turbo_frame: '_top' } do |book|
+      reserve_book_path(book)
+    end
     action :import, on: :collection, icon: 'upload'
     # bulk actions on ticked rows — the checkboxes submit selected[]=<slug>
     action :delete_selected, on: :selection, icon: 'trash', method: :delete, confirm: true do
@@ -53,7 +58,7 @@ class Book < ApplicationRecord
     end
 
     fieldset :index, %i[cover title author_names genre price publisher active],
-             actions: %i[preview edit destroy]
+             actions: %i[preview reserve edit destroy]
     # Every column, but not the storefront's bulk delete — the admin has its own.
     fieldset :admin, actions: %i[preview edit export_selected]
     fieldset :catalog, %i[cover title subtitle author_names genre price purchase_price

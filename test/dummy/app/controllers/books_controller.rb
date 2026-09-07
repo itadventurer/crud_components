@@ -46,6 +46,12 @@ class BooksController < ApplicationController
     @book = find_book
   end
 
+  # A non-GET row action, so the button_to half of an action button has a
+  # subject in the playground as well.
+  def reserve
+    redirect_to books_path, notice: "Reserved #{find_book.title}."
+  end
+
   def import; end
 
   # Bulk actions on the ticked rows. The gem resolves selected[]=<slug> back to
