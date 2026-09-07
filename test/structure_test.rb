@@ -160,7 +160,7 @@ class StructureTest < ActiveSupport::TestCase
   # ── actions ────────────────────────────────────────────────────────────────
   test 'default actions exist; declared customs slot in before destroy' do
     actions = structure_of(Book).actions
-    assert_equal %i[new show edit preview import delete_selected export_selected destroy], actions.keys
+    assert_equal %i[new show edit preview reserve import delete_selected export_selected destroy], actions.keys
     assert actions[:new].collection?
     assert actions[:delete_selected].selection?
     assert actions[:destroy].danger?
@@ -171,7 +171,7 @@ class StructureTest < ActiveSupport::TestCase
     structure = structure_of(Book)
     fieldset = structure.fieldset(:index)
     row = structure.fieldset_actions(fieldset, on: :row)
-    assert_equal %i[preview edit destroy], row.map(&:name)
+    assert_equal %i[preview reserve edit destroy], row.map(&:name)
     collection = structure.fieldset_actions(structure.default_fieldset, on: :collection)
     assert_equal %i[new import], collection.map(&:name)
   end

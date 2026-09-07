@@ -259,6 +259,13 @@ class DslValidationTest < ActiveSupport::TestCase
     assert_match(/app_path declared twice/, error.message)
   end
 
+  test 'action data: that is not a hash raises' do
+    model = define_model { action(:preview, data: 'controller=preview') { '/preview' } }
+    error = assert_raises(CrudComponents::DefinitionError) { structure_of(model) }
+    assert_match(/data: takes a hash/, error.message)
+    assert_match(/String/, error.message)
+  end
+
   test 'app_path without a block raises' do
     model = define_model { app_path }
     error = assert_raises(CrudComponents::DefinitionError) { structure_of(model) }

@@ -12,9 +12,9 @@ module CrudComponents
       destroy: { on: :row, method: :delete, confirm: true, danger: true }
     }.freeze
 
-    KNOWN_OPTIONS = %i[on icon title class confirm method if].freeze
+    KNOWN_OPTIONS = %i[on icon title class confirm method if data].freeze
 
-    attr_reader :name, :on, :http_method, :path_block
+    attr_reader :name, :on, :http_method, :path_block, :data
 
     def initialize(name, derived: false, **options, &path_block)
       unknown = options.keys - KNOWN_OPTIONS
@@ -34,6 +34,7 @@ module CrudComponents
       @confirm = options.key?(:confirm) ? options[:confirm] : defaults[:confirm]
       @http_method = options[:method] || defaults[:method] || :get
       @condition = options[:if]
+      @data = data_option(name, options[:data])
       @path_block = path_block
       @danger = defaults[:danger] || false
     end
@@ -80,6 +81,17 @@ module CrudComponents
       else
         true
       end
+    end
+
+    private
+
+    def data_option(name, value)
+      return {} if value.nil?
+      unless value.is_a?(Hash)
+        raise DefinitionError, "action :#{name}: data: takes a hash of data attributes, got #{value.class}"
+      end
+
+      value.transform_keys(&:to_sym)
     end
   end
 end
