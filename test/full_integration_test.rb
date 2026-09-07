@@ -290,6 +290,17 @@ class FullIntegrationTest < ActionDispatch::IntegrationTest
     assert_select "a[href='#{new_book_path}']", { minimum: 1 }, 'collection action'
   end
 
+  test 'an action carries its data attributes to the element you click' do
+    get books_path
+
+    assert_select "a[href='#{preview_book_path(@hobbit)}'][data-controller='book-preview']",
+                  { minimum: 1 }, 'a GET action puts them on the link'
+    assert_select "a[href='#{preview_book_path(@hobbit)}'][data-turbo-action='advance']",
+                  { minimum: 1 }, 'without dropping what the gem sets itself'
+    assert_select "form[action='#{reserve_book_path(@hobbit)}'] button[data-turbo-frame='_top']",
+                  { minimum: 1 }, 'any other method puts them on the button'
+  end
+
   test 'an association collection prefers nested routes' do
     get publisher_books_path(@tor)
 

@@ -130,7 +130,7 @@ module CrudComponents
     # the view context (and given the record for a row action).
     # @param name [Symbol] the action name (also the i18n/route key).
     # @param options [Hash] `on:` (`:row`/`:collection`/`:selection`), `icon:`,
-    #   `title:`, `class:`, `confirm:`, `method:`, `if:`.
+    #   `title:`, `class:`, `confirm:`, `method:`, `if:`, `data:`.
     # @yield the path block.
     # @return [void]
     def action(name, **, &)
