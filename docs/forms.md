@@ -77,6 +77,20 @@ Form field selection falls back **action → `:form` → `:default`**:
   `:edit`, `:create` to `:new`).
 - otherwise the `:default` set is used.
 
+A field with no form control — a computed one, say `attribute(:display_title) { … }`,
+which is a method rather than a column — cannot appear in a form at all, not even
+read-only. Naming one in `:form`, `:new` or `:edit` therefore **raises at build time**
+rather than quietly rendering nothing:
+
+```
+Book: fieldset :form lists :display_title, but that field has no form control, so it
+can never appear in the form. Drop it from the fieldset, or back it with a column,
+association, enum or attachment.
+```
+
+`:default` is exempt: it is the catch-all every model has and legitimately carries
+computed fields for the other views, which simply drop out of the form.
+
 New vs. edit (POST vs. PATCH) and the URL are inferred from the record (`persisted?`).
 Override with `url:` / `method:` when routes aren't conventional:
 

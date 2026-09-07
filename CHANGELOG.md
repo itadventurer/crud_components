@@ -9,6 +9,10 @@ This project follows [semantic versioning](https://semver.org).
 
 - `action ..., data: { … }` in `crud_structure` — data attributes for one action, on the element you click: the `<a>` of a GET action, the `<button>` of any other. A Stimulus controller (`data: { controller: 'clipboard', action: 'click->clipboard#copy' }`) or a `data-turbo-frame` breakout no longer needs a hand-written actions partial for the whole cell. What the gem sets itself stays unless you name the same key, so a GET action keeps `data-turbo-action="advance"` and `confirm:` keeps writing `data-turbo-confirm`.
 
+### Fixed
+
+- A form fieldset that lists a field without a form control now raises at build time instead of silently rendering nothing. A computed field is a method, not a column, so it has no input and no read-only display in a form — naming one in `fieldset :form` (or `:new`/`:edit`) used to do nothing whatsoever, which reads like a rendering bug from the outside. `:default` stays exempt: it is the catch-all every model has and legitimately carries computed fields for the other views.
+
 ## v0.3.0 — 2026-08-13
 
 ### Added
