@@ -5,7 +5,7 @@ class Book < ApplicationRecord
 
   belongs_to :publisher, optional: true
   has_many :reviews, dependent: :destroy
-  has_many :comments, as: :commentable # polymorphic — the comments demo links back here
+  has_many :comments, as: :commentable, dependent: :destroy # polymorphic — the comments demo links back here
   has_and_belongs_to_many :authors
   has_one_attached :cover
   has_one_attached :manual # a PDF — exercises the previewable / icon-fallback display

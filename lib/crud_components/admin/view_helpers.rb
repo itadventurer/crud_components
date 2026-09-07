@@ -24,7 +24,7 @@ module CrudComponents
       # them the same way it names everything else that goes.
       def admin_selection_item(model, records)
         CrudComponents::Admin::Dependents::Item.new(
-          name: nil, model: model, count: records.size, behavior: :destroy, cascades: false,
+          name: nil, model: model, total: records.size, behavior: :destroy, cascades: false,
           records: records.first(CrudComponents::Admin::Dependents::PREVIEW)
         )
       end
@@ -67,7 +67,8 @@ module CrudComponents
       # The admin layout's stylesheet, inlined (CSP-nonce aware).
       def admin_styles
         nonce = content_security_policy_nonce if respond_to?(:content_security_policy_nonce)
-        tag.style(CrudComponents::Admin.bundled_css.html_safe, type: 'text/css', nonce: nonce)
+        # The gem's own stylesheet, read from its own file — no user input reaches it.
+        tag.style(CrudComponents::Admin.bundled_css.html_safe, type: 'text/css', nonce: nonce) # rubocop:disable Rails/OutputSafety
       end
 
       # The bulk action, or nil for a model with no destroy route. Like the row's

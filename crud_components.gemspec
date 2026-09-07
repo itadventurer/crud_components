@@ -35,9 +35,9 @@ Gem::Specification.new do |spec|
     []
   end
   tracked = Dir.glob('**/*', File::FNM_DOTMATCH).select { |f| File.file?(f) } if tracked.empty?
+  not_shipped = %w[AGENTS.md Dockerfile .dockerignore].freeze
   spec.files = tracked.reject do |f|
-    f.start_with?('test/', 'script/', '.github/', 'docs/screenshots/', 'deploy/') ||
-      %w[AGENTS.md Dockerfile .dockerignore].include?(f)
+    f.start_with?('test/', 'script/', '.github/', 'docs/screenshots/', 'deploy/') || not_shipped.include?(f)
   end
   spec.require_paths = ['lib']
 

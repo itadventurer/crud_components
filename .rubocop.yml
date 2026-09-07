@@ -76,3 +76,10 @@ Layout/LineLength:
   Exclude:
     - 'test/dummy/config/initializers/simple_form.rb'
     - 'test/dummy/config/initializers/simple_form_bootstrap.rb'
+
+# habtm is one of the field types this gem derives a control for, so the
+# bookstore has to have one. The cop's advice is right for an application and
+# beside the point for the fixture that demonstrates the feature.
+Rails/HasAndBelongsToMany:
+  Exclude:
+    - 'test/dummy/app/models/**/*'

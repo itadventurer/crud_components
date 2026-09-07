@@ -11,19 +11,22 @@ module CrudComponents
       # How many of an item's records the confirmation page names.
       PREVIEW = 10
 
-      Item = Struct.new(:name, :model, :count, :behavior, :cascades, :records, keyword_init: true) do
+      # `total`, not `count`: a Struct member named count overrides Struct#count,
+      # which quietly turns any Enumerable question about an Item into a question
+      # about its members.
+      Item = Struct.new(:name, :model, :total, :behavior, :cascades, :records, keyword_init: true) do
         def destroys? = DESTROYING.include?(behavior)
 
         # What is left over once the named ones are shown.
-        def unnamed = count - Array(records).size
+        def unnamed = total - Array(records).size
 
-        def blocks? = BLOCKING.include?(behavior) && count.positive?
+        def blocks? = BLOCKING.include?(behavior) && total.positive?
 
         def nullifies? = behavior == :nullify
 
         def human_name
-          human = model ? model.model_name.human(count: count) : name.to_s.humanize
-          count == 1 ? human : human.pluralize(I18n.locale)
+          human = model ? model.model_name.human(count: total) : name.to_s.humanize
+          total == 1 ? human : human.pluralize(I18n.locale)
         end
       end
 
@@ -43,7 +46,7 @@ module CrudComponents
 
         def merged(name, items)
           Item.new(name: name, model: items.first.model, behavior: items.first.behavior,
-                   count: items.sum(&:count), cascades: items.any?(&:cascades),
+                   total: items.sum(&:total), cascades: items.any?(&:cascades),
                    records: items.flat_map(&:records).first(PREVIEW))
         end
       end
@@ -55,9 +58,7 @@ module CrudComponents
       end
 
       def items
-        # Not `reject(&:none?)`: an Item is a Struct, so Enumerable#none? asks
-        # about its members, not about the count member.
-        @items ||= (association_items + attachment_items).reject { |item| item.count.zero? } # rubocop:disable Style/CollectionQuerying
+        @items ||= (association_items + attachment_items).reject { |item| item.total.zero? }
       end
 
       # Anything that blocks the delete outright.
@@ -75,7 +76,7 @@ module CrudComponents
           next unless behavior
           next if support.include?(reflection.name)
 
-          Item.new(name: reflection.name, model: target_of(reflection), count: count_for(reflection),
+          Item.new(name: reflection.name, model: target_of(reflection), total: count_for(reflection),
                    behavior: behavior, cascades: cascades?(reflection), records: preview_of(reflection))
         end
       end
@@ -87,7 +88,7 @@ module CrudComponents
 
         record.class.reflect_on_all_attachments.map do |reflection|
           attachments = attachments_of(record.public_send(reflection.name))
-          Item.new(name: reflection.name, model: nil, count: attachments.size, behavior: :destroy,
+          Item.new(name: reflection.name, model: nil, total: attachments.size, behavior: :destroy,
                    cascades: false, records: attachments.first(PREVIEW))
         end
       end

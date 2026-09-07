@@ -291,6 +291,7 @@ module CrudComponents
         enum: :select, select: :select,
         string: :text, text: :text
       }.freeze
+      private_constant :RENDER_TO_FILTER_TYPE
 
       def build_typed_filter
         facet = facets[:filter]
@@ -302,8 +303,11 @@ module CrudComponents
 
       # A filter block opts into a typed control by declaring keyword params
       # (eq:/geq:/leq:/contains:); a positional `->(scope, value)` stays plain text.
+      KEYWORD_PARAMETER_KINDS = %i[key keyreq keyrest].freeze
+      private_constant :KEYWORD_PARAMETER_KINDS
+
       def keyword_filter_block?(block)
-        block.parameters.any? { |kind, _| %i[key keyreq keyrest].include?(kind) }
+        block.parameters.any? { |kind, _| KEYWORD_PARAMETER_KINDS.include?(kind) }
       end
 
       # The filter's value type: `filter_as:` if given, else inferred from the

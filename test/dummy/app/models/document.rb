@@ -5,7 +5,7 @@
 class Document < ApplicationRecord
   include CrudComponents::Model
 
-  has_many :comments, as: :commentable # the polymorphic side, for the comments demo
+  has_many :comments, as: :commentable, dependent: :destroy # the polymorphic side, for the comments demo
 
   crud_structure do
     label :title

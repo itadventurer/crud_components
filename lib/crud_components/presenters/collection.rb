@@ -344,8 +344,8 @@ module CrudComponents
       # A URL for page n that keeps this collection's filters/search/sort and
       # every other collection's params (only our own `page` changes) — so the
       # pager composes with everything and respects `param_prefix:`.
-      def page_url(n)
-        params = view.request.query_parameters.merge(pn('page') => n)
+      def page_url(number)
+        params = view.request.query_parameters.merge(pn('page') => number)
         "#{view.request.path}?#{params.to_query}"
       end
 
@@ -441,6 +441,7 @@ module CrudComponents
       private
 
       GROUP_NONE = 'none'
+      private_constant :GROUP_NONE
 
       # Validate the group key and order the relation by it (groups contiguous),
       # keeping the active sort as the secondary order.

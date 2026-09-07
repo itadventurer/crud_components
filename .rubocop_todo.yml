@@ -6,29 +6,10 @@
 # Note that changes in the inspected code, or installation of new
 # versions of RuboCop, may require this file to be generated again.
 
-# Offense count: 2
-# Configuration parameters: AllowedMethods.
-# AllowedMethods: enums
-Lint/ConstantDefinitionInBlock:
-  Exclude:
-    - 'test/structure_test.rb'
 
 
-# Offense count: 1
-Lint/StructNewOverride:
-  Exclude:
-    - 'lib/crud_components/admin/dependents.rb'
 
 
-# Offense count: 7
-Lint/UselessConstantScoping:
-  Exclude:
-    - 'app/controllers/crud_components/admin/resources_controller.rb'
-    - 'lib/crud_components/admin/configuration.rb'
-    - 'lib/crud_components/builder.rb'
-    - 'lib/crud_components/fields/base.rb'
-    - 'lib/crud_components/presenters/collection.rb'
-    - 'lib/crud_components/typed_filter.rb'
 
 # Offense count: 33
 # Configuration parameters: AllowedMethods, AllowedPatterns, CountRepeatedAttributes, Max.
@@ -146,36 +127,13 @@ Metrics/PerceivedComplexity:
     - 'test/dummy/app/controllers/application_controller.rb'
     - 'test/dummy/app/models/property_definition.rb'
 
-# Offense count: 1
-# Configuration parameters: MinNameLength, AllowNamesEndingInNumbers, AllowedNames, ForbiddenNames.
-# AllowedNames: as, at, by, cc, db, id, if, in, io, ip, of, on, os, pp, to
-Naming/MethodParameterName:
-  Exclude:
-    - 'lib/crud_components/presenters/collection.rb'
-
-# Offense count: 3
-# Configuration parameters: MinSize.
-Performance/CollectionLiteralInLoop:
-  Exclude:
-    - 'crud_components.gemspec'
-    - 'lib/crud_components/fields/base.rb'
-    - 'lib/crud_components/typed_filter.rb'
 
 
 
 
 
-# Offense count: 2
-Rails/HasAndBelongsToMany:
-  Exclude:
-    - 'test/dummy/app/models/author.rb'
-    - 'test/dummy/app/models/book.rb'
 
-# Offense count: 2
-Rails/HasManyOrHasOneDependent:
-  Exclude:
-    - 'test/dummy/app/models/book.rb'
-    - 'test/dummy/app/models/document.rb'
+
 
 # Offense count: 12
 Rails/I18nLocaleTexts:
@@ -188,12 +146,6 @@ Rails/I18nLocaleTexts:
 
 
 
-# Offense count: 4
-Rails/OutputSafety:
-  Exclude:
-    - 'lib/crud_components/admin/view_helpers.rb'
-    - 'lib/crud_components/helpers.rb'
-    - 'test/dummy/app/helpers/playground_helper.rb'
 
 
 
@@ -201,38 +153,12 @@ Rails/OutputSafety:
 
 
 
-# Offense count: 7
-# Configuration parameters: AllowedConstants.
-Style/Documentation:
-  Exclude:
-    - 'lib/crud_components.rb'
-    - 'lib/crud_components/builder.rb'
-    - 'lib/crud_components/config.rb'
-    - 'lib/crud_components/model.rb'
-    - 'lib/crud_components/presenters/base.rb'
-    - 'lib/generators/crud_components/install/install_generator.rb'
-    - 'lib/generators/crud_components/views/views_generator.rb'
 
 
 
 
-# Offense count: 1
-Style/MultilineBlockChain:
-  Exclude:
-    - 'lib/crud_components/admin/entry.rb'
-
-# Offense count: 1
-# Configuration parameters: AllowedMethods.
-# AllowedMethods: respond_to_missing?
-Style/OptionalBooleanParameter:
-  Exclude:
-    - 'lib/crud_components/builder.rb'
 
 
-# Offense count: 1
-# Configuration parameters: Max.
-Style/SafeNavigationChainLength:
-  Exclude:
-    - 'lib/crud_components/admin/entry.rb'
+
 
 

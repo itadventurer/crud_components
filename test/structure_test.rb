@@ -3,6 +3,9 @@
 require 'test_helper'
 
 class StructureTest < ActiveSupport::TestCase
+  # The permission entry point, named short because these tests read it a lot.
+  P = CrudComponents::Permission
+
   # ── rule zero: a model with no configuration at all ───────────────────────
   test 'zero-config model resolves all columns and associations with derived flavors' do
     structure = structure_of(Author) # Author has no include, no declarations
@@ -225,7 +228,6 @@ class StructureTest < ActiveSupport::TestCase
   test 'permission callables: symbol, zero-arity lambda, record lambda, it-proc' do
     allow = CrudTestHelpers::AllowAll.new
     deny  = CrudTestHelpers::DenyAll.new
-    P = CrudComponents::Permission
 
     # symbol sugar → can?(symbol, record) — the record when there is one, else
     # the model class for a column-level decision
@@ -266,7 +268,6 @@ class StructureTest < ActiveSupport::TestCase
   # grant per-record write access).
   test 'a record-dependent condition defers to recordless when there is no record' do
     allow = CrudTestHelpers::AllowAll.new
-    P = CrudComponents::Permission
 
     assert P.permitted?(->(b) { b.active }, Book, allow, nil) # visibility default
     assert_not P.permitted?(->(b) { b.active }, Book, allow, nil, recordless: false) # editability default
