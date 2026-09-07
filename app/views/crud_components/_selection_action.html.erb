@@ -9,6 +9,7 @@
                formmethod: get ? 'get' : 'post',
                name: get ? nil : '_method', value: get ? nil : action.http_method,
                class: action.css_class, title: action.title,
-               data: { turbo_confirm: action.confirm_message, crud_select_target: 'button' }.compact do %>
+               data: { turbo_confirm: action.confirm_message,
+                       crud_select_target: 'button' }.compact.merge(action.data) do %>
   <% if action.icon %><i class="<%= css.icon_prefix %><%= action.icon %>" aria-hidden="true"></i> <% end %><%= action.title %>
 <% end %>

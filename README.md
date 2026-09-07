@@ -475,7 +475,7 @@ attributes(*names, **shared_options)
   # form_as:  — form-input partial (defaults to the field's type)
   # if:       — visibility (everywhere: column, filter, sort, form)
   # editable: — writability in forms (read-only when false / unpermitted)
-action(name, icon:, title:, class:, confirm:, method:, on:, if:, &path_block)
+action(name, icon:, title:, class:, confirm:, method:, on:, if:, data:, &path_block)
 fieldset(name, fields = :all, actions: nil, filters: nil)
 ```
 

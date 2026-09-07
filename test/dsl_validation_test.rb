@@ -20,6 +20,35 @@ class DslValidationTest < ActiveSupport::TestCase
     assert_match(/render facet/, error.message)
   end
 
+  test 'a form fieldset that lists a field with no form control raises' do
+    model = define_model do
+      attribute(:display_title) { |book| book.title.to_s.upcase }
+      fieldset :form, %i[title display_title]
+    end
+    error = assert_raises(CrudComponents::DefinitionError) { structure_of(model) }
+    assert_match(/fieldset :form lists :display_title/, error.message)
+    assert_match(/no form control/, error.message)
+    assert_match(/Drop it from the fieldset/, error.message)
+  end
+
+  test 'the same field is fine in a fieldset that is not a form' do
+    model = define_model do
+      attribute(:display_title) { |book| book.title.to_s.upcase }
+      fieldset :index, %i[title display_title]
+    end
+
+    assert structure_of(model)
+  end
+
+  test 'the default fieldset may hold fields that no form can show' do
+    model = define_model do
+      attribute(:display_title) { |book| book.title.to_s.upcase }
+      fieldset :default, %i[title display_title]
+    end
+
+    assert structure_of(model)
+  end
+
   test 'attribute declared twice raises' do
     model = define_model do
       attribute :title
@@ -254,6 +283,13 @@ class DslValidationTest < ActiveSupport::TestCase
     end
     error = assert_raises(CrudComponents::DefinitionError) { structure_of(model) }
     assert_match(/app_path declared twice/, error.message)
+  end
+
+  test 'action data: that is not a hash raises' do
+    model = define_model { action(:preview, data: 'controller=preview') { '/preview' } }
+    error = assert_raises(CrudComponents::DefinitionError) { structure_of(model) }
+    assert_match(/data: takes a hash/, error.message)
+    assert_match(/String/, error.message)
   end
 
   test 'app_path without a block raises' do
