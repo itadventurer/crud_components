@@ -279,6 +279,21 @@ The block is the path, run in the [view context](fields.md#custom-markup) with t
 | `method:`  | HTTP method             | `:delete` for `:destroy`, else GET              |
 | `on:`      | `:row` or `:collection` | `:row` (`:new` is `:collection`)                |
 | `if:`      | permission callable     | `can?(name, record)` when an ability is present |
+| `data:`    | data attributes hash    | none                                            |
+
+`data:` lands on the element you click — the `<a>` of a GET action, the `<button>` of any
+other — so a Stimulus controller, a `data-turbo-frame` breakout or any other hook reaches
+the action without a custom partial:
+
+```ruby
+action :copy_link, icon: 'clipboard', data: { controller: 'clipboard', action: 'click->clipboard#copy' } do |book|
+  book_url(book)
+end
+```
+
+The gem's own attributes stay unless you name them: a GET action keeps
+`data-turbo-action="advance"`, and `confirm:` keeps writing `data-turbo-confirm` on the
+form of a non-GET action. Give the same key and yours wins.
 
 A fieldset's `actions:` is authoritative *per kind*: `actions: %i[preview edit destroy]`
 curates the row buttons without losing the derived `:new`; `actions: []` hides
