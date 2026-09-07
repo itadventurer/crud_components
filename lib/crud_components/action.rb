@@ -19,12 +19,7 @@ module CrudComponents
     attr_reader :name, :on, :http_method, :path_block, :data
 
     def initialize(name, derived: false, **options, &path_block)
-      unknown = options.keys - KNOWN_OPTIONS
-      if unknown.any?
-        raise DefinitionError, "action :#{name}: unknown option(s) #{unknown.map(&:inspect).join(', ')} — " \
-                               "known: #{KNOWN_OPTIONS.map(&:inspect).join(', ')}"
-      end
-
+      reject_unknown_options(name, options)
       defaults = DERIVED[name.to_sym] || {}
       @name = name.to_sym
       @derived = derived
@@ -86,6 +81,14 @@ module CrudComponents
     end
 
     private
+
+    def reject_unknown_options(name, options)
+      unknown = options.keys - KNOWN_OPTIONS
+      return if unknown.none?
+
+      raise DefinitionError, "action :#{name}: unknown option(s) #{unknown.map(&:inspect).join(', ')} — " \
+                             "known: #{KNOWN_OPTIONS.map(&:inspect).join(', ')}"
+    end
 
     def data_option(name, value)
       return {} if value.nil?
