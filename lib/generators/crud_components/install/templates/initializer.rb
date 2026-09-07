@@ -24,7 +24,7 @@ CrudComponents.configure do |config|
   # config.model_fallback_icon = 'box'   # default nil = no icon when unmapped
 
   # CSS class map (Bootstrap 5 defaults). The full key list:
-  # CrudComponents::Config::DEFAULT_CSS  
+  # CrudComponents::Config::DEFAULT_CSS
   # config.css.table = 'table align-middle'
   # config.css.thead = ''
   # config.css.filter_row = 'crud-filter-row'

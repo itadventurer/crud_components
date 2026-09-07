@@ -40,8 +40,11 @@ module CrudComponents
         return dash if value.nil?
 
         o = field.renderer_options
-        formatted = o[:digits] ? @v.number_with_precision(value, precision: o[:digits], delimiter: ',')
-                               : @v.number_with_delimiter(value)
+        formatted = if o[:digits]
+                      @v.number_with_precision(value, precision: o[:digits], delimiter: ',')
+                    else
+                      @v.number_with_delimiter(value)
+                    end
         o[:unit] ? @v.safe_join([formatted, " #{o[:unit]}"]) : @v.safe_join([formatted])
       end
 
@@ -85,10 +88,13 @@ module CrudComponents
         links = @v.safe_join(shown.map { |item| association_item(field, item, record) }, ', ')
         return links if items.size <= shown.size
 
-        more = @v.t('crud_components.more', count: items.size - shown.size, default: '+%{count} more')
+        more = @v.t('crud_components.more', count: items.size - shown.size, default: '+%<count>s more')
         index_path = @v.crud_association_index_path(record, field)
-        more_html = index_path ? @v.link_to(more, index_path, class: css.muted, data: { turbo_action: 'advance' })
-                               : @v.tag.span(more, class: css.muted)
+        more_html = if index_path
+                      @v.link_to(more, index_path, class: css.muted, data: { turbo_action: 'advance' })
+                    else
+                      @v.tag.span(more, class: css.muted)
+                    end
         @v.safe_join([links, ' ', more_html])
       end
 

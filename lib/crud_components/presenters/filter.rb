@@ -25,12 +25,12 @@ module CrudComponents
       end
 
       def fields = query.filter_fields
-      def searchable? = query.searchable?
+      delegate :searchable?, to: :query
       def form_path = view.request.path
       def reset_path = view.request.path
 
-      def param_name(key) = query.param_name(key)
-      def value(key) = query.value(key)
+      delegate :param_name, to: :query
+      delegate :value, to: :query
 
       # ── sorting (headerless surfaces) ──────────────────────────────────────
       # Whether to render the sort picker: asked for, and there's something to
@@ -52,7 +52,9 @@ module CrudComponents
       # kept as hidden inputs (to preserve the current sort across an Apply) unless
       # the sort picker renders them — then they'd duplicate, so we drop them.
       def preserved_params
-        own = fields.flat_map { |f| [param_name(f.name.to_s), param_name("#{f.name}_geq"), param_name("#{f.name}_leq")] }
+        own = fields.flat_map do |f|
+          [param_name(f.name.to_s), param_name("#{f.name}_geq"), param_name("#{f.name}_leq")]
+        end
         own += [param_name('q'), param_name('page'), param_name('per')]
         own += [param_name('sort'), param_name('dir')] if sort_control?
         view.request.query_parameters.reject { |key, _| own.include?(key) }

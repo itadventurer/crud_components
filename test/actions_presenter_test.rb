@@ -28,10 +28,12 @@ class ActionsPresenterTest < ActiveSupport::TestCase
 
   test 'derived action icons come from config.action_icons (overridable at render)' do
     edit = CrudComponents::Action.new(:edit, derived: true)
+
     assert_equal 'pencil', edit.icon                      # the shipped default
 
     icons = CrudComponents.config.action_icons.dup
     CrudComponents.config.action_icons[:edit] = 'pencil-fill'
+
     assert_equal 'pencil-fill', edit.icon                 # resolved against config, not frozen at build
   ensure
     CrudComponents.config.action_icons = icons

@@ -3,10 +3,10 @@ class Book < ApplicationRecord
 
   belongs_to :publisher, optional: true
   has_many :reviews, dependent: :destroy
-  has_many :comments, as: :commentable   # polymorphic — the comments demo links back here
+  has_many :comments, as: :commentable # polymorphic — the comments demo links back here
   has_and_belongs_to_many :authors
   has_one_attached :cover
-  has_one_attached :manual   # a PDF — exercises the previewable / icon-fallback display
+  has_one_attached :manual # a PDF — exercises the previewable / icon-fallback display
 
   enum :genre, { fiction: 0, scifi: 1, nonfiction: 2 }
 
@@ -24,7 +24,7 @@ class Book < ApplicationRecord
 
   crud_structure do
     identify_by :slug
-    search_in :title, :subtitle, :publisher, :authors   # :publisher / :authors match each target's label
+    search_in :title, :subtitle, :publisher, :authors # :publisher / :authors match each target's label
 
     attribute :price, as: :number, unit: '€', digits: 2
     attribute :blurb, as: :markdown      # soft-dependency renderer (commonmarker/redcarpet/kramdown)
@@ -34,7 +34,7 @@ class Book < ApplicationRecord
     attribute :active, editable: :manage                    # everyone sees it; only managers edit it
     attribute :internal_token, if: ->(book) { book.active } # record-dependent visibility: only on active books
 
-    attribute :author_names, preload: %i[authors] do   # render block reaches :authors → preload it
+    attribute :author_names, preload: %i[authors] do # render block reaches :authors → preload it
       render { |book| book.authors.map(&:name).to_sentence }
       filter authors: :name
       sort { |scope, dir| scope.left_joins(:authors).order(Author.arel_table[:name].public_send(dir)) }

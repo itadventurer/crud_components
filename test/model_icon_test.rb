@@ -7,6 +7,7 @@ class ModelIconTest < ActiveSupport::TestCase
     # Publisher declares `icon 'building'`; even if the map said otherwise, the
     # declaration is authoritative.
     CrudComponents.config.model_icons['publisher'] = 'shop'
+
     assert_equal 'building', icon_of(Publisher)
   ensure
     CrudComponents.config.model_icons['publisher'] = 'building'
@@ -20,8 +21,10 @@ class ModelIconTest < ActiveSupport::TestCase
 
   test 'unmapped, undeclared model falls back to model_fallback_icon (nil by default)' do
     sprocket = define_model(name: 'Sprocket')
+
     assert_nil icon_of(sprocket)
     CrudComponents.config.model_fallback_icon = 'box'
+
     assert_equal 'box', icon_of(sprocket)
     assert_equal 'book', icon_of(Book), 'a mapped model ignores the fallback'
   ensure
@@ -30,6 +33,7 @@ class ModelIconTest < ActiveSupport::TestCase
 
   test 'an app can register an icon for its own model via config' do
     CrudComponents.config.model_icons['sprocket'] = 'gear-wide'
+
     assert_equal 'gear-wide', icon_of(define_model(name: 'Sprocket'))
   ensure
     CrudComponents.config.model_icons.delete('sprocket')
@@ -37,7 +41,10 @@ class ModelIconTest < ActiveSupport::TestCase
 
   test 'declaring icon twice raises' do
     error = assert_raises(CrudComponents::DefinitionError) do
-      structure_of(define_model(name: 'Twice') { icon 'a'; icon 'b' })
+      structure_of(define_model(name: 'Twice') do
+        icon 'a'
+        icon 'b'
+      end)
     end
     assert_match(/icon declared twice/, error.message)
   end

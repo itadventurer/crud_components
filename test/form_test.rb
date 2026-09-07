@@ -9,9 +9,10 @@ class FormTest < ActiveSupport::TestCase
 
   test 'permit list = editable, permitted, form-capable fields' do
     list = permit(:update, ability: CrudTestHelpers::AllowAll.new)
+
     assert_includes list, :title
-    assert_includes list, :publisher_id        # belongs_to → foreign key
-    assert_includes list, ({ author_ids: [] }) # habtm → ids array
+    assert_includes list, :publisher_id # belongs_to → foreign key
+    assert_includes list, { author_ids: [] } # habtm → ids array
     assert_includes list, :cover               # attachment
     assert_includes list, :active              # editable: :manage, granted
     assert_includes list, :purchase_price      # if: :manage, granted
@@ -19,36 +20,39 @@ class FormTest < ActiveSupport::TestCase
 
   test 'permit list excludes non-editable, computed and association-display fields' do
     list = permit(:update, ability: CrudTestHelpers::AllowAll.new)
-    refute_includes list, :slug          # editable: false
-    refute_includes list, :id
-    refute_includes list, :created_at
-    refute_includes list, :shop_margin   # computed — no form control
-    refute_includes list, :reviews       # has_many (non-habtm) — not editable
+
+    assert_not_includes list, :slug          # editable: false
+    assert_not_includes list, :id
+    assert_not_includes list, :created_at
+    assert_not_includes list, :shop_margin   # computed — no form control
+    assert_not_includes list, :reviews       # has_many (non-habtm) — not editable
   end
 
   test 'permit list is permission-aware (visibility and editability)' do
     list = permit(:update, ability: nil)
-    refute_includes list, :purchase_price  # if: :manage — not even visible
-    refute_includes list, :active          # editable: :manage — visible but not editable
+
+    assert_not_includes list, :purchase_price  # if: :manage — not even visible
+    assert_not_includes list, :active          # editable: :manage — visible but not editable
     assert_includes list, :title
   end
 
-
   test 'a zero-config model still yields a derived permit list' do
     list = CrudComponents.permitted_attributes(Author)
+
     assert_includes list, :name
     assert_includes list, :email
-    assert_includes list, ({ book_ids: [] })   # habtm, derived from the schema
-    assert_includes list, ({ images: [] })      # has_many_attached, derived from the schema
-    refute_includes list, :id
-    refute_includes list, :created_at
+    assert_includes list, { book_ids: [] } # habtm, derived from the schema
+    assert_includes list, { images: [] } # has_many_attached, derived from the schema
+    assert_not_includes list, :id
+    assert_not_includes list, :created_at
   end
 
   test 'control mapping: input vs read-only vs skipped' do
     structure = structure_of(Book)
-    assert structure.field(:title).editable?
-    refute structure.field(:slug).editable?            # editable: false → read-only
-    assert_nil structure.field(:shop_margin).form_control  # computed → skipped
+
+    assert_predicate structure.field(:title), :editable?
+    assert_not_predicate structure.field(:slug), :editable? # editable: false → read-only
+    assert_nil structure.field(:shop_margin).form_control # computed → skipped
     assert_equal :belongs_to, structure.field(:publisher).form_control
     assert_equal :habtm, structure.field(:authors).form_control
     assert_equal :file, structure.field(:cover).form_control
@@ -56,14 +60,16 @@ class FormTest < ActiveSupport::TestCase
 
   test 'form_partial defaults to the form_control type and is overridden by form_as:' do
     structure = structure_of(Book)
-    assert_equal :text, structure.field(:blurb).form_partial          # text column
+
+    assert_equal :text, structure.field(:blurb).form_partial # text column
     assert_equal :belongs_to, structure.field(:publisher).form_partial
     assert_equal :habtm, structure.field(:authors).form_partial
 
     overridden = define_model { attribute :blurb, form_as: :rich_text }
+
     assert_equal :rich_text, structure_of(overridden).field(:blurb).form_partial
     # form_as: must not leak into renderer options (it is not an HTML attribute)
-    refute_includes structure_of(overridden).field(:blurb).renderer_options.keys, :form_as
+    assert_not_includes structure_of(overridden).field(:blurb).renderer_options.keys, :form_as
   end
 
   test 'form_fieldset falls back action → :form → :default' do

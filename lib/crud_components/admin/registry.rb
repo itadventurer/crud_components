@@ -46,7 +46,7 @@ module CrudComponents
       attr_reader :config
 
       def index
-        @index ||= entries.to_h { |entry| [entry.name, entry] }
+        @index ||= entries.index_by { |entry| entry.name }
       end
 
       def build

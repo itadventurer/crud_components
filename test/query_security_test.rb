@@ -23,12 +23,12 @@ class QuerySecurityTest < ActiveSupport::TestCase
                          active: true, published_on: Date.new(2020, 1, 1), pages: 250)
   end
 
-  def query(params, fieldset: :catalog, **options)
-    CrudComponents::Query.new(Book, params, fieldset: fieldset, **options)
+  def query(params, fieldset: :catalog, **)
+    CrudComponents::Query.new(Book, params, fieldset: fieldset, **)
   end
 
-  def apply(params, **options)
-    query(params, **options).apply(Book.all)
+  def apply(params, **)
+    query(params, **).apply(Book.all)
   end
 
   # ── 1. whitelist by construction ──────────────────────────────────────────
@@ -63,6 +63,7 @@ class QuerySecurityTest < ActiveSupport::TestCase
 
   test 'permission-gated fields filter with a granting ability' do
     scoped = apply({ 'purchase_price_geq' => '6' }, ability: CrudTestHelpers::AllowAll.new)
+
     assert_equal [@hobbit], scoped.to_a
   end
 
@@ -73,29 +74,35 @@ class QuerySecurityTest < ActiveSupport::TestCase
   # ── 3. no injection through sort/dir ──────────────────────────────────────
   test 'sorts by whitelisted fields with direction' do
     titles = apply({ 'sort' => 'title', 'dir' => 'desc' }).pluck(:title)
+
     assert_equal ['The Hobbit', 'The Dispossessed', '100% Ruby'], titles
   end
 
   test 'sort injection produces no ORDER BY at all' do
     sql = apply({ 'sort' => 'title; DROP TABLE books' }).to_sql
-    refute_match(/ORDER BY/i, sql)
-    refute_match(/DROP/i, sql)
+
+    assert_no_match(/ORDER BY/i, sql)
+    assert_no_match(/DROP/i, sql)
   end
 
   test 'invalid dir falls back to asc' do
     titles = apply({ 'sort' => 'title', 'dir' => 'evil; --' }).pluck(:title)
+
     assert_equal ['100% Ruby', 'The Dispossessed', 'The Hobbit'], titles
   end
 
   test 'sorting is bound to the fieldset too' do
     sql = apply({ 'sort' => 'title' }, fieldset: :compact).to_sql
+
     assert_match(/ORDER BY/i, sql)
     sql = apply({ 'sort' => 'genre' }, fieldset: :compact).to_sql
-    refute_match(/ORDER BY/i, sql, 'genre is not visible in :compact')
+
+    assert_no_match(/ORDER BY/i, sql, 'genre is not visible in :compact')
   end
 
   test 'a belongs_to sorts by the target label via a join' do
     sql = apply({ 'sort' => 'publisher', 'dir' => 'asc' }).to_sql
+
     assert_match(/ORDER BY.*publishers/i, sql)
     ordered = apply({ 'sort' => 'publisher', 'dir' => 'asc' }).to_a
     # Ace < Tor Books → the Ace book precedes the Tor book
@@ -103,7 +110,7 @@ class QuerySecurityTest < ActiveSupport::TestCase
   end
 
   test 'a computed field without a sort facet is unsortable' do
-    refute_match(/ORDER BY/i, apply({ 'sort' => 'shop_margin' }).to_sql)
+    assert_no_match(/ORDER BY/i, apply({ 'sort' => 'shop_margin' }).to_sql)
   end
 
   test 'a sort facet makes a computed field sortable' do
@@ -122,6 +129,7 @@ class QuerySecurityTest < ActiveSupport::TestCase
 
   test 'a backslash in the value is escaped, not treated as a LIKE escape char' do
     winpath = Book.create!(title: 'C:\\Windows guide', slug: 'winpath', genre: :nonfiction)
+
     assert_equal [winpath], apply({ 'title' => '\\' }).to_a          # literal backslash only
     assert_equal [winpath], apply({ 'title' => 'C:\\Win' }).to_a     # backslash mid-pattern
     assert_empty apply({ 'title' => '\\%' }).to_a                    # not a wildcard escape
@@ -136,8 +144,10 @@ class QuerySecurityTest < ActiveSupport::TestCase
 
   test 'numeric exact accepts scientific and negative notation' do
     @ruby.update!(price: 100)
+
     assert_includes apply({ 'price' => '1e2' }).to_a, @ruby
     Book.create!(title: 'Owed', slug: 'owed', price: -5, genre: :fiction)
+
     assert_equal 1, apply({ 'price_leq' => '-1' }).count
   end
 
@@ -191,12 +201,14 @@ class QuerySecurityTest < ActiveSupport::TestCase
     over = Book.create!(title: 'Over', slug: 'over', genre: :fiction, created_at: (day + 1).beginning_of_day)
 
     leq = apply({ 'created_at_leq' => '2026-02-10' }).to_a
-    assert_includes leq, edge           # 23:59:59 of the day is in
-    refute_includes leq, over           # 00:00:00 next day is out
+
+    assert_includes leq, edge # 23:59:59 of the day is in
+    assert_not_includes leq, over # 00:00:00 next day is out
 
     geq = apply({ 'created_at_geq' => '2026-02-11' }).to_a
+
     assert_includes geq, over
-    refute_includes geq, edge
+    assert_not_includes geq, edge
   end
 
   # ── 5. identify_by resolution only ────────────────────────────────────────
@@ -230,35 +242,38 @@ class QuerySecurityTest < ActiveSupport::TestCase
 
   test 'param_prefix applies to sort and search too: prefixed wins, bare is ignored' do
     sql = apply({ 'books_sort' => 'title', 'sort' => 'genre' }, param_prefix: :books).to_sql
+
     assert_match(/ORDER BY.*title/i, sql)
-    refute_match(/ORDER BY.*genre/i, sql)
+    assert_no_match(/ORDER BY.*genre/i, sql)
     assert_equal [@hobbit], apply({ 'books_q' => 'tor books' }, param_prefix: :books).to_a
-    assert_equal 3, apply({ 'q' => 'tor books' }, param_prefix: :books).count   # bare q ignored
+    assert_equal 3, apply({ 'q' => 'tor books' }, param_prefix: :books).count # bare q ignored
   end
 
   # ── search vs. permissions ────────────────────────────────────────────────
   test 'q does not search a declared, permission-gated column' do
     model = define_model(name: 'GatedSearchBook') do
       search_in :title, :blurb
-      attribute :blurb, if: :manage          # gated string column
+      attribute :blurb, if: :manage # gated string column
     end
     only_in_blurb = model.create!(title: 'nothing here', slug: 'g1', blurb: 'zztreasure')
 
     deny = CrudComponents::Query.new(model, { 'q' => 'zztreasure' },
                                      ability: CrudTestHelpers::DenyAll.new)
+
     assert_empty deny.apply(model.where(id: only_in_blurb.id)).to_a, 'gated column unsearchable'
 
     allow = CrudComponents::Query.new(model, { 'q' => 'zztreasure' },
                                       ability: CrudTestHelpers::AllowAll.new)
+
     assert_equal [only_in_blurb], allow.apply(model.where(id: only_in_blurb.id)).to_a
   end
 
   # ── plumbing ──────────────────────────────────────────────────────────────
   test 'active? reflects whether any filter or search param is set' do
-    assert query({ 'title' => 'x' }).active?
-    assert query({ 'q' => 'x' }).active?
-    refute query({ 'nonsense' => 'x' }).active?
-    refute query({}).active?
+    assert_predicate query({ 'title' => 'x' }), :active?
+    assert_predicate query({ 'q' => 'x' }), :active?
+    assert_not_predicate query({ 'nonsense' => 'x' }), :active?
+    assert_not_predicate query({}), :active?
   end
 
   # ── exposing the params it understands (filter_params / permitted_keys) ─────
@@ -273,19 +288,20 @@ class QuerySecurityTest < ActiveSupport::TestCase
     assert_includes keys, 'sort'
     assert_includes keys, 'dir'
     # pagination is the host's, never the query's
-    refute_includes keys, 'page'
+    assert_not_includes keys, 'page'
     # only what's filterable in the fieldset — internal_token is not visible
-    refute_includes keys, 'internal_token'
+    assert_not_includes keys, 'internal_token'
   end
 
   test 'permitted_keys is fieldset-bound and never names what you cannot see' do
     assert_includes query({}, fieldset: :catalog).permitted_keys, 'genre'
-    refute_includes query({}, fieldset: :compact).permitted_keys, 'genre'
+    assert_not_includes query({}, fieldset: :compact).permitted_keys, 'genre'
   end
 
   test 'permitted_keys respects a granting ability for gated fields' do
-    refute_includes query({}).permitted_keys, 'purchase_price'
+    assert_not_includes query({}).permitted_keys, 'purchase_price'
     granted = query({}, ability: CrudTestHelpers::AllowAll.new).permitted_keys
+
     assert_includes granted, 'purchase_price'
     assert_includes granted, 'purchase_price_geq'
   end
@@ -294,13 +310,15 @@ class QuerySecurityTest < ActiveSupport::TestCase
     raw = ActionController::Parameters.new('title' => 'hobbit', 'evil' => 'x',
                                            'sort' => 'title', 'dir' => 'desc')
     permitted = raw.permit(*query({}).permitted_keys)
+
     assert_equal [@hobbit], apply(permitted).to_a
-    refute permitted.key?('evil')
+    assert_not permitted.key?('evil')
   end
 
   test 'filter_params keeps only present, understood params under their real names' do
     fp = query({ 'title' => 'hobbit', 'price_geq' => '10', 'price_leq' => '',
                  'sort' => 'title', 'evil' => 'x', 'page' => '3' }).filter_params
+
     assert_equal({ 'title' => 'hobbit', 'price_geq' => '10', 'sort' => 'title' }, fp)
   end
 
@@ -311,15 +329,17 @@ class QuerySecurityTest < ActiveSupport::TestCase
   test 'active_filters reads filter and search values by logical name, excluding sort/dir' do
     af = query({ 'title' => 'hobbit', 'price_geq' => '10', 'q' => 'dragons',
                  'sort' => 'title', 'dir' => 'desc' }).active_filters
+
     assert_equal({ 'title' => 'hobbit', 'price_geq' => '10', 'q' => 'dragons' }, af)
   end
 
   test 'a param_prefix flows through permitted_keys, filter_params and active_filters' do
     q = query({ 'books_title' => 'hobbit', 'title' => 'ignored', 'books_q' => 'x' },
               param_prefix: :books)
+
     assert_includes q.permitted_keys, 'books_title'
     assert_includes q.permitted_keys, 'books_q'
-    refute_includes q.permitted_keys, 'title'
+    assert_not_includes q.permitted_keys, 'title'
     assert_equal({ 'books_title' => 'hobbit', 'books_q' => 'x' }, q.filter_params)
     # active_filters keys are logical (unprefixed) for the chip UI
     assert_equal({ 'title' => 'hobbit', 'q' => 'x' }, q.active_filters)

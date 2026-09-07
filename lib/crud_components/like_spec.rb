@@ -79,8 +79,10 @@ module CrudComponents
     # Explicit nesting ({ assoc => columns }) — spell the target's columns out.
     def expand_assoc(model, assoc, sub, path)
       reflection = model.reflect_on_association(assoc)
-      raise DefinitionError, "like-spec references association '#{assoc}', " \
-                             "which #{model} does not have" unless reflection
+      unless reflection
+        raise DefinitionError, "like-spec references association '#{assoc}', " \
+                               "which #{model} does not have"
+      end
 
       expand(reflection.klass, sub, path + [assoc])
     end

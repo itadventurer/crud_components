@@ -75,7 +75,7 @@ module CrudComponents
 
         CrudComponents::Action.new(
           :destroy_selected, on: :selection, method: :get, confirm: false, icon: 'trash',
-          if: :destroy, title: t('crud_components.admin.destroy_selected', default: 'Delete selected')
+                             if: :destroy, title: t('crud_components.admin.destroy_selected', default: 'Delete selected')
         ) { public_send("delete_#{entry.route_key}_path") }
       end
 
@@ -94,7 +94,7 @@ module CrudComponents
       def admin_show_in_app_action
         CrudComponents::Action.new(
           :show_in_app, on: :row, icon: 'box-arrow-up-right',
-          title: t('crud_components.admin.show_in_app', default: 'Show in app')
+                        title: t('crud_components.admin.show_in_app', default: 'Show in app')
         ) { |record| crud_app_path(record) }
       end
 
@@ -115,10 +115,10 @@ module CrudComponents
       # A route helper the engine does not have falls through to the host
       # application's routes — the admin renders the host's partials and render
       # blocks, and those call the host's routes.
-      def method_missing(name, *args, **options, &block)
+      def method_missing(name, ...)
         return super unless forwardable_route_helper?(name)
 
-        main_app.public_send(name, *args, **options, &block)
+        main_app.public_send(name, ...)
       end
 
       def respond_to_missing?(name, include_private = false)

@@ -26,7 +26,7 @@ module CrudComponents
         if @record.save
           redirect_to after_save_path(@record), notice: saved_notice(:created)
         else
-          render :new, status: :unprocessable_entity
+          render :new, status: :unprocessable_content
         end
       end
 
@@ -34,7 +34,7 @@ module CrudComponents
         if @record.update(record_params(:update))
           redirect_to after_save_path(@record), notice: saved_notice(:updated)
         else
-          render :edit, status: :unprocessable_entity
+          render :edit, status: :unprocessable_content
         end
       end
 
@@ -63,7 +63,7 @@ module CrudComponents
         records.each(&:destroy!)
         redirect_to index_path,
                     notice: t('crud_components.admin.notices.destroyed_selected', count: records.size,
-                              default: '%{count} deleted.')
+                                                                                  default: '%<count>s deleted.')
       rescue ActiveRecord::InvalidForeignKey, ActiveRecord::DeleteRestrictionError => e
         redirect_to index_path, alert: e.message
       end
@@ -177,7 +177,7 @@ module CrudComponents
 
       def saved_notice(key)
         t("crud_components.admin.notices.#{key}", model: @model.model_name.human,
-                                                  default: "%{model} #{key}.")
+                                                  default: "%<model>s #{key}.")
       end
     end
   end

@@ -49,7 +49,7 @@ module CrudComponents
     # keyword the block declared; a value that doesn't cast becomes nil, so junk
     # never reaches SQL.
     def apply(scope, value: nil, geq: nil, leq: nil)
-      single = (@keywords.include?(:contains) && !@keywords.include?(:eq)) ? :contains : :eq
+      single = @keywords.include?(:contains) && !@keywords.include?(:eq) ? :contains : :eq
       values = { single => cast(value), geq: cast(geq), leq: cast(leq), choices: @choices }
       @apply.call(scope, **values.slice(*@keywords))
     end
@@ -59,7 +59,11 @@ module CrudComponents
     def filter_choices(query = nil)
       return nil unless type == :select
 
-      raw = @choices.respond_to?(:call) ? (@choices.arity.zero? ? @choices.call : @choices.call(query)) : @choices
+      raw = if @choices.respond_to?(:call)
+              @choices.arity.zero? ? @choices.call : @choices.call(query)
+            else
+              @choices
+            end
       Array(raw).map { |opt| opt.is_a?(Array) ? opt : [opt.to_s, opt] }
     end
 

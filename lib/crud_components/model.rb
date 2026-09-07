@@ -6,6 +6,8 @@ module CrudComponents
       base.extend(ClassMethods)
     end
 
+    # What including CrudComponents::Model adds to the model class itself:
+    # the crud_structure declaration and access to the built structure.
     module ClassMethods
       def crud_structure(&block)
         raise ArgumentError, 'crud_structure requires a block' unless block

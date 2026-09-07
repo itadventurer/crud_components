@@ -3,7 +3,7 @@ Rails.application.configure do
   # test fixture). application.rb already clears config.hosts and sets a
   # throwaway secret_key_base, so nothing else is needed to boot.
   config.eager_load = true
-  config.consider_all_requests_local = false   # override application.rb: no backtrace pages in public
+  config.consider_all_requests_local = false # override application.rb: no backtrace pages in public
   config.active_storage.service = :local
 
   # Log to stdout for containers.

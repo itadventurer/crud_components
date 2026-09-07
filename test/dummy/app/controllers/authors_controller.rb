@@ -11,17 +11,17 @@ class AuthorsController < ApplicationController
     @author = Author.new
   end
 
+  def edit
+    @author = Author.find(params[:id])
+  end
+
   def create
     @author = Author.new(author_params)
     if @author.save
       redirect_to @author, notice: 'Author created.'
     else
-      render :new, status: :unprocessable_entity
+      render :new, status: :unprocessable_content
     end
-  end
-
-  def edit
-    @author = Author.find(params[:id])
   end
 
   def update
@@ -29,7 +29,7 @@ class AuthorsController < ApplicationController
     if @author.update(author_params)
       redirect_to @author, notice: 'Author updated.'
     else
-      render :edit, status: :unprocessable_entity
+      render :edit, status: :unprocessable_content
     end
   end
 
@@ -42,6 +42,7 @@ class AuthorsController < ApplicationController
 
   # Works for a model that doesn't even include CrudComponents::Model.
   def author_params
-    params.require(:author).permit(*CrudComponents.permitted_attributes(Author, action: action_name.to_sym, ability: self))
+    params.require(:author).permit(*CrudComponents.permitted_attributes(Author, action: action_name.to_sym,
+                                                                                ability: self))
   end
 end

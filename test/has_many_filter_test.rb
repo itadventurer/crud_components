@@ -25,7 +25,7 @@ class HasManyFilterTest < ActiveSupport::TestCase
   end
 
   test 'a has_many with a column-labelled target filters by that label as text' do
-    assert books_field.filterable?
+    assert_predicate books_field, :filterable?
     assert_equal :text, books_field.filter_control
   end
 
@@ -40,7 +40,7 @@ class HasManyFilterTest < ActiveSupport::TestCase
   end
 
   test 'a publisher with no books never matches a non-empty query' do
-    refute_includes filtered('Dune').to_a, @empty
+    assert_not_includes filtered('Dune').to_a, @empty
   end
 
   test 'a blank query is inert (the row is not filtered)' do
@@ -49,7 +49,7 @@ class HasManyFilterTest < ActiveSupport::TestCase
 
   test 'a target labelled by a computed method leaves the column unfilterable' do
     with_label(Book, :shop_margin) do
-      refute books_field.filterable?
+      assert_not_predicate books_field, :filterable?
       assert_equal Publisher.count, filtered('Dune').count
     end
   end

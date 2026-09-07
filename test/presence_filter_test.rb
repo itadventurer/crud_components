@@ -26,7 +26,7 @@ class PresenceFilterTest < ActiveSupport::TestCase
 
   # ── has_one_attached (Book#cover), end to end through the query ─────────────
   test 'has_one_attached renders the presence control' do
-    assert field(:cover).filterable?
+    assert_predicate field(:cover), :filterable?
     assert_equal :presence, field(:cover).filter_control
   end
 
@@ -43,6 +43,7 @@ class PresenceFilterTest < ActiveSupport::TestCase
   # ── has_many_attached (Author#images), no CrudComponents config at all ──────
   test 'has_many_attached joins through the *_attachments reflection' do
     images = structure_of(Author).field(:images)
+
     assert_equal :presence, images.filter_control
 
     tolkien = Author.create!(name: 'J. R. R. Tolkien', email: 'jrr@example.com')
@@ -51,13 +52,14 @@ class PresenceFilterTest < ActiveSupport::TestCase
 
     assert_equal [tolkien], images.apply_filter(Author.all, value: 'present').to_a
     present_absent = images.apply_filter(Author.all, value: 'absent').to_a
+
     assert_includes present_absent, bare
-    refute_includes present_absent, tolkien
+    assert_not_includes present_absent, tolkien
   end
 
   # ── non-attachment associations keep their standard behavior ───────────────
   test 'belongs_to still filters by value, not presence' do
-    refute_equal :presence, field(:publisher).filter_control
+    assert_not_equal :presence, field(:publisher).filter_control
     assert_equal [@with_cover], filtered(:publisher, @tor.slug).to_a
   end
 
@@ -65,7 +67,7 @@ class PresenceFilterTest < ActiveSupport::TestCase
   # there is no single column to match — no derived filter (a `filter` facet, or a
   # column-labelled target, would opt it in).
   test 'has_many with a block-labelled target has no derived filter' do
-    refute field(:reviews).filterable?
+    assert_not_predicate field(:reviews), :filterable?
   end
 
   # A computed-method label has no column behind it: the value half of the

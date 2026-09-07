@@ -4,12 +4,14 @@ require_relative 'test_helper'
 class AdminOptedOutModel < ApplicationRecord
   self.table_name = 'reviews'
   include CrudComponents::Model
+
   crud_structure { admin false }
 end
 
 class AdminReadOnlyModel < ApplicationRecord
   self.table_name = 'reviews'
   include CrudComponents::Model
+
   crud_structure do
     admin group: 'Reporting', label: 'Read-only things', actions: %i[index show]
   end
@@ -18,6 +20,7 @@ end
 class AdminScopedModel < ApplicationRecord
   self.table_name = 'books'
   include CrudComponents::Model
+
   crud_structure do
     admin actions: %i[index new], scope: -> { where(active: true) }
     fieldset :admin, %i[title slug]
@@ -33,7 +36,7 @@ class AdminRegistryTest < ActiveSupport::TestCase
     restore_admin_config!
   end
 
-  def registry = CrudComponents::Admin.registry
+  delegate :registry, to: :'CrudComponents::Admin'
 
   def names = registry.entries.map(&:name)
 

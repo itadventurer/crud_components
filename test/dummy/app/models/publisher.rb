@@ -2,7 +2,7 @@ class Publisher < ApplicationRecord
   include CrudComponents::Model
 
   has_many :books, dependent: :nullify
-  has_one_attached :brochure   # an .adoc — a non-previewable file: shows as an icon + filename
+  has_one_attached :brochure # an .adoc — a non-previewable file: shows as an icon + filename
 
   before_validation { self.slug = name.to_s.parameterize if slug.blank? }
 
@@ -11,7 +11,7 @@ class Publisher < ApplicationRecord
   crud_structure do
     label :name
     identify_by :slug
-    icon 'building'        # explicit per-model icon (overrides the name-based guess)
+    icon 'building' # explicit per-model icon (overrides the name-based guess)
     search_in :name
 
     fieldset :index, %i[name founded_on brochure books]

@@ -91,8 +91,8 @@ module CrudComponents
     def association_field_names
       @association_field_names ||=
         model.reflect_on_all_associations.reject(&:belongs_to?).map(&:name)
-              .reject { |n| n.to_s.start_with?('rich_text_', 'with_attached_') }
-              .reject { |n| attachment_support_names.include?(n) }
+             .reject { |n| n.to_s.start_with?('rich_text_', 'with_attached_') }
+             .reject { |n| attachment_support_names.include?(n) }
     end
 
     # The join associations behind each attachment — excluded from the field
@@ -200,7 +200,7 @@ module CrudComponents
     def search_in_spec
       return nil if @search_decl.is_a?(Proc)
 
-      @search_in_spec ||= (@search_decl.presence || default_search_spec)
+      @search_in_spec ||= @search_decl.presence || default_search_spec
     end
 
     # "Search what you see": with no search_in declared, ?q= covers the text

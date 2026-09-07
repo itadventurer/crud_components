@@ -32,7 +32,7 @@ module CrudComponents
         end
       end
 
-      def any? = items.any?
+      delegate :any?, to: :items
 
       # Bootstrap btn-group only renders cleanly when every child is a direct
       # `.btn`. A non-GET action is a button_to *form*, which breaks the

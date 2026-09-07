@@ -14,6 +14,6 @@ class MissingLibvipsBootTest < ActiveSupport::TestCase
       RbConfig.ruby, '-r', stub, '-e', "require #{environment.dump}"
     )
 
-    assert status.success?, "booting without libvips failed:\n#{output}"
+    assert_predicate status, :success?, "booting without libvips failed:\n#{output}"
   end
 end

@@ -36,7 +36,7 @@ module CrudComponents
       def habtm? = reflection.macro == :has_and_belongs_to_many
       def default_editable? = habtm?
       def form_control = :habtm
-      def ids_method = "#{name.to_s.singularize}_ids".to_sym
+      def ids_method = :"#{name.to_s.singularize}_ids"
       def permit_param = { ids_method => [] }
 
       def form_choices

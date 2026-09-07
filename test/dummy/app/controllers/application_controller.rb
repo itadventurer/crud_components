@@ -32,6 +32,6 @@ class ApplicationController < ActionController::Base
 
   def toggle_admin
     session[:admin] = session[:admin] ? nil : true
-    redirect_back fallback_location: root_path
+    redirect_back_or_to(root_path)
   end
 end

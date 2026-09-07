@@ -15,9 +15,9 @@ class DynamicColumnsTest < ActiveSupport::TestCase
     view
   end
 
-  def collection(params: {}, admin: true, **opts)
+  def collection(params: {}, admin: true, **)
     CrudComponents::Presenters::Collection.new(
-      view: view(params: params, admin: admin), records: Book.all, fieldset: :index, **opts
+      view: view(params: params, admin: admin), records: Book.all, fieldset: :index, **
     )
   end
 
@@ -26,19 +26,24 @@ class DynamicColumnsTest < ActiveSupport::TestCase
   # ── the field ──────────────────────────────────────────────────────────────
   test 'a dynamic column resolves its value from the resolver block + preload cache' do
     column = CrudComponents::DynamicColumn.new(:weight, as: :number,
-                                               preload: ->(records) { records.to_h { |r| [r.id, r.id * 10] } }) do |record, loaded|
+                                                        preload: lambda { |records|
+                                                          records.to_h do |r|
+                                                            [r.id, r.id * 10]
+                                                          end
+                                                        }) do |record, loaded|
       loaded[record.id]
     end
     book = Book.create!(title: 'W', slug: 'dc-weight', price: 1)
     field = column.to_field(Book).preload!([book])
 
     assert_equal book.id * 10, field.value(book)
-    assert_equal :number, field.renderer(book)   # explicit as:
-    assert_nil field.column                       # no backing DB column
+    assert_equal :number, field.renderer(book) # explicit as:
+    assert_nil field.column # no backing DB column
   end
 
   test 'renderer is inferred from the value type when no as: is given' do
     book = Book.create!(title: 'I', slug: 'dc-infer', price: 1)
+
     assert_equal :boolean, CrudComponents::DynamicColumn.new(:flag) { |_r| true }.to_field(Book).renderer(book)
     assert_equal :date, CrudComponents::DynamicColumn.new(:on) { |_r| Date.today }.to_field(Book).renderer(book)
     assert_equal :string, CrudComponents::DynamicColumn.new(:txt) { |_r| 'x' }.to_field(Book).renderer(book)
@@ -46,72 +51,103 @@ class DynamicColumnsTest < ActiveSupport::TestCase
 
   test 'filter/sort are off unless the column supplies the facet (keeps the query whitelist tight)' do
     plain = CrudComponents::DynamicColumn.new(:c) { |_r| 1 }.to_field(Book)
+
     assert_not plain.filterable?
     assert_not plain.sortable?
 
     rich = CrudComponents::DynamicColumn.new(:c, filter: ->(s, _v) { s }, sort: ->(s, _d) { s }).to_field(Book)
-    assert rich.filterable?
-    assert rich.sortable?
+
+    assert_predicate rich, :filterable?
+    assert_predicate rich, :sortable?
   end
 
   # A Proc sort facet must override a prior order (e.g. a search backend's
   # relevance rank), not append to it — so an explicit ?sort= wins (issue #23).
   test 'a Proc sort facet overrides a prior order instead of appending' do
     field = CrudComponents::DynamicColumn.new(:t, sort: ->(scope, dir) { scope.order(title: dir) }).to_field(Book)
-    prior = Book.order(:price)   # stands in for the rank order a search_in block set
+    prior = Book.order(:price) # stands in for the rank order a search_in block set
     order_clause = field.apply_sort(prior, :asc).to_sql.split(/order by/i).last
 
     assert_includes order_clause, 'title'
-    assert_not_includes order_clause, 'price'   # the prior order was cleared, not kept as primary
+    assert_not_includes order_clause, 'price' # the prior order was cleared, not kept as primary
   end
 
   # ── typed filter controls ────────────────────────────────────────────────────
   # The internal mechanism: casting, keyword routing, control derivation.
   test 'a typed filter casts values to its type and hands the block only its keywords' do
     got = nil
-    f = CrudComponents::TypedFilter.new(:numeric, ->(scope, geq:, leq:) { got = { geq:, leq: }; scope })
+    f = CrudComponents::TypedFilter.new(:numeric, lambda { |scope, geq:, leq:|
+      got = { geq:, leq: }
+      scope
+    })
+
     assert_equal :kept, f.apply(:kept, value: 'x', geq: '5', leq: '10')   # returns the block's scope
     assert_equal({ geq: BigDecimal('5'), leq: BigDecimal('10') }, got)    # cast; the bare slot dropped
   end
 
   test 'an unparseable value drops to nil before the block (junk never reaches SQL)' do
     got = :unset
-    CrudComponents::TypedFilter.new(:numeric, ->(scope, geq:, leq:) { got = { geq:, leq: }; scope })
+    CrudComponents::TypedFilter.new(:numeric, lambda { |scope, geq:, leq:|
+      got = { geq:, leq: }
+      scope
+    })
                                .apply(:scope, geq: 'not-a-number', leq: '')
+
     assert_equal({ geq: nil, leq: nil }, got)
   end
 
   test 'the bare ?field= value binds to contains: when the block asks, else eq:' do
     text_got = nil
-    CrudComponents::TypedFilter.new(:text, ->(scope, contains:) { text_got = contains; scope }).apply(:s, value: 'foo')
+    CrudComponents::TypedFilter.new(:text, lambda { |scope, contains:|
+      text_got = contains
+      scope
+    }).apply(:s, value: 'foo')
+
     assert_equal 'foo', text_got
 
     num_got = :unset
-    CrudComponents::TypedFilter.new(:numeric, ->(scope, eq:) { num_got = eq; scope }).apply(:s, value: '42')
+    CrudComponents::TypedFilter.new(:numeric, lambda { |scope, eq:|
+      num_got = eq
+      scope
+    }).apply(:s, value: '42')
+
     assert_equal BigDecimal('42'), num_got
   end
 
   test 'a boolean typed filter pre-parses true/false, and a blank value means any' do
     seen = []
-    f = CrudComponents::TypedFilter.new(:boolean, ->(scope, eq:) { seen << eq; scope })
+    f = CrudComponents::TypedFilter.new(:boolean, lambda { |scope, eq:|
+      seen << eq
+      scope
+    })
     f.apply(:s, value: 'true')
     f.apply(:s, value: 'no')
     f.apply(:s, value: '')
+
     assert_equal [true, false, nil], seen
   end
 
   test 'a **opts block receives every keyword, cast' do
     got = nil
-    CrudComponents::TypedFilter.new(:numeric, ->(scope, **opts) { got = opts; scope }).apply(:s, value: '1', geq: '2', leq: '3')
+    CrudComponents::TypedFilter.new(:numeric, lambda { |scope, **opts|
+      got = opts
+      scope
+    }).apply(:s, value: '1', geq: '2', leq: '3')
+
     assert_equal({ eq: BigDecimal('1'), geq: BigDecimal('2'), leq: BigDecimal('3'), choices: nil }, got)
   end
 
   test 'a select typed filter exposes its choices and feeds the block eq' do
     got = nil
-    f = CrudComponents::TypedFilter.new(:select, ->(scope, eq:) { got = eq; scope },
+    f = CrudComponents::TypedFilter.new(:select, lambda { |scope, eq:|
+      got = eq
+      scope
+    },
                                         choices: [%w[Hard hardcover], %w[Soft paperback]])
+
     assert_equal [%w[Hard hardcover], %w[Soft paperback]], f.filter_choices
     f.apply(:scope, value: 'hardcover')
+
     assert_equal 'hardcover', got
   end
 
@@ -123,37 +159,43 @@ class DynamicColumnsTest < ActiveSupport::TestCase
   # The public surface: `as:` drives the filter type, the block's keywords the control.
   test 'a dynamic column filters as its as: type — a number block with bounds is a range' do
     field = CrudComponents::DynamicColumn.new(:weight, as: :number, filter: ->(s, geq:, leq:) { s }).to_field(Book)
-    assert field.filterable?
+
+    assert_predicate field, :filterable?
     assert_equal :number_range, field.filter_control
-    assert field.range_filter?
+    assert_predicate field, :range_filter?
   end
 
   test 'a number block that asks only for eq: renders a single field' do
     field = CrudComponents::DynamicColumn.new(:weight, as: :number, filter: ->(s, eq:) { s }).to_field(Book)
+
     assert_equal :number, field.filter_control
   end
 
   test 'a date column filters as a date range' do
     field = CrudComponents::DynamicColumn.new(:published_on, as: :date, filter: ->(s, geq:, leq:) { s }).to_field(Book)
+
     assert_equal :date_range, field.filter_control
   end
 
   test 'filter_as: overrides the filter type when it differs from as:' do
     field = CrudComponents::DynamicColumn.new(:rating, as: :string, filter_as: :number,
-                                              filter: ->(s, geq:, leq:) { s }).to_field(Book)
+                                                       filter: ->(s, geq:, leq:) { s }).to_field(Book)
+
     assert_equal :number_range, field.filter_control
   end
 
   test 'filter_as: :select with filter_choices: renders a dropdown with those choices' do
     field = CrudComponents::DynamicColumn.new(:binding, filter_as: :select,
-                                              filter_choices: [%w[Hard hardcover]],
-                                              filter: ->(s, eq:) { s }).to_field(Book)
+                                                        filter_choices: [%w[Hard hardcover]],
+                                                        filter: ->(s, eq:) { s }).to_field(Book)
+
     assert_equal :select, field.filter_control
     assert_equal [%w[Hard hardcover]], field.filter_choices
   end
 
   test 'a positional filter block (no keywords) stays a plain text filter' do
     field = CrudComponents::DynamicColumn.new(:c, filter: ->(s, _v) { s }).to_field(Book)
+
     assert_equal :text, field.filter_control
     assert_not field.range_filter?
     assert_nil field.filter_choices
@@ -161,6 +203,7 @@ class DynamicColumnsTest < ActiveSupport::TestCase
 
   test 'a keyword block with no as: defaults to a text filter' do
     field = CrudComponents::DynamicColumn.new(:note, filter: ->(s, contains:) { s }).to_field(Book)
+
     assert_equal :text, field.filter_control
   end
 
@@ -169,9 +212,10 @@ class DynamicColumnsTest < ActiveSupport::TestCase
     weight = CrudComponents::DynamicColumn.new(:weight, filter: ->(s, _v) { s }, sort: ->(s, _d) { s }) { |_r| 1 }
     f = CrudComponents::Presenters::Filter.new(view: view, model: Book, fieldset: :index,
                                                extra_columns: [weight], sort: true)
-    assert_includes f.fields.map(&:name), :weight                  # the dynamic column's filter is in the form
-    assert f.sort_control?                                         # sort: true + there are sortable fields
-    assert_includes f.sort_field_choices.map(&:last), 'weight'     # …including the dynamic one
+
+    assert_includes f.fields.map(&:name), :weight # the dynamic column's filter is in the form
+    assert_predicate f, :sort_control? # sort: true + there are sortable fields
+    assert_includes f.sort_field_choices.map(&:last), 'weight' # …including the dynamic one
   end
 
   test 'the Filter sort picker is off by default and when nothing is sortable' do
@@ -181,6 +225,7 @@ class DynamicColumnsTest < ActiveSupport::TestCase
   # ── the presenter: selection + ordering ──────────────────────────────────────
   test 'dynamic columns are appended to the permitted column set' do
     names = collection(extra_columns: [color]).available_fields.map(&:name)
+
     assert_includes names, :color
     assert_equal :color, names.last
   end
@@ -200,11 +245,13 @@ class DynamicColumnsTest < ActiveSupport::TestCase
 
   test 'picked_columns: :auto reads ?cols= to limit and order the visible columns' do
     fields = collection(picker: true, params: { 'cols' => %w[color title] }, extra_columns: [color]).fields
+
     assert_equal %i[color title], fields.map(&:name)
   end
 
   test 'an unknown ?cols= name is ignored, not rendered' do
     fields = collection(picker: true, params: { 'cols' => %w[nope title] }).fields
+
     assert_equal %i[title], fields.map(&:name)
   end
 
@@ -220,14 +267,15 @@ class DynamicColumnsTest < ActiveSupport::TestCase
 
   test 'picked_columns: :auto with no ?cols= shows all (the gear, nothing picked yet)' do
     c = collection(picker: true, extra_columns: [color])
-    assert_equal c.available_fields.map(&:name), c.fields.map(&:name)   # no selection → every field
+
+    assert_equal c.available_fields.map(&:name), c.fields.map(&:name) # no selection → every field
   end
 
   test 'picker: only toggles the gear; picked_columns applies on its own' do
     # the gear follows picker: alone
-    assert collection(picker: true).column_picker?
+    assert_predicate collection(picker: true), :column_picker?
     assert_not collection(picker: false).column_picker?
-    assert_not collection.column_picker?                                  # picker: false is the default
+    assert_not collection.column_picker? # picker: false is the default
     assert_not collection(picker: false, picked_columns: %i[title]).column_picker?
 
     # an Array narrows even with no gear here (the gear may live elsewhere)
@@ -239,11 +287,13 @@ class DynamicColumnsTest < ActiveSupport::TestCase
 
   test '?cols= accepts the comma-joined form the JS controller submits' do
     assert_equal %i[price title],
-                 collection(picker: true, params: { 'cols' => 'price,title' }, extra_columns: [color]).fields.map(&:name)
+                 collection(picker: true, params: { 'cols' => 'price,title' },
+                            extra_columns: [color]).fields.map(&:name)
   end
 
   test 'column_visible? reflects the current selection' do
     c = collection(picker: true, params: { 'cols' => %w[title] }, extra_columns: [color])
+
     assert c.column_visible?(c.available_fields.find { |f| f.name == :title })
     assert_not c.column_visible?(c.available_fields.find { |f| f.name == :color })
   end
@@ -260,6 +310,7 @@ class DynamicColumnsTest < ActiveSupport::TestCase
 
   test 'a manage-gated dynamic column follows the ability like a declared if: field' do
     gated = CrudComponents::DynamicColumn.new(:cost, if: :manage) { |_r| 9 }
+
     assert_includes collection(extra_columns: [gated], admin: true).available_fields.map(&:name), :cost
     assert_not_includes collection(extra_columns: [gated], admin: false).available_fields.map(&:name), :cost
   end
@@ -268,12 +319,13 @@ class DynamicColumnsTest < ActiveSupport::TestCase
   test 'CrudComponents.selected_columns extracts the picker selection from params' do
     assert_nil CrudComponents.selected_columns({})
     assert_equal %w[title price], CrudComponents.selected_columns({ 'cols' => %w[title price] })
-    assert_equal %w[title price], CrudComponents.selected_columns({ 'cols' => 'title,price' })  # comma form
+    assert_equal %w[title price], CrudComponents.selected_columns({ 'cols' => 'title,price' }) # comma form
     assert_equal %w[title], CrudComponents.selected_columns({ 'books_cols' => %w[title] }, param_prefix: :books)
-    assert_nil CrudComponents.selected_columns({ 'cols' => ['', nil] })  # empty submit → nil
+    assert_nil CrudComponents.selected_columns({ 'cols' => ['', nil] }) # empty submit → nil
 
     yielded = nil
     CrudComponents.selected_columns({ 'cols' => %w[a b] }) { |cols| yielded = cols }
+
     assert_equal %w[a b], yielded
     CrudComponents.selected_columns({}) { |_cols| flunk 'block must not run when nothing was submitted' }
   end
@@ -282,31 +334,39 @@ class DynamicColumnsTest < ActiveSupport::TestCase
     book = Book.create!(title: 'R', slug: 'rec-vis', price: 1)
     # an explicit Array is verbatim (and never reads ?cols=, even when present)
     base = CrudComponents::Presenters::Record.new(view: view, record: book, picked_columns: %i[price title])
+
     assert_equal %i[price title], base.fields.map(&:name)
 
     ignored = CrudComponents::Presenters::Record.new(view: view(params: { 'cols' => %w[title] }),
                                                      record: book, picked_columns: %i[price title])
-    assert_equal %i[price title], ignored.fields.map(&:name)   # Array ignores ?cols=
+
+    assert_equal %i[price title], ignored.fields.map(&:name) # Array ignores ?cols=
 
     # :auto (the default) does NOT read ?cols= on a record — no inline gear here, so a
     # stray param is ignored; the controller resolves and passes an Array instead.
     auto = CrudComponents::Presenters::Record.new(view: view(params: { 'cols' => %w[title] }),
                                                   record: book, picked_columns: :auto)
+
     assert_includes auto.fields.map(&:name), :title
-    assert auto.fields.size > 1, 'record :auto should not narrow from a stray ?cols='
+    assert_operator auto.fields.size, :>, 1, 'record :auto should not narrow from a stray ?cols='
   end
 
   test 'crud_record renders dynamic columns as extra rows (extra_columns:)' do
     book = Book.create!(title: 'Rec', slug: 'rec-extra', price: 1)
     column = CrudComponents::DynamicColumn.new(:shelf, label: 'Shelf',
-                                               preload: ->(records) { records.to_h { |r| [r.id, 'A1'] } }) do |record, loaded|
+                                                       preload: lambda { |records|
+                                                         records.to_h do |r|
+                                                           [r.id, 'A1']
+                                                         end
+                                                       }) do |record, loaded|
       loaded[record.id]
     end
     presenter = CrudComponents::Presenters::Record.new(view: view, record: book, extra_columns: [column])
 
     assert_includes presenter.available_fields.map(&:name), :shelf
     shelf = presenter.fields.find { |f| f.name == :shelf }
-    assert_equal 'A1', shelf.value(book)   # batch-loaded on [record] and resolved
+
+    assert_equal 'A1', shelf.value(book) # batch-loaded on [record] and resolved
   end
 
   test 'a dynamic/computed column header uses its label: instead of the humanized slug' do
@@ -320,6 +380,7 @@ class DynamicColumnsTest < ActiveSupport::TestCase
   # ── custom column headers + header actions (issue #4) ─────────────────────────
   test 'a plain dynamic column has no custom header (layout keeps human_name + sort)' do
     field = color.to_field(Book)
+
     assert_not field.custom_header?
     assert_not collection(extra_columns: [color]).custom_header?(field)
   end
@@ -327,10 +388,10 @@ class DynamicColumnsTest < ActiveSupport::TestCase
   test 'header: and header_actions: flow from the column onto its field' do
     action = CrudComponents::Action.new(:send_all, method: :post) { '/send' }
     column = CrudComponents::DynamicColumn.new(:mail, label: 'Mail',
-                                               header: -> { 'X' }, header_actions: [action])
+                                                      header: -> { 'X' }, header_actions: [action])
     field = column.to_field(Book)
 
-    assert field.custom_header?
+    assert_predicate field, :custom_header?
     assert_equal [action], field.header_actions
     assert_kind_of Proc, field.header
   end
@@ -346,6 +407,7 @@ class DynamicColumnsTest < ActiveSupport::TestCase
 
     s_field = col.available_fields.find { |f| f.name == :s }
     b_field = col.available_fields.find { |f| f.name == :b }
+
     assert_equal '<b>Hi</b>', col.column_header(s_field)        # String passes through as-is
     assert_equal 'FROM-VIEW', col.column_header(b_field)        # block runs in view context
   end
@@ -360,6 +422,7 @@ class DynamicColumnsTest < ActiveSupport::TestCase
     without_field = col.available_fields.find { |f| f.name == :n }
 
     actions = col.column_header_actions(with_field)
+
     assert_equal :collection, actions.kind                     # acts on the column, not a row
     assert_nil col.column_header_actions(without_field)        # header but no actions
   end
@@ -368,7 +431,7 @@ class DynamicColumnsTest < ActiveSupport::TestCase
     action = CrudComponents::Action.new(:bulk, on: :selection, method: :post) { '/bulk' }
     field  = CrudComponents::Fields::StringField.new(:title, Book, { header: 'Catalog', header_actions: [action] })
 
-    assert field.custom_header?
+    assert_predicate field, :custom_header?
     assert_equal 'Catalog', field.header
     assert_equal [action], field.header_actions
     assert_not_includes field.renderer_options.keys, :header   # header keys don't leak into cell rendering
@@ -377,13 +440,13 @@ class DynamicColumnsTest < ActiveSupport::TestCase
 
   test 'a column with an on: :selection header action makes the collection selectable' do
     sel = CrudComponents::DynamicColumn.new(:m, header_actions: [
-      CrudComponents::Action.new(:tag, on: :selection, method: :post) { '/tag' }
-    ]) { |_r| 1 }
+                                              CrudComponents::Action.new(:tag, on: :selection, method: :post) { '/tag' }
+                                            ]) { |_r| 1 }
     plain = CrudComponents::DynamicColumn.new(:n, header_actions: [
-      CrudComponents::Action.new(:ping, on: :collection, method: :post) { '/ping' }
-    ]) { |_r| 1 }
+                                                CrudComponents::Action.new(:ping, on: :collection, method: :post) { '/ping' }
+                                              ]) { |_r| 1 }
 
-    assert collection(extra_columns: [sel]).column_selection_actions?       # :selection → checkboxes
+    assert_predicate collection(extra_columns: [sel]), :column_selection_actions? # :selection → checkboxes
     assert_not collection(extra_columns: [plain]).column_selection_actions? # :collection → none
   end
 end
@@ -403,26 +466,31 @@ class DynamicColumnsIntegrationTest < ActionDispatch::IntegrationTest
 
   test 'dynamic columns render with type-aware formatting' do
     get '/custom_fields'
+
     assert_response :success
     assert_select 'th', text: /Shelf/
     assert_select 'td', text: /A1/
-    assert_match(/300.* g/, response.body)   # number flavor + unit
+    assert_match(/300.* g/, response.body) # number flavor + unit
   end
 
   test 'a dynamic column filters via a plain GET param' do
     get '/custom_fields', params: { shelf: 'A1' }
+
     assert_select 'td', text: /A1/
     assert_select 'td', { text: /B2/, count: 0 }
   end
 
   test 'a dynamic column sorts via plain GET params' do
     get '/custom_fields', params: { sort: 'weight', dir: 'desc' }
+
     assert_response :success
-    assert response.body.index('Beta') < response.body.index('Alpha'), 'desc weight: 900 (Beta) before 300 (Alpha)'
+    assert_operator response.body.index('Beta'), :<, response.body.index('Alpha'),
+                    'desc weight: 900 (Beta) before 300 (Alpha)'
   end
 
   test 'a number dynamic column filters by range (geq/leq), not substring (issue #20)' do
     get '/custom_fields', params: { weight_geq: '500' }
+
     assert_response :success
     assert_select 'td', text: /Beta/                   # 900 ≥ 500
     assert_select 'td', { text: /Alpha/, count: 0 }    # 300 < 500, excluded
@@ -433,6 +501,7 @@ class DynamicColumnsIntegrationTest < ActionDispatch::IntegrationTest
 
   test 'crud_filter accepts extra_columns: so dynamic-column filters appear in the standalone form (#22)' do
     get '/custom_fields'
+
     assert_response :success
     # The standalone filter form (not the inline table row) carries the dynamic
     # column's control — only possible because crud_filter got extra_columns:.
@@ -441,21 +510,24 @@ class DynamicColumnsIntegrationTest < ActionDispatch::IntegrationTest
 
   test 'the column picker limits the visible columns via ?cols=' do
     get '/columns', params: { cols: %w[shelf title] }
+
     assert_response :success
     # Assert on the sortable header links (the picker's labels are <span>s, so
     # scope to <th> <a> to avoid matching the picker list).
     assert_select 'thead th a', text: /Shelf/
-    assert_select 'thead th a', { text: /Genre/, count: 0 }   # dropped by the selection
+    assert_select 'thead th a', { text: /Genre/, count: 0 } # dropped by the selection
   end
 
   test 'the picker renders a checkbox per available column, pre-ticked for the current view' do
     get '/columns', params: { cols: %w[title] }
+
     assert_select 'input[type=checkbox][name="cols[]"][value=title][checked]'
     assert_select 'input[type=checkbox][name="cols[]"][value=shelf]:not([checked])'
   end
 
   test 'the picker is a gear in the table header, not a toolbar button' do
     get '/columns'
+
     assert_select 'thead details.crud-column-picker summary i[class*=gear]'   # gear, in the header
     assert_select '.crud-toolbar-cell details.crud-column-picker', count: 0   # not in the toolbar
   end
@@ -463,11 +535,13 @@ class DynamicColumnsIntegrationTest < ActionDispatch::IntegrationTest
   test 'the standalone picker drives a detail view via ?cols=' do
     book = Book.create!(title: 'Solo', slug: 'solo-detail', price: 7)
     get book_path(book)
+
     assert_select 'details.crud-column-picker'                 # the standalone gear renders
     assert_select 'dt', text: /Title/
     assert_select 'dt', text: /Price/
 
     get book_path(book), params: { cols: %w[title] }
+
     assert_select 'dt', text: /Title/
     assert_select 'dt', { text: /Price/, count: 0 }            # crud_record narrowed to the pick
   end
@@ -475,6 +549,7 @@ class DynamicColumnsIntegrationTest < ActionDispatch::IntegrationTest
   # ── custom column headers + header actions (issue #4) ─────────────────────────
   test 'a dynamic column renders a custom header link in its <th>' do
     get '/column_headers'
+
     assert_response :success
     # The header block is a link_to, so the Shelf column header is an <a>, not
     # plain text (and not a sort link — these columns are display-only).
@@ -483,6 +558,7 @@ class DynamicColumnsIntegrationTest < ActionDispatch::IntegrationTest
 
   test 'an on: :selection header action submits the shared select-form (not its own form, not a GET link)' do
     get '/column_headers'
+
     assert_response :success
     path = tag_column_headers_path(key: 'shelf')
     # A submit button bound to the shared select-form (form=) posting to the
@@ -495,6 +571,7 @@ class DynamicColumnsIntegrationTest < ActionDispatch::IntegrationTest
 
   test 'a column-level :selection action makes the table selectable (checkboxes render)' do
     get '/column_headers'
+
     assert_response :success
     assert_select 'form#crud_select_books'                      # the shared select-form
     assert_select 'th.crud-select-cell input[type=checkbox]'    # select-all in the header
@@ -506,11 +583,13 @@ class DynamicColumnsIntegrationTest < ActionDispatch::IntegrationTest
     b = Book.create!(title: 'Sel B', slug: 'ch-sel-b', price: 1)
     post tag_column_headers_path(key: 'shelf'), params: { selected: [a.slug, b.slug] }
     follow_redirect!
+
     assert_select '.alert-success', text: /Tagged 2 book\(s\) for 'shelf'/
   end
 
   test 'a render: cell block can read the preload:-ed value (passed as the 2nd arg)' do
     get '/column_headers'
+
     assert_response :success
     # The render: block built `tag:<value>` from the value it now receives.
     assert_select 'span.shelf-tag', text: 'tag:A1'

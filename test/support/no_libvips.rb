@@ -3,7 +3,7 @@
 require 'ffi'
 
 class << FFI::DynamicLibrary
-  alias_method :open_with_libvips, :open
+  alias open_with_libvips open
 
   def open(name, flags)
     if name.to_s.include?('vips')
