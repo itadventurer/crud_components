@@ -21,51 +21,15 @@ module CrudComponents
                      extra_columns: nil, picker: false, picked_columns: :auto, extra_actions: nil,
                      except_actions: nil)
         super(view: view)
-        unless records.respond_to?(:klass)
-          raise ArgumentError,
-                'crud_collection expects an ActiveRecord relation (e.g. Book.all, @books, or an ' \
-                "authorized scope like Book.accessible_by(current_ability)), got #{records.class}. " \
-                'Pass a scope so your authorization and filtering apply before the gem renders.'
-        end
-        relation = records
+        relation = checked_relation(records)
         @model = relation.klass
         @structure = Structure.for(@model)
         @owner = relation.respond_to?(:proxy_association) ? relation.proxy_association.owner : nil
-        @layout = layout
-        @param_prefix = param_prefix
-        @actions_enabled = actions
-        @extra_actions = Array(extra_actions)
-        @except_actions = Array(except_actions).map(&:to_sym)
-        @search_bar_enabled = search_bar
-        # Two orthogonal column-picker knobs (see ColumnSelection): the gear is on
-        # iff `picker`; the selection comes from the param (`:auto`) or verbatim
-        # from the resolved Array — they never both read the param.
-        @picker = picker
-        @picked_columns = normalize_picked_columns(picked_columns)
-        # User-defined columns whose data lives outside the model's table. Built
-        # fresh per request (never on the immutable Structure), so they may carry
-        # the per-page value cache.
-        @dynamic_fields = Array(extra_columns).map { |c| c.to_field(@model) }
-
-        case query
-        when :static
-          @static = true
-          @fieldset = @structure.fieldset(fieldset || :index)
-        when :auto, nil
-          @fieldset = @structure.fieldset(fieldset || :index)
-          @query = Query.new(@model, view.request.query_parameters,
-                             fieldset: @fieldset, ability: ability,
-                             param_prefix: param_prefix, extra_fields: @dynamic_fields)
-          relation = @query.apply(relation)
-        when Query
-          @query = query
-          @fieldset = fieldset ? @structure.fieldset(fieldset) : query.fieldset
-          @param_prefix = query.param_prefix
-        else
-          raise ArgumentError,
-                "crud_collection query: expects :auto, :static or a CrudComponents::Query, got #{query.inspect}"
-        end
-
+        store_presentation(layout: layout, param_prefix: param_prefix, actions: actions,
+                           search_bar: search_bar, picker: picker, picked_columns: picked_columns,
+                           extra_actions: extra_actions, except_actions: except_actions,
+                           extra_columns: extra_columns)
+        relation = resolve_query(query, fieldset, relation)
         @relation = eager_load(relation)
         setup_grouping(group_by) if group_by
       end
@@ -439,6 +403,61 @@ module CrudComponents
       end
 
       private
+
+      # A scope, not a model class: whatever the caller has already authorized
+      # and filtered is what gets rendered.
+      def checked_relation(records)
+        return records if records.respond_to?(:klass)
+
+        raise ArgumentError,
+              'crud_collection expects an ActiveRecord relation (e.g. Book.all, @books, or an ' \
+              "authorized scope like Book.accessible_by(current_ability)), got #{records.class}. " \
+              'Pass a scope so your authorization and filtering apply before the gem renders.'
+      end
+
+      def store_presentation(layout:, param_prefix:, actions:, search_bar:, picker:, picked_columns:,
+                             extra_actions:, except_actions:, extra_columns:)
+        @layout = layout
+        @param_prefix = param_prefix
+        @actions_enabled = actions
+        @extra_actions = Array(extra_actions)
+        @except_actions = Array(except_actions).map(&:to_sym)
+        @search_bar_enabled = search_bar
+        # Two orthogonal column-picker knobs (see ColumnSelection): the gear is on
+        # iff `picker`; the selection comes from the param (`:auto`) or verbatim
+        # from the resolved Array — they never both read the param.
+        @picker = picker
+        @picked_columns = normalize_picked_columns(picked_columns)
+        # User-defined columns whose data lives outside the model's table. Built
+        # fresh per request (never on the immutable Structure), so they may carry
+        # the per-page value cache.
+        @dynamic_fields = Array(extra_columns).map { |c| c.to_field(@model) }
+      end
+
+      # Sets @fieldset, and @query where there is one; returns the relation the
+      # query narrowed it to.
+      def resolve_query(query, fieldset, relation)
+        case query
+        when :static
+          @static = true
+          @fieldset = @structure.fieldset(fieldset || :index)
+          relation
+        when :auto, nil
+          @fieldset = @structure.fieldset(fieldset || :index)
+          @query = Query.new(@model, view.request.query_parameters,
+                             fieldset: @fieldset, ability: ability,
+                             param_prefix: @param_prefix, extra_fields: @dynamic_fields)
+          @query.apply(relation)
+        when Query
+          @query = query
+          @fieldset = fieldset ? @structure.fieldset(fieldset) : query.fieldset
+          @param_prefix = query.param_prefix
+          relation
+        else
+          raise ArgumentError,
+                "crud_collection query: expects :auto, :static or a CrudComponents::Query, got #{query.inspect}"
+        end
+      end
 
       GROUP_NONE = 'none'
       private_constant :GROUP_NONE

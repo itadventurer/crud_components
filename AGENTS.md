@@ -57,11 +57,10 @@ the description for leaks before pushing.
   also commit messages and pull request prose, since the audience is public.
 - Every raising DSL combination has a test in `dsl_validation_test.rb`; every
   security guarantee has one in `query_security_test.rb`.
-- RuboCop runs in CI and must be clean. `.rubocop.yml` holds the deliberate
-  decisions, each with the reason next to it; `.rubocop_todo.yml` holds what is
-  merely not cleaned up yet, with a count per cop. Put a new exception in the
-  first file only when it is a decision — otherwise fix the code, or let
-  `--auto-gen-config` extend the second and burn it down later.
+- RuboCop runs in CI and must be clean, with **no todo file**: `.rubocop.yml`
+  holds every exception and each one carries its reason. Adding one is a
+  decision to argue for in review — the default answer is to fix the code. If a
+  change ever needs a todo file to land, that is the signal it is too big.
 - Runtime deps: activerecord/activesupport/actionview + simple_form (forms only).
   CanCanCan, Turbo, Stimulus, markdown/rouge gems: feature-detected only.
 - Renderers and layouts are partials resolved by naming convention — no
