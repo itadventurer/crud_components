@@ -48,3 +48,9 @@ Metrics/BlockLength:
     # Shipped by simple_form's generator and kept close to upstream so it can be
     # diffed against a newer one.
     - 'test/dummy/config/initializers/simple_form_bootstrap.rb'
+
+# The gems here are grouped by what they are for, and a comment block covers
+# each group — the soft-dependency renderers, for one. Sorting them
+# alphabetically tears the gems out from under the comment that explains them.
+Bundler/OrderedGems:
+  Enabled: false
