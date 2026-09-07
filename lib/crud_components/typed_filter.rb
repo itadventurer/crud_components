@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module CrudComponents
   # The mechanism behind a typed dynamic-column filter (built internally by
   # {Fields::Base} — you don't construct one). It pairs a value type with an apply

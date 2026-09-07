@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module CrudComponents
   module Admin
     # Who may in at all, as one verdict the controller only has to carry out.

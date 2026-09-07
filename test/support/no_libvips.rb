@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 # Preload that simulates a host with the ruby-vips gem but without the native
 # libvips: every dlopen of a vips library fails the way FFI fails without it.
 require 'ffi'

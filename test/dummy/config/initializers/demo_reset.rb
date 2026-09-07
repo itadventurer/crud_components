@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 # Live-demo only (enabled with DEMO_RESET=1): wipe + reseed the database every
 # few minutes so anything visitors do reverts on its own. Self-contained — a
 # background thread, no external cron. The DB is ephemeral SQLite, so a restart

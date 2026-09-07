@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module CrudComponents
   module Presenters
     # Fast inline cell renderers — Ruby equivalents of the

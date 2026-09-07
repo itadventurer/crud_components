@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module CrudComponents
   module Admin
     # The mount root: what there is to administer.

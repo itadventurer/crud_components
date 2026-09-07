@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require 'test_helper'
 
 # The form side: the permit list (the single source of truth that keeps form

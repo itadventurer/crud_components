@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 # Author is a zero-config model (no include, no crud_structure) — yet it gets
 # a working table, record view AND form, all derived.
 class AuthorsController < ApplicationController

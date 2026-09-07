@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module CrudComponents
   # The declarative mini-language shared by `filter like:` and `search_in`:
   # case-insensitive contains across columns, joining associations as needed.

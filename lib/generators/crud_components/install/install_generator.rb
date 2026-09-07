@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module CrudComponents
   module Generators
     # `rails g crud_components:install` — writes the initializer and, on ask,

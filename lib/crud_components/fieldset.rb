@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module CrudComponents
   # A named selection of fields and actions. `filters:`
   # extends the filterable set beyond the visible fields ("filter only what

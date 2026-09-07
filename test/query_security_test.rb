@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require 'test_helper'
 
 # The security model as executable spec. The uniform rule: a param is applied

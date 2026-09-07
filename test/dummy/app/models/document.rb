@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 # STI base — Manual (manual.rb) inherits this crud_structure (the gem walks the
 # superclass for the declaration). The `type` column is the STI discriminator.
 class Document < ApplicationRecord

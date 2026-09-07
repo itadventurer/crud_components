@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require 'test_helper'
 
 # Name-gated smart renderers: a column named email/url/website/link renders as a

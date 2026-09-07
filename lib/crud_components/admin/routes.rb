@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 CrudComponents::Admin::Engine.routes.draw do
   root 'dashboard#show'
 

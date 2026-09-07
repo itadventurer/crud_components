@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require 'test_helper'
 
 # Dynamic columns (CrudComponents::DynamicColumn / Fields::DynamicField) and the

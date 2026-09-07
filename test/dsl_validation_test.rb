@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require 'test_helper'
 
 # Every raising DSL combination — errors must arrive at structure build time

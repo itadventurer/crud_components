@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module CrudComponents
   module Admin
     # View helpers for the engine's own templates. Included explicitly by the

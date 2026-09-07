@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 class GroupsController < ApplicationController
   # Grouping is a render-time arrangement, like the layout (`as:`). You hand
   # crud_collection a scope as usual and add `group_by:`; the gem orders by the

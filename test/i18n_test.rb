@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require 'test_helper'
 
 # The gem ships default strings (en + de) for its built-in UI, auto-loaded from

@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module CrudComponents
   # The resolved, validated description of how a model appears in the UI.
   # Built lazily per model class and memoized; works for models without any

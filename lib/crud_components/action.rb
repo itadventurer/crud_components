@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module CrudComponents
   # A button, per row or per collection. Derived defaults (:new, :show, :edit,
   # :destroy) are self-disabling: they render only when permitted and their

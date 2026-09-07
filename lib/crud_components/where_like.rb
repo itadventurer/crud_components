@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module CrudComponents
   # Extended onto every scope handed to filter/search blocks, so custom query
   # logic keeps the safe ILIKE machinery without hand-written SQL:

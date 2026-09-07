@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 class BooksController < ApplicationController
   # You hand crud_collection a scope — so authorization/scoping happens here,
   # in your controller (e.g. Book.accessible_by(current_ability)), not in the gem.

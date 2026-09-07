@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 Rails.application.configure do
   # Minimal production config for the deployed live demo (the app is otherwise a
   # test fixture). application.rb already clears config.hosts and sets a

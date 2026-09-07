@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module CrudComponents
   module Presenters
     # The single `form` local of the form partial. Derives a form from the

@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module CrudComponents
   # The minimal context `if:` conditions run in when there is no view around
   # (i.e. inside Query). Exposes `can?` backed by the passed ability; without

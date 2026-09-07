@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 Rails.application.routes.draw do
   root 'home#index' # the living-documentation landing page (a feature index)
 

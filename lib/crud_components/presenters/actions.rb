@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module CrudComponents
   module Presenters
     # Resolves a list of actions for a subject (record or model class) into

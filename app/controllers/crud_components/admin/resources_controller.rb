@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module CrudComponents
   module Admin
     # Every registered model's CRUD, in one controller. The model comes from the

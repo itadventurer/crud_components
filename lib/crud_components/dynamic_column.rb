@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module CrudComponents
   # A column whose data lives *outside* the model's own table — a user-defined
   # property kept in a separate store (definition + value tables, a JSONB blob,

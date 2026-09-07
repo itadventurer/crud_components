@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module CrudComponents
   module Admin
     # What else goes when a record is destroyed: the associations that declare a

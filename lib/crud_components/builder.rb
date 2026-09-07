@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module CrudComponents
   # The DSL evaluated inside `crud_structure do … end`. Its instance methods —
   # {#attribute}, {#attributes}, {#action}, {#fieldset}, {#label},
