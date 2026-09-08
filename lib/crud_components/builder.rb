@@ -174,7 +174,9 @@ module CrudComponents
     #   `%i[index show new create edit update destroy]`), `group:`, `label:`,
     #   `fieldset:`, `scope:` (a callable narrowing the base relation).
     # @return [void]
-    def admin(enabled = true, **options)
+    # `admin false` is the documented way to keep a model out, so the boolean
+    # stays positional — a keyword here would break every caller.
+    def admin(enabled = true, **options) # rubocop:disable Style/OptionalBooleanParameter
       raise DefinitionError, "#{model}: admin declared twice" if defined?(@admin_decl) && !@admin_decl.nil?
 
       unless [true, false].include?(enabled)
@@ -193,6 +195,7 @@ module CrudComponents
     private
 
     ADMIN_OPTIONS = %i[actions group label fieldset scope].freeze
+    private_constant :ADMIN_OPTIONS
 
     def validate_admin_options!(options)
       unknown = options.keys - ADMIN_OPTIONS

@@ -307,7 +307,8 @@ module CrudComponents
     # with `stylesheet_link_tag "crud_components"`.
     def crud_components_styles
       nonce = content_security_policy_nonce if respond_to?(:content_security_policy_nonce)
-      tag.style(CrudComponents.bundled_css.html_safe, type: 'text/css', nonce: nonce)
+      # The gem's own stylesheet, read from its own file — no user input reaches it.
+      tag.style(CrudComponents.bundled_css.html_safe, type: 'text/css', nonce: nonce) # rubocop:disable Rails/OutputSafety
     end
   end
 end

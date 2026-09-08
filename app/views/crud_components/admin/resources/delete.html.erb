@@ -34,7 +34,7 @@
           <ul class="mb-0">
             <%- blockers.each do |item| -%>
               <li>
-                <%= item.count %> <%= item.human_name %>
+                <%= item.total %> <%= item.human_name %>
                 <%= render 'crud_components/admin/resources/dependent_records', owner: @record, item: item %>
               </li>
             <%- end -%>
@@ -50,7 +50,7 @@
         <ul>
           <%- goes.each do |item| -%>
             <li>
-              <strong><%= number_with_delimiter(item.count) %></strong> <%= item.human_name %>
+              <strong><%= number_with_delimiter(item.total) %></strong> <%= item.human_name %>
               <%- if item.cascades -%>
                 <span class="text-muted"><%= t('crud_components.admin.delete.cascades',
                                                default: '(and whatever depends on those)') %></span>
@@ -70,7 +70,7 @@
         <ul>
           <%- nullified.each do |item| -%>
             <li>
-              <strong><%= number_with_delimiter(item.count) %></strong> <%= item.human_name %>
+              <strong><%= number_with_delimiter(item.total) %></strong> <%= item.human_name %>
               <%= render 'crud_components/admin/resources/dependent_records', owner: @record, item: item %>
             </li>
           <%- end -%>

@@ -1,5 +1,3 @@
-inherit_from: .rubocop_todo.yml
-
 plugins:
   - rubocop-minitest
   - rubocop-performance
@@ -40,17 +38,6 @@ Style/Documentation:
   Exclude:
     - 'test/**/*'
 
-# Declaration blocks are long because the declaration is long — that is the
-# whole point of a DSL. A gemspec and a routes file are the same shape.
-Metrics/BlockLength:
-  AllowedMethods:
-    - crud_structure
-    - draw
-  Exclude:
-    - '*.gemspec'
-    # Shipped by simple_form's generator and kept close to upstream so it can be
-    # diffed against a newer one.
-    - 'test/dummy/config/initializers/simple_form_bootstrap.rb'
 
 # The gems here are grouped by what they are for, and a comment block covers
 # each group — the soft-dependency renderers, for one. Sorting them
@@ -76,3 +63,61 @@ Layout/LineLength:
   Exclude:
     - 'test/dummy/config/initializers/simple_form.rb'
     - 'test/dummy/config/initializers/simple_form_bootstrap.rb'
+
+# habtm is one of the field types this gem derives a control for, so the
+# bookstore has to have one. The cop's advice is right for an application and
+# beside the point for the fixture that demonstrates the feature.
+Rails/HasAndBelongsToMany:
+  Exclude:
+    - 'test/dummy/app/models/**/*'
+
+# ── complexity ─────────────────────────────────────────────────────────────
+# The tests and the bookstore are out of all of these: a test class is a list
+# of tests, and the playground packs every feature into a few files on purpose.
+# Neither would ever be refactored to satisfy a count, only silenced.
+#
+# For the code that ships, the method-level ceilings are set just above what
+# the worst method needs today (measured, not guessed). They are there to stop
+# growth, not to bless the present: a method that wants more has to earn it in
+# review. The one genuine outlier — a 40-line constructor at ABC 39 — is split
+# in this same commit rather than configured around.
+Metrics/AbcSize:
+  Max: 30
+  Exclude: &fixtures
+    - 'test/**/*'
+Metrics/MethodLength:
+  Max: 25
+  Exclude: *fixtures
+Metrics/CyclomaticComplexity:
+  Max: 12
+  Exclude: *fixtures
+Metrics/PerceivedComplexity:
+  Max: 13
+  Exclude: *fixtures
+
+# Declaration blocks are long because the declaration is long — that is the
+# point of a DSL. A gemspec and a routes file are the same shape.
+Metrics/BlockLength:
+  AllowedMethods:
+    - crud_structure
+    - draw
+  Exclude:
+    - '*.gemspec'
+    - 'test/**/*'
+
+# Length is not the signal here. A presenter is long because of how many
+# surfaces it renders, a field type because of how many facets it answers —
+# splitting either to get under a line count scatters code that belongs
+# together. The complexity ceilings above are the ones that bite.
+Metrics/ClassLength:
+  Enabled: false
+Metrics/ModuleLength:
+  Enabled: false
+
+# The bookstore's flash messages are written in place, in English, because the
+# playground is read as documentation — a locale key would send the reader to
+# another file to find out what the screen says. The gem's own strings do go
+# through i18n, and there the cop applies.
+Rails/I18nLocaleTexts:
+  Exclude:
+    - 'test/dummy/**/*'

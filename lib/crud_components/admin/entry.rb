@@ -39,8 +39,10 @@ module CrudComponents
       def group
         return options[:group].to_s if options[:group]
 
-        namespace = name.to_s.deconstantize
-        namespace.presence&.demodulize&.underscore&.humanize
+        namespace = name.to_s.deconstantize.presence
+        return nil unless namespace
+
+        namespace.demodulize.underscore.humanize
       end
 
       # The declared group as a locale-independent key: what the heading is
@@ -81,13 +83,14 @@ module CrudComponents
       # This model's to-many associations that point at another registered
       # model, as [association name, entry] — one nested index each.
       def nested_associations(registry)
-        model.reflect_on_all_associations.select(&:collection?).filter_map do |reflection|
+        pairs = model.reflect_on_all_associations.select(&:collection?).filter_map do |reflection|
           target = safe_target(reflection)
           nested = target && registry[target]
           next unless nested&.allows?(:index) && nested.model != model
 
           [reflection.name, nested]
-        end.uniq { |_, nested| nested.route_key }
+        end
+        pairs.uniq { |_, nested| nested.route_key }
       end
 
       private

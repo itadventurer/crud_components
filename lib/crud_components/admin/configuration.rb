@@ -106,6 +106,7 @@ module CrudComponents
       private
 
       MODES = %i[cancan cancancan ability none].freeze
+      private_constant :MODES
 
       def normalized_mode(mode)
         raise ArgumentError, "auth_with: unknown mode #{mode.inspect}, one of #{MODES.inspect}" unless

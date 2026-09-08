@@ -131,6 +131,7 @@ module CrudComponents
 
       # The engine's own actions, mapped to the RESTful one an ability knows.
       ACTION_PERMISSIONS = { destroy_selected: :destroy, delete_selected: :destroy, delete: :destroy }.freeze
+      private_constant :ACTION_PERMISSIONS
 
       # Otherwise the action the request performs is the one authorized.
       # CanCanCan aliases :new to :create and :edit to :update, so a rule

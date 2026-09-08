@@ -71,8 +71,10 @@ module CrudComponents
 
     private
 
+    NAMED_PARAMETER_KINDS = %i[key keyreq].freeze
     TRUE_VALUES = %w[true t 1 yes on].freeze
     FALSE_VALUES = %w[false f 0 no off].freeze
+    private_constant :NAMED_PARAMETER_KINDS, :TRUE_VALUES, :FALSE_VALUES
 
     def range? = @keywords.intersect?(%i[geq leq])
 
@@ -81,7 +83,7 @@ module CrudComponents
       params = apply.respond_to?(:parameters) ? apply.parameters : []
       return KEYWORDS if params.any? { |kind, _| kind == :keyrest }
 
-      params.filter_map { |kind, name| name if %i[key keyreq].include?(kind) }
+      params.filter_map { |kind, name| name if NAMED_PARAMETER_KINDS.include?(kind) }
     end
 
     def cast(value)
