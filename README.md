@@ -495,7 +495,7 @@ CrudComponents::Query.new(model, params, fieldset: :default, ability: nil, param
                                             # #permitted_keys → strong-params list for the filters it reads
                                             # #filter_params → present subset, for filter-preserving links
                                             # #active_filters → active values by logical name, for chips
-CrudComponents.permitted_attributes(model, action: :update, ability: nil)  # strong-params list (forms)
+CrudComponents.permitted_attributes(model, action: :update, ability: nil, record: nil)  # strong-params list (forms)
 CrudComponents.configure { |config| … }     # css/icon maps, select_limit, defaults
 ```
 

@@ -27,6 +27,20 @@ impossible: the permit list *is* the form's field set, projected to param keys. 
 models that don't `include CrudComponents::Model`, use
 `CrudComponents.permitted_attributes(Model, action:, ability:)` — identical result.
 
+**Pass `record:` when a condition looks at the record.** `if: :manage` asks the
+ability alone and needs nothing; `if: ->(book) { book.active? }` needs the book. There
+is no record on the class, and behind the permit list nothing checks again — so a list
+built without one raises rather than guess:
+
+```ruby
+params.require(:book)
+      .permit(*CrudComponents.permitted_attributes(Book, action: action_name.to_sym,
+                                                         ability: current_ability, record: @book))
+```
+
+For `new`/`create` that is the unsaved record (`Book.new`) — the same object the form
+renders from, so form and permit list keep agreeing.
+
 What the list contains, per editable field:
 
 | Field                                         | Permit key                        |

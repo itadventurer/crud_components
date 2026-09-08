@@ -147,8 +147,8 @@ module CrudComponents
     #   params.require(:book)
     #         .permit(*CrudComponents.permitted_attributes(Book, action: :update,
     #                                                       ability: current_ability))
-    def permitted_attributes(model, action: :update, ability: nil)
-      Structure.for(model).permitted_params(action, PermissionContext.new(ability))
+    def permitted_attributes(model, action: :update, ability: nil, record: nil)
+      Structure.for(model).permitted_params(action, PermissionContext.new(ability), record)
     end
 
     # Resolve a bulk-action selection from request params into a relation. The
