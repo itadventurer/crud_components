@@ -154,7 +154,8 @@ module CrudComponents
       end
 
       def record_params(action)
-        permitted = CrudComponents.permitted_attributes(@model, action: action, ability: admin_ability)
+        permitted = CrudComponents.permitted_attributes(@model, action: action, ability: admin_ability,
+                                                                record: @record)
         return {} if permitted.empty?
 
         params.require(@model.model_name.param_key).permit(*permitted)

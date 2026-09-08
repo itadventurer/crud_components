@@ -158,10 +158,24 @@ module CrudComponents
     # Editable, permitted fields of the form fieldset, as a strong-params
     # permit list (symbols and nested hashes) — the controller's single
     # source of truth, so form and params can never drift.
-    def permitted_params(action, context)
-      fields = fieldset_fields(form_fieldset(action))
-      fields.select { |f| f.permitted?(context) && f.editable? && f.editable_permitted?(context) && f.form_control }
-            .map(&:permit_param)
+    def permitted_params(action, context, record = nil)
+      fields = fieldset_fields(form_fieldset(action)).select(&:form_control)
+      fields.each { |field| require_record_for!(field) } if record.nil?
+      fields.select do |field|
+        field.permitted?(context, record) && field.editable? && field.editable_permitted?(context, record)
+      end.map(&:permit_param)
+    end
+
+    # A condition that decides per record cannot be decided without one. Guessing
+    # either way is worse than saying so: permitting writes the form never offers,
+    # denying makes a field that looks saveable silently not save.
+    def require_record_for!(field)
+      condition = %i[if editable].find { |key| Permission.record_dependent?(field.options[key]) }
+      return unless condition
+
+      raise DefinitionError,
+            "#{model}.#{field.name}: #{condition}: decides per record, so the permit list needs the record " \
+            "it is about — CrudComponents.permitted_attributes(#{model}, action: …, ability: …, record: @record)"
     end
 
     # ── identity ─────────────────────────────────────────────────────────────

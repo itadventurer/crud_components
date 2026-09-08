@@ -32,6 +32,14 @@ module CrudComponents
   module Permission
     module_function
 
+    # Whether a condition needs a record to decide — a Proc taking one (or any
+    # other callable). A Symbol or a zero-arity lambda asks the ability alone.
+    def record_dependent?(condition)
+      return condition.lambda? ? !condition.arity.zero? : true if condition.is_a?(Proc)
+
+      !condition.nil? && condition.respond_to?(:call)
+    end
+
     def permitted?(condition, model, context, record = nil, recordless: true)
       return true if condition.nil?
 
