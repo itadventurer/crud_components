@@ -17,6 +17,7 @@ This project follows [semantic versioning](https://semver.org).
 
 ### Fixed
 
+- **The bundled admin loads Turbo.** Its markup has always carried `data-turbo-action` and `data-turbo-confirm`, and a nested block's (+) loads its row into a frame — with no Turbo on the page all of that fell back to full page loads, and a `confirm:` never asked. The layout now includes it from the same CDN it already takes Bootstrap from; override the layout to load your own build. Clicking (+) in the admin now swaps the frame instead of reloading the page, so what is typed above it stays and the page does not jump to the top.
 - A form fieldset that lists a field without a form control now raises at build time instead of silently rendering nothing. A computed field is a method, not a column, so it has no input and no read-only display in a form — naming one in `fieldset :form` (or `:new`/`:edit`) used to do nothing whatsoever, which reads like a rendering bug from the outside. `:default` stays exempt: it is the catch-all every model has and legitimately carries computed fields for the other views.
 
 ## v0.3.0 — 2026-08-13
