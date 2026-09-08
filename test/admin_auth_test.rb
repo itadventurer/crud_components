@@ -22,7 +22,7 @@ class AdminAuthTest < ActiveSupport::TestCase
   test 'the default asks the ability for access to the admin' do
     conf = config
 
-    assert conf.cancan_gate?
+    assert_predicate conf, :cancan_gate?
     assert_equal :crud_admin, conf.auth_subject
   end
 

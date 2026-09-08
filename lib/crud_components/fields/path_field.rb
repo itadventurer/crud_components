@@ -136,6 +136,7 @@ module CrudComponents
 
       def filter_control
         return :text if filter_facet
+
         delegating? ? target_field.filter_control : :text
       end
 
@@ -160,7 +161,7 @@ module CrudComponents
       end
 
       def apply_filter(scope, value: nil, geq: nil, leq: nil)
-        return super if filter_facet      # an author-supplied facet wins
+        return super if filter_facet # an author-supplied facet wins
         return delegate_filter(scope, value: value, geq: geq, leq: leq) if delegating?
         return scope unless value
 
@@ -285,7 +286,12 @@ module CrudComponents
       def link_value(view, semantic, value)
         case semantic
         when :email then view.mail_to(value)
-        when :url   then value.match?(%r{\Ahttps?://}i) ? view.link_to(value, value, rel: 'noopener', target: '_blank') : value
+        when :url   then if value.match?(%r{\Ahttps?://}i)
+                           view.link_to(value, value, rel: 'noopener',
+                                                      target: '_blank')
+                         else
+                           value
+                         end
         else value
         end
       end

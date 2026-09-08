@@ -7,6 +7,8 @@ require 'active_support/core_ext/date/calculations'
 require 'active_support/core_ext/date_and_time/calculations'
 require 'active_support/core_ext/integer/time'
 
+# Declarative CRUD UI for ActiveRecord models: the entry points an app calls
+# (structure_for, permitted_attributes, selected) and the configuration hook.
 module CrudComponents
   # The query params the gem owns (filters are top-level params named after the
   # field, so a field can't share these names). Declaring such an attribute
@@ -56,6 +58,7 @@ require_relative 'crud_components/model'
 require_relative 'crud_components/query'
 require_relative 'crud_components/admin'
 
+# Reopened once the parts above are loaded: the module-level API an app calls.
 module CrudComponents
   class << self
     def config
@@ -104,7 +107,11 @@ module CrudComponents
     def selected_columns(params, param_prefix: nil)
       key = param_prefix ? "#{param_prefix}_cols" : 'cols'
       raw = params[key] || params[key.to_sym]
-      list = raw.is_a?(Array) ? raw : raw.is_a?(String) ? raw.split(',') : nil
+      list = if raw.is_a?(Array)
+               raw
+             else
+               raw.is_a?(String) ? raw.split(',') : nil
+             end
       names = list&.map { |n| n.to_s.strip }&.reject(&:blank?)
       names = nil if names.nil? || names.empty?
       yield names if block_given? && names

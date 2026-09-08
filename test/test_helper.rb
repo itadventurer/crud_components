@@ -13,6 +13,7 @@ module CrudTestHelpers
     klass = Class.new(ApplicationRecord) do
       self.table_name = table
       include CrudComponents::Model
+
       define_singleton_method(:name) { name }
     end
     klass.crud_structure(&block) if block

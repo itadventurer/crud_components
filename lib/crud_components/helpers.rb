@@ -110,15 +110,17 @@ module CrudComponents
     # @param url [String, nil] where the picker form submits; defaults to the current path.
     # @param param_prefix [Symbol, nil] namespaces the `?cols=` param.
     # @return [ActiveSupport::SafeBuffer] the rendered HTML.
-    def crud_column_picker(subject, fieldset: nil, extra_columns: nil, picked_columns: :auto, url: nil, param_prefix: nil)
+    def crud_column_picker(subject, fieldset: nil, extra_columns: nil, picked_columns: :auto, url: nil,
+                           param_prefix: nil)
       relation = if subject.respond_to?(:klass) then subject
                  elsif subject.is_a?(Class) then subject.all
-                 else subject.class.all
+                 else
+                   subject.class.all
                  end
       presenter = Presenters::Collection.new(view: self, records: relation, fieldset: fieldset, query: :static,
                                              extra_columns: extra_columns, picker: true, picked_columns: picked_columns,
                                              param_prefix: param_prefix, actions: false)
-      render 'crud_components/column_picker', collection: presenter, url: (url || request.path)
+      render 'crud_components/column_picker', collection: presenter, url: url || request.path
     end
 
     # A standalone labelled filter form (modal / sidebar) — separate from the
@@ -139,7 +141,8 @@ module CrudComponents
     #   this is the way to choose `?sort=&dir=`; a table carries the links itself.
     # @param layout [Symbol] the partial under `crud_components/` (`:filter` ships).
     # @return [ActiveSupport::SafeBuffer] the rendered HTML.
-    def crud_filter(model, fieldset: nil, query: nil, param_prefix: nil, extra_columns: nil, sort: false, layout: :filter)
+    def crud_filter(model, fieldset: nil, query: nil, param_prefix: nil, extra_columns: nil, sort: false,
+                    layout: :filter)
       presenter = Presenters::Filter.new(view: self, model: model, fieldset: fieldset, query: query,
                                          param_prefix: param_prefix, extra_columns: extra_columns, sort: sort)
       render "crud_components/#{layout}", filter: presenter
@@ -255,7 +258,11 @@ module CrudComponents
     # @param subject [ActiveRecord::Base, Class, ActiveRecord::Relation]
     # @return [String, nil]
     def crud_model_icon_name(subject)
-      model = subject.respond_to?(:klass) ? subject.klass : subject.is_a?(Class) ? subject : subject.class
+      model = if subject.respond_to?(:klass)
+                subject.klass
+              else
+                subject.is_a?(Class) ? subject : subject.class
+              end
       Structure.for(model).icon
     end
 

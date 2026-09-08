@@ -27,13 +27,13 @@ class ColumnHeadersController < ApplicationController
     # A render: cell block that reads its preload:-ed value — only possible now
     # that render_cell passes the value as the block's second argument.
     shelf = PropertyDefinition.find_by(key: 'shelf')
-    if shelf
-      @columns << CrudComponents::DynamicColumn.new(
-        :shelf_tag, label: 'Shelf tag',
-        preload: ->(records) { shelf.values_by_subject(Book, records) },
-        render: ->(record, value) { content_tag(:span, "tag:#{value}", class: 'shelf-tag') }
-      ) { |record, loaded| loaded[record.id]&.value }
-    end
+    return unless shelf
+
+    @columns << CrudComponents::DynamicColumn.new(
+      :shelf_tag, label: 'Shelf tag',
+                  preload: ->(records) { shelf.values_by_subject(Book, records) },
+                  render: ->(_record, value) { content_tag(:span, "tag:#{value}", class: 'shelf-tag') }
+    ) { |record, loaded| loaded[record.id]&.value }
   end
 
   # The header selection action's target: the row checkboxes submit the shared

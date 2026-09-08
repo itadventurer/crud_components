@@ -111,8 +111,10 @@ module CrudComponents
       end
 
       def filter_facet
-        facets[:filter].is_a?(Proc) || facets[:filter].is_a?(Array) ||
-          facets[:filter].is_a?(Hash) || facets[:filter].is_a?(Symbol) ? facets[:filter] : nil
+        if facets[:filter].is_a?(Proc) || facets[:filter].is_a?(Array) ||
+           facets[:filter].is_a?(Hash) || facets[:filter].is_a?(Symbol)
+          facets[:filter]
+        end
       end
 
       # The internal {TypedFilter} for a `filter:` block that declares keyword params
@@ -146,7 +148,7 @@ module CrudComponents
       end
 
       def range_filter?
-        filter_control == :number_range || filter_control == :date_range
+        %i[number_range date_range].include?(filter_control)
       end
 
       # The raw param values (Strings or nil): `value` is the bare `?field=`, `geq`
@@ -290,7 +292,7 @@ module CrudComponents
 
       def build_typed_filter
         facet = facets[:filter]
-        return facet if facet.is_a?(CrudComponents::TypedFilter)   # already built (escape hatch)
+        return facet if facet.is_a?(CrudComponents::TypedFilter) # already built (escape hatch)
         return nil unless facet.is_a?(Proc) && keyword_filter_block?(facet)
 
         CrudComponents::TypedFilter.new(filter_type, facet, choices: options[:filter_choices])

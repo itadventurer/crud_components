@@ -1,5 +1,7 @@
 module CrudComponents
   module Generators
+    # `rails g crud_components:views` — copies the gem partials into the app so
+    # they can be edited instead of shadowed.
     class ViewsGenerator < Rails::Generators::Base
       source_root File.expand_path('../../../../app/views/crud_components', __dir__)
 

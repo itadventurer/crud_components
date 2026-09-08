@@ -18,17 +18,17 @@ class BooksController < ApplicationController
     @book = Book.new
   end
 
+  def edit
+    @book = find_book
+  end
+
   def create
     @book = Book.new(book_params)
     if @book.save
       redirect_to @book, notice: 'Book created.'
     else
-      render :new, status: :unprocessable_entity
+      render :new, status: :unprocessable_content
     end
-  end
-
-  def edit
-    @book = find_book
   end
 
   def update
@@ -36,7 +36,7 @@ class BooksController < ApplicationController
     if @book.update(book_params)
       redirect_to @book, notice: 'Book updated.'
     else
-      render :edit, status: :unprocessable_entity
+      render :edit, status: :unprocessable_content
     end
   end
 

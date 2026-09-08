@@ -19,21 +19,23 @@ class FullIntegrationTest < ActionDispatch::IntegrationTest
   # ── living-documentation landing page ─────────────────────────────────────
   test 'the home page is a feature index linking to the demos' do
     get root_path
+
     assert_response :success
     assert_select 'h1', text: /living documentation/i
     # the feature grid links to the real demo routes
-    assert_select "a[href=?]", columns_path
-    assert_select "a[href=?]", groups_path
-    assert_select "a[href=?]", authors_path
-    assert_select "a[href=?]", custom_fields_path
-    assert_select "a[href=?]", renderers_path
-    assert_select "a[href=?]", documents_path
+    assert_select 'a[href=?]', columns_path
+    assert_select 'a[href=?]', groups_path
+    assert_select 'a[href=?]', authors_path
+    assert_select 'a[href=?]', custom_fields_path
+    assert_select 'a[href=?]', renderers_path
+    assert_select 'a[href=?]', documents_path
   end
 
   # ── soft-dependency renderers + manual actions ────────────────────────────
   test 'the renderers page renders markdown and a JSON cell' do
-    @hobbit.update!(blurb: "**bold** blurb", metadata: { isbn: '978-1' })
+    @hobbit.update!(blurb: '**bold** blurb', metadata: { isbn: '978-1' })
     get renderers_path
+
     assert_response :success
     assert_select 'strong', text: 'bold'          # markdown → <strong>
     assert_select 'dd', text: /isbn/              # JSON cell shows the keys
@@ -47,6 +49,7 @@ class FullIntegrationTest < ActionDispatch::IntegrationTest
     Comment.create!(commentable: doc, body: 'on a document')
 
     get documents_path
+
     assert_response :success
     assert_select 'td', text: /Manual/            # STI type column
     assert_select 'h2', text: /Ship/              # @manual (first Manual) asciidoc body → <h2>
@@ -56,6 +59,7 @@ class FullIntegrationTest < ActionDispatch::IntegrationTest
   # ── zero config ───────────────────────────────────────────────────────────
   test 'a zero-config model renders a usable table' do
     get authors_path
+
     assert_response :success
     assert_select 'table'
     assert_select 'th', text: /Name/
@@ -65,17 +69,20 @@ class FullIntegrationTest < ActionDispatch::IntegrationTest
   test 'a zero-config model filters and sorts via plain GET params' do
     Author.create!(name: 'Ursula K. Le Guin', email: 'ursula@example.com')
     get authors_path(name: 'tolkien')
+
     assert_select 'td', text: /Tolkien/
     assert_select 'td', { text: /Le Guin/, count: 0 }
 
     get authors_path(sort: 'name', dir: 'desc')
+
     assert_response :success
-    assert response.body.index('Ursula') < response.body.index('J. R. R.'), 'desc order: U before J'
+    assert_operator response.body.index('Ursula'), :<, response.body.index('J. R. R.'), 'desc order: U before J'
   end
 
   # ── cells ─────────────────────────────────────────────────────────────────
   test 'cells render type-aware: badge, currency options, boolean icon, links' do
     get books_path
+
     assert_select 'span.badge', text: /Fiction/
     assert_match(/15\.00 €/, response.body)
     assert_select 'span.text-success', text: '✓'
@@ -84,6 +91,7 @@ class FullIntegrationTest < ActionDispatch::IntegrationTest
 
   test 'the label cell links to the record' do
     get books_path
+
     assert_select "a[href='#{book_path(@hobbit)}']", text: 'The Hobbit'
   end
 
@@ -91,7 +99,8 @@ class FullIntegrationTest < ActionDispatch::IntegrationTest
     @review.update!(rating: 4)
     Review.create!(book: @hobbit, rating: 2, reviewer_name: 'Bo', body: 'meh')
     get reviews_path
-    assert_select 'span[title="4/5"]'   # the host-app _stars partial, tied to value
+
+    assert_select 'span[title="4/5"]' # the host-app _stars partial, tied to value
     assert_select 'span[title="2/5"]'
   end
 
@@ -105,29 +114,34 @@ class FullIntegrationTest < ActionDispatch::IntegrationTest
   # ── selection + bulk actions (on: :selection) ─────────────────────────────
   test 'CrudComponents.selected resolves selected[] slugs (array or comma) to a scope' do
     by_array = CrudComponents.selected(Book, { selected: [@hobbit.slug, @dispossessed.slug] })
+
     assert_equal %w[dispossessed hobbit], by_array.map(&:slug).sort
     by_comma = CrudComponents.selected(Book, { selected: "#{@hobbit.slug},#{@dispossessed.slug}" })
+
     assert_equal 2, by_comma.count
     assert_empty CrudComponents.selected(Book, {}).to_a
   end
 
   test 'CrudComponents.selected narrows within a pre-authorized scope (safe default)' do
-    scope = Book.where(genre: :scifi)   # only The Dispossessed, not The Hobbit
+    scope = Book.where(genre: :scifi) # only The Dispossessed, not The Hobbit
     # a slug outside the scope (the fiction Hobbit) cannot be reached through it
     picked = CrudComponents.selected(scope, { selected: [@hobbit.slug, @dispossessed.slug] })
+
     assert_equal %w[dispossessed], picked.map(&:slug)
   end
 
   test 'a selectable collection renders row checkboxes and bulk-action buttons' do
     get books_path
-    assert_select "form##{'crud_select_books'}"
+
+    assert_select 'form#crud_select_books'
     assert_select "input[type=checkbox][name='selected[]'][value=?]", @hobbit.slug
-    assert_select "button[formaction=?][formmethod=post][value=delete]", delete_selected_books_path
-    assert_select "button[formaction=?][formmethod=get]", export_selected_books_path
+    assert_select 'button[formaction=?][formmethod=post][value=delete]', delete_selected_books_path
+    assert_select 'button[formaction=?][formmethod=get]', export_selected_books_path
   end
 
   test 'export_selected lists exactly the selected rows' do
     get export_selected_books_path(selected: [@hobbit.slug])
+
     assert_select 'li', text: /The Hobbit/
     assert_select 'li', { text: /The Dispossessed/, count: 0 }
   end
@@ -142,8 +156,9 @@ class FullIntegrationTest < ActionDispatch::IntegrationTest
 
   # ── grouping (group_by:) ──────────────────────────────────────────────────
   test 'group_by renders a header row per group, with a count' do
-    get groups_path   # group_by: :publisher
-    assert_select 'tr.crud-group-row', minimum: 2          # Tor Books, Ace, …
+    get groups_path # group_by: :publisher
+
+    assert_select 'tr.crud-group-row', minimum: 2 # Tor Books, Ace, …
     assert_select 'tr.crud-group-row td', text: /Tor Books/
   end
 
@@ -154,6 +169,7 @@ class FullIntegrationTest < ActionDispatch::IntegrationTest
 
     # ?open= with only Ace → the Tor book's row is hidden, but its header remains
     get groups_path(open: 'ace')
+
     assert_select 'tr.crud-group-row td', text: /Tor Books/   # header still there
     assert_select 'td', { text: /The Hobbit/, count: 0 }      # collapsed away
     assert_select 'td', text: /The Dispossessed/              # Ace, open
@@ -169,13 +185,15 @@ class FullIntegrationTest < ActionDispatch::IntegrationTest
   # ── filtering, sorting (no JS: plain GET) ─────────────────────────────────
   test 'the inline filter row binds inputs to the external form' do
     get books_path
-    assert_select "form#crud_filter_books[method=get]"
-    assert_select "input[name=title][form=crud_filter_books]"
-    assert_select "select[name=genre][form=crud_filter_books]"
+
+    assert_select 'form#crud_filter_books[method=get]'
+    assert_select 'input[name=title][form=crud_filter_books]'
+    assert_select 'select[name=genre][form=crud_filter_books]'
   end
 
   test 'filtering via GET params narrows the table' do
     get books_path(genre: 'scifi')
+
     assert_select 'td', text: /The Dispossessed/
     assert_select 'td', { text: /The Hobbit/, count: 0 }
   end
@@ -186,14 +204,17 @@ class FullIntegrationTest < ActionDispatch::IntegrationTest
 
     # the inline filter row offers the option for nullable columns
     get books_path
+
     assert_select "select[name=genre] option[value='#{null_value}']", text: /Not set/
 
     # …and it resolves to IS NULL
     get books_path(genre: null_value)
+
     assert_select 'td', text: /Untitled/
     assert_select 'td', { text: /The Hobbit/, count: 0 }
 
     get books_path(active: null_value)
+
     assert_select 'td', text: /Untitled/
     assert_select 'td', { text: /The Dispossessed/, count: 0 }
   ensure
@@ -202,34 +223,40 @@ class FullIntegrationTest < ActionDispatch::IntegrationTest
 
   test 'sort headers are plain links that toggle direction and keep filters' do
     get books_path(genre: 'fiction')
+
     assert_select "th a[href*='sort=title']"
     assert_select "th a[href*='genre=fiction']", { minimum: 1 }, 'sort links preserve filters'
   end
 
   test 'the standalone filter form has a real submit button and no autosubmit' do
     get books_path
+
     assert_select 'form.crud-filter-form button[type=submit]'
     assert_select 'form.crud-filter-form select[data-action]', count: 0
   end
 
   test 'crud_filter sort: renders a field/direction picker for headerless surfaces (#22)' do
     get books_path(layout: 'cards')
+
     assert_select 'form.crud-filter-form select[name=sort]'
     assert_select 'form.crud-filter-form select[name=dir]'
   end
 
   test 'crud_filter omits the sort picker by default (a table carries its own header links)' do
     get books_path
+
     assert_select 'form.crud-filter-form select[name=sort]', count: 0
   end
 
   # ── permissions ───────────────────────────────────────────────────────────
   test 'permission-gated columns are hidden and unfilterable for non-admins' do
     get books_path(view: 'catalog')
+
     assert_select 'th', { text: /Purchase price/, count: 0 }
 
     # the param is inert, so both books stay visible
     get books_path(view: 'catalog', purchase_price_geq: '7')
+
     assert_select "tbody a[href='#{book_path(@hobbit)}']"
     assert_select "tbody a[href='#{book_path(@dispossessed)}']"
   end
@@ -237,21 +264,25 @@ class FullIntegrationTest < ActionDispatch::IntegrationTest
   test 'permission-gated columns appear for admins' do
     post toggle_admin_path
     get books_path(view: 'catalog')
+
     assert_select 'th', text: /Purchase price/
   end
 
   test 'derived destroy action is permission-gated through can?' do
     get books_path
+
     assert_select "form[action='#{book_path(@hobbit)}']", count: 0
 
     post toggle_admin_path
     get books_path
+
     assert_select "form[action='#{book_path(@hobbit)}']"
   end
 
   # ── actions & routes ──────────────────────────────────────────────────────
   test 'derived actions resolve conventional routes; customs too' do
     get books_path
+
     assert_select "a[href='#{edit_book_path(@hobbit)}']"
     assert_select "a[href='#{preview_book_path(@hobbit)}']", { minimum: 1 }, 'custom member action'
     assert_select "a[href='#{new_book_path}']", { minimum: 1 }, 'collection action'
@@ -270,6 +301,7 @@ class FullIntegrationTest < ActionDispatch::IntegrationTest
 
   test 'an association collection prefers nested routes' do
     get publisher_books_path(@tor)
+
     assert_select "a[href='#{edit_publisher_book_path(@tor, @hobbit)}']"
   end
 
@@ -277,6 +309,7 @@ class FullIntegrationTest < ActionDispatch::IntegrationTest
     # Reviews have no :new route — the derived :new action is omitted, while
     # :edit (which does have a route) is rendered.
     get reviews_path
+
     assert_select "a[href*='/reviews/new']", count: 0
     assert_select "a[href='#{edit_review_path(@review)}']"
   end
@@ -287,29 +320,34 @@ class FullIntegrationTest < ActionDispatch::IntegrationTest
       delete review_path(@review)
     end
     follow_redirect!
+
     assert_response :success
   end
 
   # ── static collections and multi-collection pages ─────────────────────────
   test 'query: :static renders a static table without filter row or sort links' do
     get book_path(@hobbit)
+
     assert_select 'h2', text: /Reviews/
     assert_select 'tr.crud-filter-row', count: 0
   end
 
   test 'param_prefix isolates two collections on one page' do
     get dashboard_path(books_title: 'hobbit')
+
     assert_select 'tbody td', text: /The Hobbit/
     assert_select 'tbody td', { text: /The Dispossessed/, count: 0 }
     assert_select 'tbody td', text: /Ada/, minimum: 1 # reviews table untouched
 
     get dashboard_path(reviews_sort: 'rating', books_title: 'hobbit')
+
     assert_response :success
   end
 
   # ── record page ───────────────────────────────────────────────────────────
   test 'the record page renders a definition list with actions' do
     get book_path(@hobbit)
+
     assert_select 'dl dt', text: 'Title'
     assert_select 'dl dd', text: /The Hobbit/
     assert_select "a[href='#{edit_book_path(@hobbit)}']", minimum: 1
@@ -317,46 +355,55 @@ class FullIntegrationTest < ActionDispatch::IntegrationTest
 
   test 'search works via plain ?q=' do
     get books_path(q: 'tor books')
+
     assert_select 'td', text: /The Hobbit/
     assert_select 'td', { text: /The Dispossessed/, count: 0 }
   end
 
   test 'the header has a global search box and books are searchable by author' do
     get books_path
+
     assert_select 'table thead input[type=search][name=q]' # search seated in the table head, not floating above
     assert_select 'table thead th.crud-toolbar-cell[colspan]'
-    get books_path(q: 'tolkien')        # delegates through :authors
+    get books_path(q: 'tolkien') # delegates through :authors
+
     assert_select 'td', text: /The Hobbit/
     assert_select 'td', { text: /The Dispossessed/, count: 0 }
   end
 
   test 'a reset link appears in the filter row only when filtering' do
     get books_path
+
     assert_select 'tr.crud-filter-row a', { text: /Reset/, count: 0 }
     get books_path(genre: 'fiction')
+
     assert_select 'tr.crud-filter-row a', text: /Reset/
   end
 
   # ── click-to-filter ───────────────────────────────────────────────────────
   test 'enum badges link to a click-to-filter URL' do
     get books_path
+
     assert_select "a[href*='genre=fiction'] span.badge", text: /Fiction/
   end
 
   test 'click-to-filter respects param_prefix' do
     get dashboard_path
-    assert_select "a[href*='books_genre=']"   # prefixed, not bare genre=
+
+    assert_select "a[href*='books_genre=']" # prefixed, not bare genre=
   end
 
   # ── auto association columns & has_many links ─────────────────────────────
   test 'a zero-config model auto-derives association columns' do
     get authors_path
+
     assert_select 'th', text: /Books/
   end
 
   test 'has_many +n more prefers the nested index' do
     6.times { |i| @tor.books.create!(title: "Extra #{i}", slug: "extra-#{i}") }
     get publisher_path(@tor)
+
     assert_select "a[href='#{publisher_books_path(@tor)}']"
   end
 
@@ -371,6 +418,7 @@ class FullIntegrationTest < ActionDispatch::IntegrationTest
     author = Author.create!(name: 'Prolific')
     4.times { |i| author.books << Book.create!(title: "B#{i}", slug: "habtm-b#{i}") }
     get authors_path
+
     assert_select "a[href='#{author_books_path(author)}']", text: /\+1 more/
     # the old behavior linked to /books?author=<id>, which silently showed everything
     assert_select "a[href*='/books?author=']", count: 0
@@ -378,9 +426,11 @@ class FullIntegrationTest < ActionDispatch::IntegrationTest
 
   test 'the nested author books index scopes to that author' do
     author = Author.create!(name: 'Scoped')
-    hers = Book.create!(title: 'Hers Alone', slug: 'hers'); author.books << hers
+    hers = Book.create!(title: 'Hers Alone', slug: 'hers')
+    author.books << hers
     Book.create!(title: 'Not Hers', slug: 'not-hers')
     get author_books_path(author)
+
     assert_select 'td', text: /Hers Alone/
     assert_select 'td', { text: /Not Hers/, count: 0 }
   end
@@ -388,26 +438,30 @@ class FullIntegrationTest < ActionDispatch::IntegrationTest
   # ── custom layout & custom collection action ──────────────────────────────
   test 'a host-app layout renders via layout:' do
     get books_path(layout: 'cards')
+
     assert_select '.card.h-100'
   end
 
   test 'a custom collection action renders and resolves its route' do
     get books_path
+
     assert_select "a[href='#{import_books_path}']"
   end
 
   # ── forms ─────────────────────────────────────────────────────────────────
   test 'the derived edit form has type-appropriate inputs' do
     get edit_book_path(@hobbit)
+
     assert_select "input[name='book[title]']"
     assert_select "textarea[name='book[blurb]']"
     assert_select "select[name='book[publisher_id]']"
-    assert_select "select[name='book[author_ids][]'][multiple][data-controller='crud-multiselect']"  # habtm baseline + chip hook
+    assert_select "select[name='book[author_ids][]'][multiple][data-controller='crud-multiselect']" # habtm baseline + chip hook
     assert_select "input[name='book[cover]'][type=file]"
   end
 
   test 'has_many_attached is derived: a multiple file field on a zero-config model' do
     get edit_author_path(@tolkien)
+
     assert_select "input[name='author[images][]'][type=file][multiple]"
   end
 
@@ -419,17 +473,20 @@ class FullIntegrationTest < ActionDispatch::IntegrationTest
   test 'a non-image attachment renders as an icon + filename download link' do
     @tor.brochure.attach(io: StringIO.new('= Press kit'), filename: 'tor.adoc', content_type: 'text/asciidoc')
     get publishers_path
-    assert_select 'a', text: /tor\.adoc/   # not an <img>: icon + filename, linking to the blob
+
+    assert_select 'a', text: /tor\.adoc/ # not an <img>: icon + filename, linking to the blob
   end
 
   test 'a form with an attachment field is multipart (so uploads actually send)' do
-    get edit_book_path(@hobbit)   # Book has cover + manual file fields
+    get edit_book_path(@hobbit) # Book has cover + manual file fields
+
     assert_select "form.edit_book[enctype='multipart/form-data']"
   end
 
   test 'has_one attachment form shows the current file + a Remove checkbox + a file input' do
     @hobbit.manual.attach(io: StringIO.new('%PDF-1.4'), filename: 'hobbit.pdf', content_type: 'application/pdf')
     get edit_book_path(@hobbit)
+
     assert_select "input[type=file][name='book[manual]']"
     # an empty file field keeps the current file, so the control is a Remove (value "" purges), unchecked
     assert_select "input[type=checkbox][name='book[manual]'][value='']"
@@ -439,8 +496,9 @@ class FullIntegrationTest < ActionDispatch::IntegrationTest
   test 'has_many attachment form shows a keep checkbox per existing file + a multiple add input' do
     2.times { |i| @tolkien.images.attach(io: StringIO.new('img'), filename: "p#{i}.png", content_type: 'image/png') }
     get edit_author_path(@tolkien)
+
     assert_select "input[type=file][name='author[images][]'][multiple]"
-    assert_select "input[type=hidden][name='author[images][]'][value='']"  # keeps the array present (untick all → clear)
+    assert_select "input[type=hidden][name='author[images][]'][value='']" # keeps the array present (untick all → clear)
     assert_select "input[type=checkbox][name='author[images][]'][checked]", count: 2
     @tolkien.images.each do |image|
       assert_select "input[type=checkbox][name='author[images][]'][value=?]", image.signed_id
@@ -451,13 +509,16 @@ class FullIntegrationTest < ActionDispatch::IntegrationTest
     @hobbit.manual.attach(io: StringIO.new('%PDF-1.4'), filename: 'a.pdf', content_type: 'application/pdf')
     # an empty file field submits nothing, so a plain save leaves the manual untouched
     patch book_path(@hobbit), params: { book: { title: @hobbit.title } }
-    assert @hobbit.reload.manual.attached?, 'an empty file field keeps the current file'
+
+    assert_predicate @hobbit.reload.manual, :attached?, 'an empty file field keeps the current file'
 
     patch book_path(@hobbit), params: { book: { manual: '' } } # Remove ticked
-    refute @hobbit.reload.manual.attached?, 'a blank value (Remove) purges'
+
+    assert_not_predicate @hobbit.reload.manual, :attached?, 'a blank value (Remove) purges'
 
     @hobbit.manual.attach(io: StringIO.new('%PDF-1.4'), filename: 'a.pdf', content_type: 'application/pdf')
     patch book_path(@hobbit), params: { book: { manual: upload('b.pdf', 'application/pdf') } }
+
     assert_equal 'b.pdf', @hobbit.reload.manual.filename.to_s, 'a new file replaces'
   end
 
@@ -466,40 +527,47 @@ class FullIntegrationTest < ActionDispatch::IntegrationTest
     base = { name: @tor.name, slug: @tor.slug, founded_on: @tor.founded_on }
 
     patch publisher_path(@tor), params: { publisher: base } # no brochure param (empty file field)
-    assert @tor.reload.brochure.attached?, 'an empty file field keeps it'
+
+    assert_predicate @tor.reload.brochure, :attached?, 'an empty file field keeps it'
 
     patch publisher_path(@tor), params: { publisher: base.merge(brochure: '') } # Remove ticked
-    refute @tor.reload.brochure.attached?, 'blank purges'
+
+    assert_not_predicate @tor.reload.brochure, :attached?, 'blank purges'
   end
 
   test 'has_many attachment: kept signed_ids stay, omitted are purged, new files add' do
     @tolkien.images.attach(io: StringIO.new('1'), filename: '1.png', content_type: 'image/png')
     keep = @tolkien.images.first.signed_id
     # exactly what the form submits: the hidden blank, then the kept ids, then the new files
-    patch author_path(@tolkien), params: { author: { name: @tolkien.name, images: ['', keep, upload('2.png', 'image/png')] } }
+    patch author_path(@tolkien),
+          params: { author: { name: @tolkien.name, images: ['', keep, upload('2.png', 'image/png')] } }
+
     assert_equal 2, @tolkien.reload.images.count, 'kept one + added one'
 
     patch author_path(@tolkien), params: { author: { name: @tolkien.name, images: [''] } }
+
     assert_equal 0, @tolkien.reload.images.count, 'no signed_ids kept → all purged'
   end
 
   test 'editable: false renders read-only; editable: permission gates the input' do
     get edit_book_path(@hobbit)
+
     assert_select '.crud-form-readonly'                     # slug (and active, for non-admin)
     assert_select "input[name='book[active]']", count: 0    # not editable for non-admin
-    assert_select "input[name='book[purchase_price]']", count: 0  # not even visible
-    assert_select "label", { text: /Purchase price/, count: 0 }
+    assert_select "input[name='book[purchase_price]']", count: 0 # not even visible
+    assert_select 'label', { text: /Purchase price/, count: 0 }
 
     post toggle_admin_path
     get edit_book_path(@hobbit)
     # active is a nullable boolean → a 3-state select (Yes / No / not set), not a checkbox
     assert_select "select[name='book[active]'] option", text: /Not set/
-    assert_select "input[name='book[purchase_price]']"      # visible & editable for admin
+    assert_select "input[name='book[purchase_price]']" # visible & editable for admin
   end
 
   test 'a nullable enum form input offers a blank "not set" option' do
     post toggle_admin_path
     get edit_book_path(@hobbit)
+
     assert_select "select[name='book[genre]'] option[value='']", text: /Not set/
   end
 
@@ -507,6 +575,7 @@ class FullIntegrationTest < ActionDispatch::IntegrationTest
     post toggle_admin_path
     patch book_path(@hobbit), params: { book: { genre: '', active: '' } }
     @hobbit.reload
+
     assert_nil @hobbit.genre
     assert_nil @hobbit.active
   end
@@ -519,6 +588,7 @@ class FullIntegrationTest < ActionDispatch::IntegrationTest
       } }
     end
     book = Book.find_by(slug: 'a-new-hope')
+
     assert_equal 'A New Hope', book.title
     assert_equal @tor, book.publisher
     assert_equal [@tolkien], book.authors
@@ -529,6 +599,7 @@ class FullIntegrationTest < ActionDispatch::IntegrationTest
       title: 'Renamed', slug: 'hacked-slug', active: '0', purchase_price: '999'
     } }
     @hobbit.reload
+
     assert_equal 'Renamed', @hobbit.title              # editable field went through
     assert_equal 'hobbit', @hobbit.slug                # editable: false — untouched
     assert @hobbit.active, 'editable: :manage — non-admin cannot change it'
@@ -539,12 +610,14 @@ class FullIntegrationTest < ActionDispatch::IntegrationTest
     post toggle_admin_path
     patch book_path(@hobbit), params: { book: { active: '0', purchase_price: '4' } }
     @hobbit.reload
-    refute @hobbit.active
+
+    assert_not @hobbit.active
     assert_equal 4, @hobbit.purchase_price.to_i
   end
 
   test 'forms work on a zero-config model' do
     get new_author_path
+
     assert_select "input[name='author[name]']"
     assert_difference 'Author.count', 1 do
       post authors_path, params: { author: { name: 'New Author', email: 'new@example.com' } }
@@ -553,8 +626,10 @@ class FullIntegrationTest < ActionDispatch::IntegrationTest
 
   test 'publisher edit/update/create all work' do
     get edit_publisher_path(@tor)
+
     assert_select "input[name='publisher[name]']"
     patch publisher_path(@tor), params: { publisher: { name: 'Tor (renamed)' } }
+
     assert_equal 'Tor (renamed)', @tor.reload.name
 
     assert_difference 'Publisher.count', 1 do
@@ -565,31 +640,36 @@ class FullIntegrationTest < ActionDispatch::IntegrationTest
 
   test 'a failed save re-renders the form: inline field errors, entered values kept' do
     patch book_path(@hobbit), params: { book: { title: '', price: '42' } }
+
     assert_response :unprocessable_entity
     assert_select '.invalid-feedback', text: /blank/i                    # simple_form's inline error
     assert_select "input[name='book[price]'][value='42']"                # entered value kept
-    assert_equal 'The Hobbit', @hobbit.reload.title                       # not persisted
+    assert_equal 'The Hobbit', @hobbit.reload.title # not persisted
   end
 
   test 'base (whole-record) errors surface in the summary, not just the count' do
-    post toggle_admin_path   # so `active` is editable
+    post toggle_admin_path # so `active` is editable
     patch book_path(@hobbit), params: { book: { price: '0', active: '1' } }
+
     assert_response :unprocessable_entity
     assert_select '.alert-danger li', text: /priced at 0 must be inactive/i
   end
 
   test 'a failed save on a zero-config model also shows errors' do
     post authors_path, params: { author: { name: '' } }
+
     assert_response :unprocessable_entity
     assert_select '.invalid-feedback', text: /blank/i
   end
 
   test 'review edit/update work, including the belongs_to select' do
     get edit_review_path(@review)
+
     assert_select "select[name='review[book_id]']"
     assert_select "input[name='review[reviewer_name]']"
     patch review_path(@review), params: { review: { rating: 2, reviewer_name: 'Renamed' } }
     @review.reload
+
     assert_equal 2, @review.rating
     assert_equal 'Renamed', @review.reviewer_name
   end
@@ -598,6 +678,7 @@ class FullIntegrationTest < ActionDispatch::IntegrationTest
   test 'a paginated relation renders a footer pager whose links preserve sort' do
     20.times { |i| Book.create!(title: format('Filler %02d', i), slug: "filler-#{i}", genre: :fiction) }
     get '/pagination' # controller does Book.all.page(params[:page]).per(15)
+
     assert_response :success
     assert_select 'table tfoot td nav.crud-pager' # integrated as the table footer, not floated below
     assert_select 'table tfoot td[colspan]'
@@ -615,11 +696,13 @@ class FullIntegrationTest < ActionDispatch::IntegrationTest
     page1 = css_select('tbody tr').map(&:to_s)
     get '/pagination', params: { sort: 'title', dir: 'asc', page: 2 }
     page2 = css_select('tbody tr').map(&:to_s)
-    assert (page1 & page2).empty?, 'pages 1 and 2 should not overlap'
+
+    assert_empty (page1 & page2), 'pages 1 and 2 should not overlap'
   end
 
   test 'an unpaginated collection renders no pager' do
     get authors_path
+
     assert_response :success
     assert_select 'nav.crud-pager', count: 0
   end
@@ -627,6 +710,7 @@ class FullIntegrationTest < ActionDispatch::IntegrationTest
   test 'a custom layout (cards) can drive its own pager via page_scope' do
     20.times { |i| Book.create!(title: format('Filler %02d', i), slug: "filler-#{i}", genre: :fiction) }
     get '/pagination', params: { layout: 'cards' }
+
     assert_response :success
     assert_select '.card'                 # the custom cards layout rendered
     assert_select 'nav.pagination'        # kaminari's own pager markup
@@ -639,24 +723,28 @@ class FullIntegrationTest < ActionDispatch::IntegrationTest
   test 'inline cells equal the partials on the record page (all read-only types)' do
     dl = lambda do |fast|
       CrudComponents.config.fast_cells = fast
-      get book_path(@hobbit)   # string, text, number, boolean, date, enum, json, associations…
+      get book_path(@hobbit) # string, text, number, boolean, date, enum, json, associations…
+
       assert_response :success
-      response.body[%r{<dl.*?</dl>}m]   # the book's definition list — no CSRF tokens inside
+      response.body[%r{<dl.*?</dl>}m] # the book's definition list — no CSRF tokens inside
     end
+
     assert_dom_equal dl.call(false), dl.call(true)
   ensure
     CrudComponents.config.fast_cells = true
   end
 
   test 'inline cells equal the partials on a collection (incl. surface truncation)' do
-    @hobbit.update!(subtitle: 'S' * 300)   # exercises the surface==:collection truncate(120) branch
+    @hobbit.update!(subtitle: 'S' * 300) # exercises the surface==:collection truncate(120) branch
     body = lambda do |fast|
       CrudComponents.config.fast_cells = fast
       get books_path(fieldset: :catalog)
+
       assert_response :success
       # drop the per-row action <form>s: their CSRF token differs per request
       response.body[%r{<tbody.*?</tbody>}m].gsub(%r{<form\b.*?</form>}m, '')
     end
+
     assert_dom_equal body.call(false), body.call(true)
   ensure
     CrudComponents.config.fast_cells = true
@@ -670,10 +758,11 @@ class FullIntegrationTest < ActionDispatch::IntegrationTest
       File.write(File.join(dir, 'crud_components', 'fields', '_string.html.erb'),
                  %(<span class="host-string"><%= value %></span>))
       BooksController.prepend_view_path(dir)
-      get books_path   # fast_cells on by default; :string is overridden → partial path
+      get books_path # fast_cells on by default; :string is overridden → partial path
+
       assert_response :success
       assert_select 'span.host-string', minimum: 1
-      assert_select 'span.badge', minimum: 1   # other types still take the fast inline path
+      assert_select 'span.badge', minimum: 1 # other types still take the fast inline path
     end
   ensure
     BooksController.view_paths = original
@@ -689,9 +778,11 @@ class FullIntegrationTest < ActionDispatch::IntegrationTest
       b.reviews.create!(rating: 3, reviewer_name: "R#{i}", body: 'x')
     end
     books_q = count_sql(/FROM ["`]books["`]/i) { get books_path(fieldset: :catalog) }
+
     assert_response :success
     # main books query + ONE batched load of the reviews' books — not one per review
-    assert books_q <= 3, "reviews' books should be preloaded (reviews: [:book]); saw #{books_q} books queries"
+    assert_operator books_q, :<=, 3,
+                    "reviews' books should be preloaded (reviews: [:book]); saw #{books_q} books queries"
   end
 
   # ── record-dependent if: ──────────────────────────────────────────────────
@@ -700,9 +791,11 @@ class FullIntegrationTest < ActionDispatch::IntegrationTest
   # by structure_test; here we prove the per-record decision end to end.)
   test 'a record-dependent if: shows/hides the field per record' do
     get book_path(@hobbit)          # active → field shown
+
     assert_response :success
     assert_select 'dt', text: /Internal token/
     get book_path(@dispossessed)    # inactive → field hidden on its own page
+
     assert_response :success
     assert_select 'dt', { text: /Internal token/, count: 0 }
   end

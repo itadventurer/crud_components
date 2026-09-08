@@ -1,5 +1,7 @@
 module CrudComponents
   module Generators
+    # `rails g crud_components:install` — writes the initializer and, on ask,
+    # the optional Stimulus controller.
     class InstallGenerator < Rails::Generators::Base
       source_root File.expand_path('templates', __dir__)
 

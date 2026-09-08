@@ -7,9 +7,7 @@
 ENV['RAILS_ENV'] = 'development'
 require_relative '../test/dummy/config/environment'
 
-if Book.count.zero?
-  abort 'The playground database is empty — run: cd test/dummy && bin/rails db:schema:load db:seed'
-end
+abort 'The playground database is empty — run: cd test/dummy && bin/rails db:schema:load db:seed' if Book.count.zero?
 
 def show(title, relation)
   puts "\n— #{title}"

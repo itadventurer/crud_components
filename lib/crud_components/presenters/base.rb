@@ -9,8 +9,8 @@ module CrudComponents
         @view = view
       end
 
-      def config = CrudComponents.config
-      def css = config.css
+      delegate :config, to: :CrudComponents
+      delegate :css, to: :config
 
       # can?-shaped context for `if:` checks; the view itself when CanCanCan
       # (or anything can?-shaped) is around.
@@ -27,10 +27,12 @@ module CrudComponents
         end
       end
 
+      # A stand-in ability that asks the view, for hosts that answer `can?`
+      # through a helper rather than a CanCanCan Ability object.
       class ViewAbility
         def initialize(view) = @view = view
 
-        def can?(action, subject) = @view.can?(action, subject)
+        delegate :can?, to: :@view
       end
 
       # Where the gem's own field partials live — used to tell a host override

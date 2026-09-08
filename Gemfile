@@ -4,7 +4,7 @@ gemspec
 
 # The CI matrix sets RAILS_VERSION to pin a minor (e.g. 7.1, 7.2, 8.0) and
 # resolves a fresh lockfile per combo; unset, dev just uses the latest.
-rails_version = ENV['RAILS_VERSION']
+rails_version = ENV.fetch('RAILS_VERSION', nil)
 
 group :development, :test do
   gem 'image_processing' # playground only: lets the attachment renderer preview PDFs (with poppler)
@@ -27,4 +27,11 @@ group :development, :test do
   gem 'json', '< 3'
   gem 'rake'
   gem 'sqlite3' # unconstrained: bundler picks a version compatible with the Rails above
+  # Linting. Pinned to a minor so a newly released cop cannot turn CI red on a
+  # commit that did not touch the code; bump deliberately.
+  gem 'rubocop', '~> 1.81.0', require: false
+  gem 'rubocop-minitest', '~> 0.38.2', require: false
+  gem 'rubocop-performance', '~> 1.26.0', require: false
+  gem 'rubocop-rails', '~> 2.34.0', require: false
+  gem 'rubocop-rake', '~> 0.7.1', require: false
 end

@@ -9,4 +9,9 @@ Rake::TestTask.new(:test) do |t|
   t.test_files = FileList['test/**/*_test.rb']
 end
 
-task default: :test
+require 'rubocop/rake_task'
+
+RuboCop::RakeTask.new
+
+# `rake` runs both, so a local run is what CI runs.
+task default: %i[test rubocop]

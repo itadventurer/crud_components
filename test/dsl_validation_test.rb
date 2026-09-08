@@ -36,6 +36,7 @@ class DslValidationTest < ActiveSupport::TestCase
       attribute(:display_title) { |book| book.title.to_s.upcase }
       fieldset :index, %i[title display_title]
     end
+
     assert structure_of(model)
   end
 
@@ -44,6 +45,7 @@ class DslValidationTest < ActiveSupport::TestCase
       attribute(:display_title) { |book| book.title.to_s.upcase }
       fieldset :default, %i[title display_title]
     end
+
     assert structure_of(model)
   end
 
@@ -65,17 +67,32 @@ class DslValidationTest < ActiveSupport::TestCase
   test 'label takes a method or a block, not both, not neither, not twice' do
     assert_raises(CrudComponents::DefinitionError) { structure_of(define_model { label(:title) { |r| r.title } }) }
     assert_raises(CrudComponents::DefinitionError) { structure_of(define_model { label }) }
-    assert_raises(CrudComponents::DefinitionError) { structure_of(define_model { label :title; label :subtitle }) }
+    assert_raises(CrudComponents::DefinitionError) do
+      structure_of(define_model do
+        label :title
+        label :subtitle
+      end)
+    end
   end
 
   test 'identify_by and search_in declared twice raise' do
-    assert_raises(CrudComponents::DefinitionError) { structure_of(define_model { identify_by :slug; identify_by :id }) }
-    assert_raises(CrudComponents::DefinitionError) { structure_of(define_model { search_in :title; search_in :subtitle }) }
+    assert_raises(CrudComponents::DefinitionError) do
+      structure_of(define_model do
+        identify_by :slug
+        identify_by :id
+      end)
+    end
+    assert_raises(CrudComponents::DefinitionError) do
+      structure_of(define_model do
+        search_in :title
+        search_in :subtitle
+      end)
+    end
   end
 
   test 'search_in takes a spec or a block, not both' do
     error = assert_raises(CrudComponents::DefinitionError) do
-      structure_of(define_model { search_in(:title) { |scope, q| scope } })
+      structure_of(define_model { search_in(:title) { |scope, _q| scope } })
     end
     assert_match(/not both/, error.message)
   end
@@ -84,7 +101,7 @@ class DslValidationTest < ActiveSupport::TestCase
     error = assert_raises(CrudComponents::DefinitionError) do
       structure_of(define_model do
         attribute :title do
-          filter(:title) { |scope, value| scope }
+          filter(:title) { |scope, _value| scope }
         end
       end)
     end
@@ -133,7 +150,12 @@ class DslValidationTest < ActiveSupport::TestCase
   end
 
   test 'action declared twice and unknown action options raise' do
-    assert_raises(CrudComponents::DefinitionError) { structure_of(define_model { action :go; action :go }) }
+    assert_raises(CrudComponents::DefinitionError) do
+      structure_of(define_model do
+        action :go
+        action :go
+      end)
+    end
 
     error = assert_raises(CrudComponents::DefinitionError) do
       structure_of(define_model { action :go, iconn: 'x' })
@@ -143,7 +165,10 @@ class DslValidationTest < ActiveSupport::TestCase
 
   test 'fieldset declared twice raises' do
     assert_raises(CrudComponents::DefinitionError) do
-      structure_of(define_model { fieldset :index, %i[title]; fieldset :index, %i[title] })
+      structure_of(define_model do
+        fieldset :index, %i[title]
+        fieldset :index, %i[title]
+      end)
     end
   end
 
@@ -192,6 +217,7 @@ class DslValidationTest < ActiveSupport::TestCase
     model = Class.new(ApplicationRecord) do
       self.table_name = 'books'
       include CrudComponents::Model
+
       define_singleton_method(:name) { 'TempBookWithBlockTarget' }
       belongs_to :publisher, class_name: 'BlockLabelPublisher', optional: true
     end

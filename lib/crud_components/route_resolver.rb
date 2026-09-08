@@ -108,8 +108,8 @@ module CrudComponents
       error.name.to_s.end_with?('_path', '_url')
     end
 
-    def safe_url(view, helper, *args, **kwargs)
-      kwargs.empty? ? view.public_send(helper, *args) : view.public_send(helper, *args, **kwargs)
+    def safe_url(view, helper, *, **kwargs)
+      kwargs.empty? ? view.public_send(helper, *) : view.public_send(helper, *, **kwargs)
     rescue ActionController::UrlGenerationError, NoMethodError
       nil
     end

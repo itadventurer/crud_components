@@ -9,17 +9,17 @@ class PublishersController < ApplicationController
     @publisher = Publisher.new
   end
 
+  def edit
+    @publisher = find_publisher
+  end
+
   def create
     @publisher = Publisher.new(publisher_params)
     if @publisher.save
       redirect_to @publisher, notice: 'Publisher created.'
     else
-      render :new, status: :unprocessable_entity
+      render :new, status: :unprocessable_content
     end
-  end
-
-  def edit
-    @publisher = find_publisher
   end
 
   def update
@@ -27,7 +27,7 @@ class PublishersController < ApplicationController
     if @publisher.update(publisher_params)
       redirect_to @publisher, notice: 'Publisher updated.'
     else
-      render :edit, status: :unprocessable_entity
+      render :edit, status: :unprocessable_content
     end
   end
 
@@ -43,6 +43,7 @@ class PublishersController < ApplicationController
   end
 
   def publisher_params
-    params.require(:publisher).permit(*CrudComponents.permitted_attributes(Publisher, action: action_name.to_sym, ability: self))
+    params.require(:publisher).permit(*CrudComponents.permitted_attributes(Publisher, action: action_name.to_sym,
+                                                                                      ability: self))
   end
 end

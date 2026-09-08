@@ -16,16 +16,18 @@ class PathColumnsTest < ActiveSupport::TestCase
 
   test 'a single-valued path renders the target attribute, type-aware and sortable' do
     name = field('publisher.name')
+
     assert_not name.collection?
     assert_equal 'Tor', name.value(@book)
-    assert name.sortable?
+    assert_predicate name, :sortable?
     assert_equal [:publisher], name.eager_load
-    assert_equal :date, field('publisher.founded_on').renderer(@book)   # date target → date renderer
+    assert_equal :date, field('publisher.founded_on').renderer(@book) # date target → date renderer
   end
 
   # ── delegation to the target model's field (override > target > default) ──────
   test 'a single-valued path inherits the target field renderer AND its options' do
     price = CrudComponents::Fields::PathField.new(:'book.price', Review)
+
     assert_equal :number, price.renderer            # Book.price is `as: :number`
     assert_equal '€', price.renderer_options[:unit] # …with unit/digits carried through
     assert_equal 2, price.renderer_options[:digits]
@@ -33,9 +35,11 @@ class PathColumnsTest < ActiveSupport::TestCase
 
   test 'the path column overrides the target — as: and own options win' do
     forced = CrudComponents::Fields::PathField.new(:'book.price', Review, { as: :string })
+
     assert_equal :string, forced.renderer           # as: beats the target's :number
 
     own = CrudComponents::Fields::PathField.new(:'book.price', Review, { unit: '$' })
+
     assert_equal :number, own.renderer
     assert_equal '$', own.renderer_options[:unit]    # own option overrides the target's '€'
     assert_equal 2, own.renderer_options[:digits]    # …while inheriting the rest
@@ -44,25 +48,28 @@ class PathColumnsTest < ActiveSupport::TestCase
   test 'a single-valued scalar path delegates the filter control to the target field' do
     assert_equal :date_range, field('publisher.founded_on').filter_control
     genre = CrudComponents::Fields::PathField.new(:'book.genre', Review)
+
     assert_equal :select, genre.filter_control       # enum target → select
     assert_includes genre.filter_choices.map(&:last), 'scifi'
     assert_equal 'Scifi', genre.human_value('scifi') # humanized like the Book table
   end
 
   test 'a non-scalar / collection path keeps contains-match (no delegation)' do
-    assert_equal :text, field('authors.email').filter_control   # habtm list → text
+    assert_equal :text, field('authors.email').filter_control # habtm list → text
     assert_nil field('authors.email').filter_choices
   end
 
   test 'a delegated date path filters as a range through the association' do
     in_range  = field('publisher.founded_on').apply_filter(Book.all, geq: '1979-01-01', leq: '1981-12-31')
     out_range = field('publisher.founded_on').apply_filter(Book.all, geq: '1990-01-01')
+
     assert_includes in_range, @book
     assert_not_includes out_range, @book
   end
 
   test 'a path to the target label field renders a link (block), not a plain cell' do
     name = field('publisher.name')
+
     assert name.send(:link_to_target?)
     assert_kind_of Proc, name.render_block      # the label-link renderer
     assert_nil name.renderer                    # …so the cell renders via the block
@@ -72,22 +79,25 @@ class PathColumnsTest < ActiveSupport::TestCase
 
   test 'a to-many path resolves to a list, renders joined, filters but does not sort by default' do
     mail = field('authors.email')
-    assert mail.collection?
+
+    assert_predicate mail, :collection?
     assert_equal %w[ann@x.com bo@y.com], mail.value(@book)
-    assert_equal 'Ann, Bo', field('authors.name').render_list(view, @book)   # plain join
-    assert_not mail.sortable?            # no single value to order by
-    assert mail.filterable?
+    assert_equal 'Ann, Bo', field('authors.name').render_list(view, @book) # plain join
+    assert_not mail.sortable? # no single value to order by
+    assert_predicate mail, :filterable?
     assert_equal [:authors], mail.eager_load
   end
 
   test 'a to-many path of emails renders each as a mailto link' do
     html = field('authors.email').render_list(view, @book)
+
     assert_includes html, 'href="mailto:ann@x.com"'
     assert_includes html, '>bo@y.com</a>'
   end
 
   test 'path columns group under their association; the header is a breadcrumb' do
     mail = field('authors.email')
+
     assert_equal 'Authors', mail.group_label       # picker heading
     assert_equal 'Email', mail.picker_label        # label within the group
     assert_equal 'Authors › Email', mail.human_name # table header (breadcrumb)
@@ -124,7 +134,7 @@ class PathColumnsTest < ActiveSupport::TestCase
   end
 
   test 'Structure resolves a dotted name to a PathField, usable in a fieldset' do
-    assert_instance_of CrudComponents::Fields::PathField, structure_of(Book).field(:"authors.email")
+    assert_instance_of CrudComponents::Fields::PathField, structure_of(Book).field(:'authors.email')
   end
 end
 
@@ -137,6 +147,7 @@ class PathColumnsIntegrationTest < ActionDispatch::IntegrationTest
 
   test 'the picker page renders path columns and their values' do
     get '/columns'
+
     assert_response :success
     assert_select 'th', text: /Authors.*Email/         # path-column header (breadcrumb)
     assert_select 'td', text: /ann@example.com/        # the list value
@@ -145,8 +156,9 @@ class PathColumnsIntegrationTest < ActionDispatch::IntegrationTest
 
   test 'a path column is pickable like any other via ?cols=' do
     get '/columns', params: { cols: ['title', 'authors.email'] }
+
     assert_select 'td', text: /ann@example.com/
-    assert_select 'thead th a', { text: /Genre/, count: 0 }   # narrowed away
+    assert_select 'thead th a', { text: /Genre/, count: 0 } # narrowed away
   end
 
   test 'the picker groups every column by its source model (Pipedrive-style)' do
@@ -164,10 +176,11 @@ class PathColumnsIntegrationTest < ActionDispatch::IntegrationTest
 
   test 'a path to the target label field renders an icon + link to the record' do
     get '/columns'
+
     assert_response :success
     # publisher.name → a link to the publisher's show, badged with its model icon
-    assert_select "td a[href=?]", publisher_path(@pub) do
-      assert_select 'i.bi-building'   # Publisher declares icon 'building'
+    assert_select 'td a[href=?]', publisher_path(@pub) do
+      assert_select 'i.bi-building' # Publisher declares icon 'building'
       assert_select 'span', text: 'Tor'
     end
   end

@@ -43,7 +43,7 @@ class PropertyDefinition < ApplicationRecord
       # Reachable in SQL, so the column filters and sorts like any other — with a
       # control matching the property's flavor (see #filter_for).
       filter: definition.filter_for(subject_model),
-      sort:   ->(scope, dir)   { definition.sort_scope(scope, subject_model, dir) }
+      sort: ->(scope, dir) { definition.sort_scope(scope, subject_model, dir) }
     ) { |record, loaded| definition.cast(loaded[record.id]&.value) }
   end
 
@@ -64,7 +64,7 @@ class PropertyDefinition < ApplicationRecord
     when 'date'
       lambda do |scope, geq:, leq:|
         rows = values_for(subject_model)
-        rows = rows.where('value >= ?', geq.iso8601) if geq   # ISO dates sort lexically
+        rows = rows.where('value >= ?', geq.iso8601) if geq # ISO dates sort lexically
         rows = rows.where('value <= ?', leq.iso8601) if leq
         scope.where(id: rows.select(:subject_id))
       end
@@ -77,7 +77,7 @@ class PropertyDefinition < ApplicationRecord
       end
     when 'boolean'
       lambda do |scope, eq:|
-        next scope if eq.nil?   # "any"
+        next scope if eq.nil? # "any"
 
         scope.where(id: values_for(subject_model).where(value: eq.to_s).select(:subject_id))
       end

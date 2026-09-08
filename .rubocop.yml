@@ -1,0 +1,56 @@
+inherit_from: .rubocop_todo.yml
+
+plugins:
+  - rubocop-minitest
+  - rubocop-performance
+  - rubocop-rails
+  - rubocop-rake
+
+AllCops:
+  # The gemspec's floor. Cops that would suggest newer syntax stay quiet.
+  TargetRubyVersion: 3.2
+  NewCops: enable
+  Exclude:
+    - 'gemfiles/**/*'
+    - 'test/dummy/bin/**/*'
+    - 'test/dummy/db/schema.rb'
+    - 'vendor/**/*'
+
+# Deliberate, not debt — these two are style decisions this project has made.
+# Everything else that is currently unclean lives in .rubocop_todo.yml, with a
+# count, so it can be burnt down cop by cop instead of hidden.
+
+# A test here walks one flow and checks every step of it. Splitting that into
+# one assertion per test would hide the flow, which is the thing under test.
+Minitest/MultipleAssertions:
+  Enabled: false
+
+# The DSL takes keyword arguments by design — `crud_collection` alone has eight,
+# all optional and named. A positional-parameter limit does not apply.
+Metrics/ParameterLists:
+  Enabled: false
+
+# The bookstore playground and the tests are fixtures, not published API. A
+# doc comment on `class BooksController` says nothing the name does not.
+# In lib/ and app/ the cop stays on — that is the documented surface.
+Style/Documentation:
+  Exclude:
+    - 'test/**/*'
+
+# Declaration blocks are long because the declaration is long — that is the
+# whole point of a DSL. A gemspec and a routes file are the same shape.
+Metrics/BlockLength:
+  AllowedMethods:
+    - crud_structure
+    - draw
+  Exclude:
+    - '*.gemspec'
+    # Shipped by simple_form's generator and kept close to upstream so it can be
+    # diffed against a newer one.
+    - 'test/dummy/config/initializers/simple_form_bootstrap.rb'
+
+# The gems here are grouped by what they are for, and a comment block covers
+# each group — the soft-dependency renderers, for one. Sorting them
+# alphabetically tears the gems out from under the comment that explains them.
+Bundler/OrderedGems:
+  Enabled: false

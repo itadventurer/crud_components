@@ -16,7 +16,7 @@ def solid_png(width, height, rgb)
     [data.bytesize].pack('N') + type + data + [Zlib.crc32(type + data)].pack('N')
   end
   ihdr = [width, height].pack('N2') + [8, 2, 0, 0, 0].pack('C*') # 8-bit RGB
-  row = [0].pack('C') + (rgb.pack('C*') * width)                  # filter byte + pixels
+  row = [0].pack('C') + (rgb.pack('C*') * width) # filter byte + pixels
   idat = Zlib::Deflate.deflate(row * height)
   sig + chunk.call('IHDR', ihdr) + chunk.call('IDAT', idat) + chunk.call('IEND', '')
 end
@@ -54,13 +54,15 @@ end
 # an icon + filename in the table, record view and form.
 publishers.each_with_index do |publisher, i|
   next if i.odd?
+
   adoc = "= #{publisher.name} press kit\n\nFounded #{publisher.founded_on&.year}.\n\nContact: press@example.com\n"
   publisher.brochure.attach(io: StringIO.new(adoc), filename: "#{publisher.slug}-brochure.adoc",
                             content_type: 'text/asciidoc')
 end
 
 first_names = %w[Ursula Joe Ann Frank Iain Octavia Stanisław Margaret Kim Ted Liu Becky Martha Adrian Mary]
-last_names = %w[Le\ Guin Abercrombie Leckie Herbert Banks Butler Lem Atwood Robinson Chiang Cixin Chambers Wells Tchaikovsky Shelley]
+last_names = ['Le Guin', 'Abercrombie', 'Leckie', 'Herbert', 'Banks', 'Butler', 'Lem', 'Atwood', 'Robinson', 'Chiang',
+              'Cixin', 'Chambers', 'Wells', 'Tchaikovsky', 'Shelley']
 
 authors = first_names.zip(last_names).map do |first, last|
   Author.create!(name: "#{first} #{last}", email: "#{first.parameterize}@example.com")
@@ -72,6 +74,7 @@ end
 portrait_colors = %w[8d99ae cdb4db ffafcc a2d2ff bde0fe ffc8dd]
 authors.each_with_index do |author, i|
   next if i.even?
+
   rand(1..2).times do |n|
     rgb = portrait_colors.sample.scan(/../).map { |h| h.to_i(16) }
     author.images.attach(io: StringIO.new(solid_png(160, 200, rgb)),
@@ -131,9 +134,9 @@ end
 # Four user-defined columns in different flavors, plus a value per book — the
 # data the dynamic columns read from. None of this touches the Book model.
 definitions = {
-  'shelf'    => PropertyDefinition.create!(key: 'shelf',    label: 'Shelf',    flavor: 'string'),
-  'weight'   => PropertyDefinition.create!(key: 'weight',   label: 'Weight',   flavor: 'number', unit: 'g'),
-  'signed'   => PropertyDefinition.create!(key: 'signed',   label: 'Signed',   flavor: 'boolean'),
+  'shelf' => PropertyDefinition.create!(key: 'shelf', label: 'Shelf', flavor: 'string'),
+  'weight' => PropertyDefinition.create!(key: 'weight',   label: 'Weight',   flavor: 'number', unit: 'g'),
+  'signed' => PropertyDefinition.create!(key: 'signed',   label: 'Signed',   flavor: 'boolean'),
   'acquired' => PropertyDefinition.create!(key: 'acquired', label: 'Acquired', flavor: 'date')
 }
 

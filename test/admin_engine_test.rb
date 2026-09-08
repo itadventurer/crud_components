@@ -165,7 +165,7 @@ class AdminEngineTest < ActionDispatch::IntegrationTest
   end
 
   test 'destroy removes the record and returns to the index' do
-    post '/toggle_admin'   # the playground ability withholds :destroy otherwise
+    post '/toggle_admin' # the playground ability withholds :destroy otherwise
 
     assert_difference -> { Author.count }, -1 do
       delete "/admin/authors/#{@tolkien.id}"
@@ -316,7 +316,7 @@ class AdminEngineTest < ActionDispatch::IntegrationTest
     get "/admin/documents/#{document.id}"
 
     assert_response :success
-    assert_select "a[href=?]", "/documents##{ActionView::RecordIdentifier.dom_id(document)}"
+    assert_select 'a[href=?]', "/documents##{ActionView::RecordIdentifier.dom_id(document)}"
   end
 
   # ── the way back ─────────────────────────────────────────────────────────
@@ -338,7 +338,7 @@ class AdminEngineTest < ActionDispatch::IntegrationTest
 
   # ── nested indexes ───────────────────────────────────────────────────────
   test 'an owner has a nested index for each to-many association' do
-    get "/admin/publishers/tor-books/books"
+    get '/admin/publishers/tor-books/books'
 
     assert_response :success
     assert_select 'td', text: /The Hobbit/
@@ -541,7 +541,7 @@ class AdminEngineTest < ActionDispatch::IntegrationTest
     get '/admin/books/hobbit/delete'
 
     assert_response :success
-    assert_select "a[target=_blank]", text: 'hobbit-cover.png'
+    assert_select 'a[target=_blank]', text: 'hobbit-cover.png'
   end
 
   test 'past the tenth it links to the index holding the rest' do
@@ -551,7 +551,7 @@ class AdminEngineTest < ActionDispatch::IntegrationTest
     get '/admin/books/hobbit/delete'
 
     assert_response :success
-    assert_select 'li ul li', count: 11   # ten named, and the link to the rest
+    assert_select 'li ul li', count: 11 # ten named, and the link to the rest
     assert_select "a[href='/admin/books/hobbit/reviews']", text: /2 more/
   end
 

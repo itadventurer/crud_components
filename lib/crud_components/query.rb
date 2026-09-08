@@ -29,7 +29,7 @@ module CrudComponents
       apply_sort(scope)
     end
 
-    def fieldset_name = fieldset.name
+    delegate :name, to: :fieldset, prefix: true
 
     def filter_fields
       (structure.fieldset_filter_fields(fieldset) + @extra_fields.select(&:filterable?))
@@ -41,7 +41,7 @@ module CrudComponents
         .select { |f| f.permitted?(@permission) }
     end
 
-    def searchable? = structure.searchable?
+    delegate :searchable?, to: :structure
 
     # Current value of a (logical, unprefixed) param — for filter controls.
     def value(key) = param(key)

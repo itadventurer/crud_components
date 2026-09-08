@@ -21,7 +21,7 @@ module CrudComponents
         super(view: view)
         unless records.respond_to?(:klass)
           raise ArgumentError,
-                "crud_collection expects an ActiveRecord relation (e.g. Book.all, @books, or an " \
+                'crud_collection expects an ActiveRecord relation (e.g. Book.all, @books, or an ' \
                 "authorized scope like Book.accessible_by(current_ability)), got #{records.class}. " \
                 'Pass a scope so your authorization and filtering apply before the gem renders.'
         end
@@ -52,7 +52,7 @@ module CrudComponents
         when :auto, nil
           @fieldset = @structure.fieldset(fieldset || :index)
           @query = Query.new(@model, view.request.query_parameters, fieldset: @fieldset,
-                             ability: ability, param_prefix: param_prefix, extra_fields: @dynamic_fields)
+                                                                    ability: ability, param_prefix: param_prefix, extra_fields: @dynamic_fields)
           relation = @query.apply(relation)
         when Query
           @query = query
@@ -329,9 +329,9 @@ module CrudComponents
       # Whether to draw the footer at all — a single page needs no pager.
       def show_pager? = paginated? && total_pages > 1
 
-      def current_page = @relation.current_page
-      def total_pages  = @relation.total_pages
-      def total_count  = @relation.total_count
+      delegate :current_page, to: :@relation
+      delegate :total_pages, to: :@relation
+      delegate :total_count, to: :@relation
 
       # The underlying (possibly paginated) relation, for custom layouts that
       # would rather drive their own pager — e.g. hand it to kaminari's
@@ -355,7 +355,7 @@ module CrudComponents
         shown = ([1, total_pages] + ((current_page - window)..(current_page + window)).to_a)
                 .select { |p| p >= 1 && p <= total_pages }.uniq.sort
         shown.each_with_index.flat_map do |p, i|
-          (i.positive? && p - shown[i - 1] > 1) ? [:gap, p] : [p]
+          i.positive? && p - shown[i - 1] > 1 ? [:gap, p] : [p]
         end
       end
 
@@ -374,9 +374,7 @@ module CrudComponents
         actions_column? || column_picker? || filterable?
       end
 
-      def custom_actions_partial
-        fieldset.custom_actions_partial
-      end
+      delegate :custom_actions_partial, to: :fieldset
 
       def row_actions(record)
         Actions.new(view: view, subject: record, structure: structure,

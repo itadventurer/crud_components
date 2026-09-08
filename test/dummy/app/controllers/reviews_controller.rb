@@ -14,7 +14,7 @@ class ReviewsController < ApplicationController
     if @review.update(review_params)
       redirect_to @review, notice: 'Review updated.'
     else
-      render :edit, status: :unprocessable_entity
+      render :edit, status: :unprocessable_content
     end
   end
 
@@ -26,6 +26,7 @@ class ReviewsController < ApplicationController
   private
 
   def review_params
-    params.require(:review).permit(*CrudComponents.permitted_attributes(Review, action: action_name.to_sym, ability: self))
+    params.require(:review).permit(*CrudComponents.permitted_attributes(Review, action: action_name.to_sym,
+                                                                                ability: self))
   end
 end

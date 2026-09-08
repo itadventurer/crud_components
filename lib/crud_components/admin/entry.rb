@@ -20,7 +20,7 @@ module CrudComponents
         @options = options || {}
       end
 
-      def name = model.name
+      delegate :name, to: :model
 
       def route_key = model.model_name.route_key
 
@@ -31,7 +31,7 @@ module CrudComponents
 
       def label = options[:label]&.to_s || model.model_name.human(count: 2)
 
-      def icon = structure.icon
+      delegate :icon, to: :structure
 
       # nil for a top-level model; the namespace for `Catalog::Book`.
       def group

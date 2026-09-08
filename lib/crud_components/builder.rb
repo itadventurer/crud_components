@@ -24,12 +24,12 @@ module CrudComponents
     # @param model [Class] the ActiveRecord model being described.
     # @yield the `crud_structure` block, evaluated against this Builder.
     # @api private
-    def initialize(model, &block)
+    def initialize(model, &)
       @model = model
       @declarations = {}
       @actions = {}
       @fieldsets = {}
-      instance_exec(&block)
+      instance_exec(&)
     end
 
     # How a record is titled (links, headings). Give a method name or a block.
@@ -105,6 +105,7 @@ module CrudComponents
       if @declarations.key?(name)
         raise DefinitionError, "#{model}: attribute :#{name} declared twice — merge the declarations"
       end
+
       if RESERVED_PARAMS.include?(name.to_s)
         raise DefinitionError, "#{model}: :#{name} is a reserved param name " \
                                "(#{RESERVED_PARAMS.join(', ')}) and cannot be a field"
@@ -130,11 +131,11 @@ module CrudComponents
     #   `title:`, `class:`, `confirm:`, `method:`, `if:`, `data:`.
     # @yield the path block.
     # @return [void]
-    def action(name, **options, &path_block)
+    def action(name, **, &)
       name = name.to_sym
       raise DefinitionError, "#{model}: action :#{name} declared twice" if @actions.key?(name)
 
-      @actions[name] = Action.new(name, **options, &path_block)
+      @actions[name] = Action.new(name, **, &)
     end
 
     # A named selection of fields + actions for a surface (index/show/form/…).
@@ -227,6 +228,8 @@ module CrudComponents
       FacetCollector.new(model, name).collect(&block)
     end
 
+    # Gathers the facets of one attribute (render / filter / sort) while its
+    # block runs, so the builder sees them as a single declaration.
     class FacetCollector
       NONE = Object.new
 
@@ -236,8 +239,8 @@ module CrudComponents
         @facets = {}
       end
 
-      def collect(&block)
-        instance_exec(&block)
+      def collect(&)
+        instance_exec(&)
         @facets
       end
 
@@ -262,10 +265,12 @@ module CrudComponents
         once!(:filter)
         spec << assoc unless assoc.empty?
 
-        case
-        when spec == [false] && !block then @facets[:filter] = false
-        when block && spec.empty? then @facets[:filter] = block
-        when !spec.empty? && !block then @facets[:filter] = spec.size == 1 ? spec.first : spec
+        if spec == [false] && !block
+          @facets[:filter] = false
+        elsif block && spec.empty?
+          @facets[:filter] = block
+        elsif !spec.empty? && !block
+          @facets[:filter] = spec.size == 1 ? spec.first : spec
         else
           raise DefinitionError, "#{where}: filter takes `false`, a column/association spec " \
                                  '(e.g. `filter :title` or `filter authors: %i[name email]`), or a block'
@@ -274,10 +279,12 @@ module CrudComponents
 
       def sort(arg = NONE, &block)
         once!(:sort)
-        case
-        when arg == false && !block then @facets[:sort] = false
-        when block && arg.equal?(NONE) then @facets[:sort] = block
-        when arg.is_a?(Symbol) && !block then @facets[:sort] = arg
+        if arg == false && !block
+          @facets[:sort] = false
+        elsif block && arg.equal?(NONE)
+          @facets[:sort] = block
+        elsif arg.is_a?(Symbol) && !block
+          @facets[:sort] = arg
         else
           raise DefinitionError, "#{where}: sort takes `false`, an own-column symbol, or a block"
         end

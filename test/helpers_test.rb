@@ -12,6 +12,7 @@ class HelpersTest < ActiveSupport::TestCase
 
   test 'crud_model_icon_name resolves a model from a record, class or relation' do
     pub = Publisher.create!(name: 'Tor', slug: 'tor-icon')
+
     assert_equal 'building', view.crud_model_icon_name(pub)           # record (explicit icon)
     assert_equal 'building', view.crud_model_icon_name(Publisher)     # class
     assert_equal 'building', view.crud_model_icon_name(Publisher.all) # relation
@@ -23,10 +24,11 @@ class HelpersTest < ActiveSupport::TestCase
 
   test 'crud_model_icon builds the <i> tag (prefix + name), nil when no icon' do
     html = tag_view.crud_model_icon(Publisher, class: 'me-1')
+
     assert_includes html, 'bi bi-building'
     assert_includes html, 'me-1'
     assert_includes html, 'aria-hidden="true"'
-    assert_nil tag_view.crud_model_icon(Manual)   # no icon → no markup
+    assert_nil tag_view.crud_model_icon(Manual) # no icon → no markup
   end
 
   # #3: an association column can re-title the associated record per context.
@@ -35,8 +37,9 @@ class HelpersTest < ActiveSupport::TestCase
     field = Struct.new(:options)
     with_label = field.new({ label: ->(p) { "P:#{p.name}" } })
     no_label   = field.new({})
+
     assert_equal 'P:Tor', view.crud_association_label(with_label, pub)
-    assert_equal 'Tor',   view.crud_association_label(no_label, pub)   # default == crud_label
+    assert_equal 'Tor',   view.crud_association_label(no_label, pub) # default == crud_label
   ensure
     pub&.destroy
   end
@@ -46,18 +49,19 @@ class HelpersTest < ActiveSupport::TestCase
     assert_equal 'filetype-md',  view.crud_file_icon('README.md')
     assert_equal 'filetype-yml', view.crud_file_icon('config.yaml')  # full-name map handles the alias
     assert_equal 'file-earmark-zip', view.crud_file_icon('a.zip')    # …and the non-filetype glyph
-    assert_equal 'file-earmark-text', view.crud_file_icon('mystery.xyz')  # unmapped → fallback
+    assert_equal 'file-earmark-text', view.crud_file_icon('mystery.xyz') # unmapped → fallback
     assert_equal 'file-earmark-text', view.crud_file_icon('noext')
   end
 
   test 'crud_file_icon honors config (the map and the fallback)' do
     cfg = CrudComponents.config
-    icons, fallback = cfg.file_icons, cfg.file_fallback_icon
+    icons = cfg.file_icons
+    fallback = cfg.file_fallback_icon
     cfg.file_icons = { 'md' => 'ext-md' }
     cfg.file_fallback_icon = 'file'
 
     assert_equal 'ext-md', view.crud_file_icon('readme.md')
-    assert_equal 'file', view.crud_file_icon('a.pdf')   # pdf no longer mapped
+    assert_equal 'file', view.crud_file_icon('a.pdf') # pdf no longer mapped
   ensure
     cfg.file_icons = icons
     cfg.file_fallback_icon = fallback
@@ -65,6 +69,7 @@ class HelpersTest < ActiveSupport::TestCase
 
   test 'bundled_css ships the column-picker float styles' do
     css = CrudComponents.bundled_css
+
     assert_includes css, '.crud-column-picker-menu'
     assert_includes css, 'position: absolute'
   end
@@ -75,6 +80,7 @@ class HelpersTest < ActiveSupport::TestCase
       include CrudComponents::Helpers
     end.new
     html = v.crud_components_styles
+
     assert_includes html, '<style'
     assert_includes html, 'crud-column-picker-menu'
   end
@@ -88,10 +94,11 @@ class HelpersTest < ActiveSupport::TestCase
                                                     actions: false, search_bar: true)
     off = CrudComponents::Presenters::Collection.new(view: nil, records: Book.all, query: query,
                                                      actions: false, search_bar: false)
-    assert on.searchable?
-    assert on.show_toolbar?
-    refute off.searchable?
-    refute off.show_toolbar?
+
+    assert_predicate on, :searchable?
+    assert_predicate on, :show_toolbar?
+    assert_not_predicate off, :searchable?
+    assert_not_predicate off, :show_toolbar?
   end
 
   # A filterable table needs the trailing column even without row actions or a
@@ -104,10 +111,11 @@ class HelpersTest < ActiveSupport::TestCase
                                                             query: query, actions: false)
     static = CrudComponents::Presenters::Collection.new(view: nil, records: Book.all,
                                                         query: :static, actions: false)
-    assert filterable.filterable?
-    refute filterable.column_picker?
-    refute filterable.actions_column?
-    assert filterable.trailing_column?, 'filter row needs a trailing column for its button'
-    refute static.trailing_column?, 'a static, action-less, picker-less table needs none'
+
+    assert_predicate filterable, :filterable?
+    assert_not_predicate filterable, :column_picker?
+    assert_not_predicate filterable, :actions_column?
+    assert_predicate filterable, :trailing_column?, 'filter row needs a trailing column for its button'
+    assert_not_predicate static, :trailing_column?, 'a static, action-less, picker-less table needs none'
   end
 end

@@ -1,6 +1,8 @@
 require 'active_support/ordered_options'
 
 module CrudComponents
+  # The settings an app may change, set once in an initializer through
+  # CrudComponents.configure and read everywhere after that.
   class Config
     # When changed, add it to initializer.rb
     DEFAULT_CSS = {
@@ -59,7 +61,7 @@ module CrudComponents
     ].to_h { |ext| [ext, "filetype-#{ext}"] }.merge(
       'yaml' => 'filetype-yml',          # alias of yml
       'jpeg' => 'filetype-jpg',          # alias of jpg
-      'zip'  => 'file-earmark-zip'       # no filetype- glyph exists
+      'zip' => 'file-earmark-zip' # no filetype- glyph exists
     ).freeze
 
     # A guessed icon (no library prefix — paired with css.icon_prefix) per model,
