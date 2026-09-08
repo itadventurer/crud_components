@@ -88,7 +88,7 @@ module CrudComponents
       # POST bodies, not shareable URLs — unlike the filter, which uses
       # identify_by).
       def default_editable? = reflection.belongs_to? && !reflection.polymorphic?
-      def form_control = :belongs_to
+      def default_form_control = :belongs_to
       def permit_param = reflection.foreign_key.to_sym
 
       def form_choices

@@ -37,7 +37,7 @@ module CrudComponents
       # reassigning ids is safe; nested attributes are out of scope.
       def habtm? = reflection.macro == :has_and_belongs_to_many
       def default_editable? = habtm?
-      def form_control = :habtm
+      def default_form_control = :habtm
       def ids_method = :"#{name.to_s.singularize}_ids"
       def permit_param = { ids_method => [] }
 

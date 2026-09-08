@@ -9,7 +9,7 @@ module CrudComponents
       def derived_sortable? = true
       def derived_filter_control = :number_range
       def default_editable? = NON_EDITABLE_COLUMNS.exclude?(name.to_s)
-      def form_control = :number
+      def default_form_control = :number
 
       def apply_derived_filter(scope, value: nil, geq: nil, leq: nil)
         if (v = cast(value)) then scope = scope.where(name => v) end

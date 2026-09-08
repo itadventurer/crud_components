@@ -7,6 +7,10 @@ This project follows [semantic versioning](https://semver.org).
 
 ### Added
 
+- `form_as:` now **gives a field a form control it would not otherwise have**, instead of only renaming the partial of one that already had one. A computed field — a writable method without a column, `tag_list` say — had no control, so it never reached the form's field list and pointing it at a partial did nothing. `attribute :tag_list, form_as: :string` renders it and puts it in the permit list under its own name. `editable: false` still wins.
+
+### Added
+
 - `action ..., data: { … }` in `crud_structure` — data attributes for one action, on the element you click: the `<a>` of a GET action, the `<button>` of any other. A Stimulus controller (`data: { controller: 'clipboard', action: 'click->clipboard#copy' }`) or a `data-turbo-frame` breakout no longer needs a hand-written actions partial for the whole cell. What the gem sets itself stays unless you name the same key, so a GET action keeps `data-turbo-action="advance"` and `confirm:` keeps writing `data-turbo-confirm`.
 
 ### Fixed

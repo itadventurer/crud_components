@@ -14,7 +14,7 @@ module CrudComponents
       def derived_sortable? = true
       def derived_filter_control = :date_range
       def default_editable? = NON_EDITABLE_COLUMNS.exclude?(name.to_s)
-      def form_control = datetime? ? :datetime : :date
+      def default_form_control = datetime? ? :datetime : :date
 
       def apply_derived_filter(scope, value: nil, geq: nil, leq: nil)
         if (d = cast(value)) then scope = apply_day(scope, d) end

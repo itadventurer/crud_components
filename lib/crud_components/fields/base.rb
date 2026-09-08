@@ -222,7 +222,7 @@ module CrudComponents
       def editable?
         case options[:editable]
         when false then false
-        when nil then default_editable?
+        when nil then options.key?(:form_as) || default_editable?
         else true
         end
       end
@@ -241,17 +241,24 @@ module CrudComponents
         Permission.permitted?(condition, model, context, record, recordless: false)
       end
 
-      # The form-input flavor; nil = no form representation (json, computed).
+      # The form-input flavor; nil = no form representation. `form_as:` names one
+      # for a field that would not have had any — a writable method without a
+      # column, say — which is the point of pointing a field at a partial in the
+      # first place. Without this the override was inert exactly where it was
+      # needed: the field never reached the form's field list.
       def form_control
+        options[:form_as] || default_form_control
+      end
+
+      # What a field of this kind offers by default; nil = nothing (json, computed).
+      def default_form_control
         nil
       end
 
       # The form-input partial to render: crud_components/form_fields/_<name>.
-      # Defaults to the field's form_control type; override per field with
-      # `form_as:` (mirrors `as:` for the read-only/display renderer). The
-      # partial receives the simple_form builder `f`, the `field`, and `form`.
+      # Same as the control, since `form_as:` sets it.
       def form_partial
-        options[:form_as] || form_control
+        form_control
       end
 
       # What this field contributes to a strong-params permit list — a symbol
