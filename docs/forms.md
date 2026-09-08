@@ -84,8 +84,9 @@ rather than quietly rendering nothing:
 
 ```
 Book: fieldset :form lists :display_title, but that field has no form control, so it
-can never appear in the form. Drop it from the fieldset, or back it with a column,
-association, enum or attachment.
+can never appear in the form. Give it one with form_as: (attribute :display_title,
+form_as: :string), back it with a column, association, enum or attachment, or drop it
+from the fieldset.
 ```
 
 `:default` is exempt: it is the catch-all every model has and legitimately carries
@@ -186,6 +187,16 @@ plus the escape hatch:
   `form_fields/_rich_text.html.erb`. `form_as:` is the form-side parallel of `as:` (which
   picks the read-only/display renderer) and defaults to the field's type. The partial
   receives the simple_form builder `f`, the `field`, and `form`.
+
+  It also **gives a field a control it would not otherwise have**. A computed field — a
+  method without a column — has none, so it never reaches the form at all; naming a
+  partial says it is an input after all, and it joins the permit list under its own name:
+
+  ```ruby
+  attribute :tag_list, form_as: :string   # a writable method, no column
+  ```
+
+  `editable: false` still wins, for a field that should be shown but not submitted.
 - **Everything** — override `crud_components/_form.html.erb` to take over form rendering
   entirely.
 

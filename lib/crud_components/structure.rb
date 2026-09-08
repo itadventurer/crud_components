@@ -324,8 +324,9 @@ module CrudComponents
         next if field(name).form_control
 
         raise DefinitionError, "#{model}: fieldset :#{fieldset.name} lists :#{name}, but that field " \
-                               'has no form control, so it can never appear in the form. Drop it from ' \
-                               'the fieldset, or back it with a column, association, enum or attachment.'
+                               'has no form control, so it can never appear in the form. Give it one ' \
+                               "with form_as: (attribute :#{name}, form_as: :string), back it with a " \
+                               'column, association, enum or attachment, or drop it from the fieldset.'
       end
     end
 

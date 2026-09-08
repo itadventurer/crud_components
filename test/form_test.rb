@@ -74,6 +74,32 @@ class FormTest < ActiveSupport::TestCase
     assert_not_includes structure_of(overridden).field(:blurb).renderer_options.keys, :form_as
   end
 
+  test 'form_as: gives a field a form control it would not otherwise have' do
+    # shop_margin is computed: a method, no column, so no control of its own.
+    model = define_model do
+      attribute(:shop_margin, form_as: :string) { |book| book.title.to_s.length }
+      fieldset :form, %i[title shop_margin]
+    end
+    field = structure_of(model).field(:shop_margin)
+
+    assert_equal :string, field.form_control, 'form_as: names the control'
+    assert_equal :string, field.form_partial
+    assert_predicate field, :editable?, 'pointing a field at an input partial means it is an input'
+    assert_includes CrudComponents.permitted_attributes(model, action: :edit,
+                                                               ability: CrudTestHelpers::AllowAll.new),
+                    :shop_margin
+  end
+
+  test 'editable: false still wins over form_as:' do
+    model = define_model do
+      attribute(:shop_margin, form_as: :string, editable: false) { |book| book.title.to_s }
+    end
+    field = structure_of(model).field(:shop_margin)
+
+    assert_equal :string, field.form_control
+    assert_not_predicate field, :editable?
+  end
+
   test 'form_fieldset falls back action → :form → :default' do
     structure = structure_of(Book)
     # Book declares :form but not :edit, so :update resolves to :form

@@ -30,7 +30,16 @@ class DslValidationTest < ActiveSupport::TestCase
     error = assert_raises(CrudComponents::DefinitionError) { structure_of(model) }
     assert_match(/fieldset :form lists :display_title/, error.message)
     assert_match(/no form control/, error.message)
-    assert_match(/Drop it from the fieldset/, error.message)
+    assert_match(/Give it one with form_as:/, error.message)
+  end
+
+  test 'and form_as: is the way out of that' do
+    model = define_model do
+      attribute(:display_title, form_as: :string) { |book| book.title.to_s.upcase }
+      fieldset :form, %i[title display_title]
+    end
+
+    assert structure_of(model)
   end
 
   test 'the same field is fine in a fieldset that is not a form' do

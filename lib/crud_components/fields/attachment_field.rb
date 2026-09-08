@@ -33,7 +33,7 @@ module CrudComponents
 
       # ── forms ────────────────────────────────────────────────────────────
       def default_editable? = true
-      def form_control = :file
+      def default_form_control = :file
       def permit_param = many? ? { name => [] } : name
 
       private
