@@ -9,6 +9,15 @@ ActiveRecord::Schema[7.1].define(version: 1) do
     t.timestamps
   end
 
+  # A record written through its parent — what `nested:` renders in place of a
+  # picker. A publisher has exactly one, and it is edited on the publisher's form.
+  create_table :contacts, force: :cascade do |t|
+    t.integer :publisher_id
+    t.string :name
+    t.string :email
+    t.timestamps
+  end
+
   create_table :authors, force: :cascade do |t|
     t.string :name
     t.string :email

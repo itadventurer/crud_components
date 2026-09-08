@@ -7,6 +7,7 @@ This project follows [semantic versioning](https://semver.org).
 
 ### Added
 
+- **A record edited in place instead of picked from a list.** `attribute :contact, nested: %i[name email]` renders the target's own fields inside the parent's form and permits `{ contact_attributes: [:id, :name, :email] }` — the same fields, so form and params still cannot drift. `:id` rides along so an existing record is updated rather than replaced, `:_destroy` where the model allows it, and declaring `nested:` without `accepts_nested_attributes_for` raises at build time rather than rendering inputs the model would throw away. belongs_to and has_one; a collection keeps its picker. The bookstore has one: a publisher's contact.
 - `form_as:` now **gives a field a form control it would not otherwise have**, instead of only renaming the partial of one that already had one. A computed field — a writable method without a column, `tag_list` say — had no control, so it never reached the form's field list and pointing it at a partial did nothing. `attribute :tag_list, form_as: :string` renders it and puts it in the permit list under its own name. `editable: false` still wins.
 
 ### Added

@@ -52,6 +52,11 @@ publishers = [
   Publisher.create!(name: name, slug: name.parameterize, founded_on: Date.new(year, 1, 1))
 end
 
+# One contact per publisher, edited on the publisher's form through `nested:`.
+publishers.each_with_index do |publisher, i|
+  publisher.create_contact!(name: "Contact #{i + 1}", email: "press@#{publisher.slug}.example")
+end
+
 # A non-image, non-previewable attachment (.adoc) on some publishers — shows as
 # an icon + filename in the table, record view and form.
 publishers.each_with_index do |publisher, i|

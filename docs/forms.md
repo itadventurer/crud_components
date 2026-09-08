@@ -118,6 +118,7 @@ The flavor → simple_form mapping (one `form_fields/_<type>` partial each):
 | boolean                           | `f.input :name, as: :boolean` (a checkbox; a *nullable* column renders a 3-state Yes / No / not-set select instead)                                     |
 | enum                              | `f.input :name, collection: …` (your i18n'd keys; a *nullable* column adds a blank "not set" option)                                                    |
 | `belongs_to`                      | `f.association :publisher, collection: …` — submits the real **id** (forms are POST bodies, not shareable URLs, unlike filters which use `identify_by`) |
+| nested (`nested:`)                | `f.simple_fields_for :contact` around the target's own inputs |
 | habtm                             | `f.association :authors, as: :select, multiple` + a `crud-multiselect` chip-picker hook (see below)                                                     |
 | single / many attachment          | a file input + current preview + a "keep" checkbox per file (signed_id) — see [Attachments](#attachments)                                               |
 | read-only (not editable)          | rendered by the gem as a compact `label: value`, not submitted                                                                                          |
@@ -132,6 +133,23 @@ wrapper/component config, which the gem inherits.
 
 ## Associations and attachments
 
+- **nested** → the target's own fields, inside this form. For a record that is
+  written through its parent rather than picked from a list — a contact on a
+  publisher, an address on a person. Ask for it on the attribute:
+
+  ```ruby
+  accepts_nested_attributes_for :contact          # on the model, as usual
+  attribute :contact, nested: %i[name email]      # or nested: true for its form fields
+  ```
+
+  The permit list carries `{ contact_attributes: [:id, :name, :email] }` — the same
+  fields, so the two cannot drift. `:id` rides along so an existing record is updated
+  instead of replaced, and `:_destroy` joins it where the model allows it. Declaring
+  `nested:` without `accepts_nested_attributes_for` raises at build time, because the
+  inputs would render and the model would throw the params away.
+
+  belongs_to and has_one only. A collection keeps its picker; adding and removing rows
+  is a different feature.
 - **belongs_to** → a select valued by record id; permit `:publisher_id`.
 - **habtm** → a `<select multiple>` baseline (works no-JS, scales) that carries
   `data-controller="crud-multiselect"`; permit `{ author_ids: [] }`. The optional

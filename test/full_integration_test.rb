@@ -641,6 +641,35 @@ class FullIntegrationTest < ActionDispatch::IntegrationTest
     assert Publisher.find_by(slug: 'new-press'), 'slug auto-generated'
   end
 
+  test 'a nested record is edited in place on its parent form' do
+    @tor.create_contact!(name: 'Ada Press', email: 'ada@tor.example')
+
+    get edit_publisher_path(@tor)
+
+    # The target's own fields, inside the parent's form — not a picker.
+    assert_select "input[name='publisher[contact_attributes][name]'][value='Ada Press']"
+    assert_select "input[name='publisher[contact_attributes][email]']"
+    assert_select "select[name='publisher[contact_id]']", false, 'a nested record is not picked'
+    # The id rides along so the record is updated rather than replaced.
+    assert_select "input[name='publisher[contact_attributes][id]']"
+
+    patch publisher_path(@tor), params: {
+      publisher: { contact_attributes: { id: @tor.contact.id, name: 'Grace Press' } }
+    }
+
+    assert_equal 'Grace Press', @tor.reload.contact.name
+    assert_equal 'ada@tor.example', @tor.contact.email, 'the field left out kept its value'
+  end
+
+  test 'nested fields the target does not offer are not permitted' do
+    @tor.create_contact!(name: 'Ada Press', email: 'ada@tor.example')
+    permitted = CrudComponents.permitted_attributes(Publisher, action: :edit,
+                                                               ability: CrudTestHelpers::AllowAll.new)
+    nested = permitted.find { |key| key.is_a?(Hash) && key.key?(:contact_attributes) }
+
+    assert_equal %i[id name email], nested[:contact_attributes]
+  end
+
   test 'a failed save re-renders the form: inline field errors, entered values kept' do
     patch book_path(@hobbit), params: { book: { title: '', price: '42' } }
 

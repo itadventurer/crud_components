@@ -1,0 +1,10 @@
+<%# A record edited in place: the association is declared with
+    accepts_nested_attributes_for, so the target's own fields are rendered
+    inside this one, and the permit list carries <name>_attributes.
+    Locals: f (simple_form builder), field, form. %>
+<%= f.simple_fields_for field.name do |nested| %>
+  <% field.nested_fields.each do |nested_field| %>
+    <%= render "crud_components/form_fields/#{nested_field.form_partial}",
+               f: nested, field: nested_field, form: form %>
+  <% end %>
+<% end %>
