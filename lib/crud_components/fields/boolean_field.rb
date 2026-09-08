@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module CrudComponents
   module Fields
     # boolean column: ✓/✗ cell, any/yes/no select; values cast & validated,

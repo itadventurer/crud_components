@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module CrudComponents
   module Fields
     # date/datetime column: from–to range plus exact day; datetime ranges are

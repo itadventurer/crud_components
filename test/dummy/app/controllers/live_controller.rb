@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 class LiveController < ApplicationController
   def index
     @reviews = Review.order(created_at: :desc).limit(8)

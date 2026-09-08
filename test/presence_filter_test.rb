@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require 'test_helper'
 
 # The present / absent filter for Active Storage attachment columns (issue #32):

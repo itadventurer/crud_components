@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module CrudComponents
   # Soft-dependency markup rendering: works with whichever gem the host app
   # already has; raises at structure build (not here) when none is present.

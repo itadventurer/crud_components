@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require 'bigdecimal'
 require 'active_support'
 require 'active_support/core_ext/object/blank'
@@ -18,14 +20,14 @@ module CrudComponents
   # Sentinel filter value meaning "the column is NULL" (boolean/enum filters on
   # nullable columns offer it as a "not set" choice). Improbable as a real
   # value, so it never collides with a genuine enum key or boolean string.
-  NULL_FILTER_VALUE = '__null__'.freeze
+  NULL_FILTER_VALUE = '__null__'
 
   # The two non-blank values of an attachment **presence** filter — its 3-state
   # control (any / present / absent) submits these, and the query turns them into
   # an EXISTS / NOT EXISTS (`where.associated` / `where.missing`) over the backing
   # attachment association rather than a value match. See {Fields::AttachmentField}.
-  PRESENT_FILTER_VALUE = 'present'.freeze
-  ABSENT_FILTER_VALUE = 'absent'.freeze
+  PRESENT_FILTER_VALUE = 'present'
+  ABSENT_FILTER_VALUE = 'absent'
 end
 
 require_relative 'crud_components/version'

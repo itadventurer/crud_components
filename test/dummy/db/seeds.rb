@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require 'zlib'
 require 'stringio'
 
@@ -25,7 +27,7 @@ end
 # previewable, non-image attachment. poppler reconstructs the xref, so the
 # missing table is fine; it renders a page reading "CrudComponents manual".
 # Without a previewer stack it falls back to an icon + filename.
-TINY_PDF = <<~PDF.freeze
+TINY_PDF = <<~PDF
   %PDF-1.4
   1 0 obj<</Type/Catalog/Pages 2 0 R>>endobj
   2 0 obj<</Type/Pages/Kids[3 0 R]/Count 1>>endobj

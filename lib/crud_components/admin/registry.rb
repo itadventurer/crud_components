@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module CrudComponents
   module Admin
     # Which models the admin administers, resolved once and memoized. The route

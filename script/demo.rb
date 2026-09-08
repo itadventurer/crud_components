@@ -1,4 +1,6 @@
 #!/usr/bin/env ruby
+# frozen_string_literal: true
+
 # A guided tour of the query side against the seeded bookstore — run it with:
 #   ruby script/demo.rb
 # For the visual side, run the playground:

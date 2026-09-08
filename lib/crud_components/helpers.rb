@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module CrudComponents
   # The everyday view API, included into ActionView by the engine. Every helper
   # builds a presenter and renders a partial you can override via the host app's

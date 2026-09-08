@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 # Polymorphic belongs_to — the demo renders `commentable` as a nil-safe link to
 # whichever model owns the comment (a Book or a Document).
 class Comment < ApplicationRecord

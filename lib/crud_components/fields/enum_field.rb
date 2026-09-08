@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module CrudComponents
   module Fields
     # enum: badge cell, select of enum keys, values validated against the

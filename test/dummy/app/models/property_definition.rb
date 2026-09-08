@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 # A user-defined column. The app turns each definition into a
 # CrudComponents::DynamicColumn (see #to_crud_column) and hands the set to
 # `crud_collection` via `extra_columns:` — the model (Book) stays untouched.

@@ -1,5 +1,7 @@
+# frozen_string_literal: true
+
 module PlaygroundHelper
-  REPO = 'https://github.com/itadventurer/crud_components/blob/main'.freeze
+  REPO = 'https://github.com/itadventurer/crud_components/blob/main'
 
   # The "how this page is built" panel shown at the top of each playground page.
   # `intro` is a short explanation (may contain markup); the block holds the

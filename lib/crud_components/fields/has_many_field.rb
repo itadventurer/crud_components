@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module CrudComponents
   module Fields
     # has_many / habtm: truncated list of links ("a, b +3 more"). Filters by the

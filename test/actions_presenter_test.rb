@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require 'test_helper'
 
 # crud_actions takes a record (row actions) or a model class (collection

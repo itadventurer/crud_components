@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module CrudComponents
   class Error < StandardError; end
 

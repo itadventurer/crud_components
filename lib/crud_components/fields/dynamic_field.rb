@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module CrudComponents
   module Fields
     # The field flavor behind a {CrudComponents::DynamicColumn}: a column with no

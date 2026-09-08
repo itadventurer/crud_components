@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 class PublishersController < ApplicationController
   def index = @publishers = Publisher.all
 

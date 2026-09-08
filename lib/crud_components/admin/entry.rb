@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module CrudComponents
   module Admin
     # One registered model: everything the route drawer, the sidebar and the

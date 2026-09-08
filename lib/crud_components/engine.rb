@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require 'simple_form' # form rendering delegates to simple_form (a runtime dep)
 require_relative 'route_resolver'
 require_relative 'markup'

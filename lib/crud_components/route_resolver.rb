@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module CrudComponents
   # Resolves derived actions and record links to routes: the most specific
   # conventional route first (association-scoped when the collection came

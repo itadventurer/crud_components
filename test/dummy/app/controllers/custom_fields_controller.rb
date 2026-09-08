@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 class CustomFieldsController < ApplicationController
   # Dynamic columns: user-defined properties that live outside the Book table
   # (here in property_values), shown as extra columns. The model knows nothing

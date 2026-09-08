@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module CrudComponents
   # Applies URL params to a relation: filtering, global search, sorting.
   #

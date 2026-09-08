@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 # CrudComponents — everything has a working default; uncomment to deviate.
 CrudComponents.configure do |config|
   # belongs_to filter selects switch to a text input over the target's

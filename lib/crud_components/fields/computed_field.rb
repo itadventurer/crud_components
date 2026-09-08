@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module CrudComponents
   module Fields
     # A name Rails doesn't know: a public model method (rendered by its value
