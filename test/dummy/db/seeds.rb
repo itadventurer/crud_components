@@ -55,6 +55,8 @@ end
 # A non-image, non-previewable attachment (.adoc) on some publishers — shows as
 # an icon + filename in the table, record view and form.
 publishers.each_with_index do |publisher, i|
+  # One contact per publisher, edited on the publisher's form through `nested:`.
+  publisher.create_contact!(name: "Contact #{i + 1}", email: "press@#{publisher.slug}.example")
   next if i.odd?
 
   adoc = "= #{publisher.name} press kit\n\nFounded #{publisher.founded_on&.year}.\n\nContact: press@example.com\n"

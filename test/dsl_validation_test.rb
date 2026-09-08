@@ -60,6 +60,45 @@ class DslValidationTest < ActiveSupport::TestCase
     assert structure_of(model)
   end
 
+  # define_model's block declares the structure, not the class body, so these
+  # build the association themselves.
+  def model_with(table:, &body)
+    klass = Class.new(ApplicationRecord) do
+      self.table_name = table
+      include CrudComponents::Model
+
+      define_singleton_method(:name) { 'NestedTempModel' }
+    end
+    klass.class_eval(&body)
+    klass
+  end
+
+  test 'nested: without accepts_nested_attributes_for raises' do
+    model = model_with(table: 'books') do
+      belongs_to :publisher, optional: true
+      crud_structure { attribute :publisher, nested: true }
+    end
+    error = assert_raises(CrudComponents::DefinitionError) { structure_of(model) }
+    assert_match(/accepts_nested_attributes_for :publisher/, error.message)
+    assert_match(/thrown away/, error.message)
+  end
+
+  test 'nested: on a collection raises' do
+    model = model_with(table: 'publishers') do
+      has_many :books, dependent: :nullify
+      accepts_nested_attributes_for :books
+      crud_structure { attribute :books, nested: true }
+    end
+    error = assert_raises(CrudComponents::DefinitionError) { structure_of(model) }
+    assert_match(/belongs_to or has_one/, error.message)
+  end
+
+  test 'nested: on something that is not an association raises' do
+    model = define_model { attribute :title, nested: true }
+    error = assert_raises(CrudComponents::DefinitionError) { structure_of(model) }
+    assert_match(/needs an association/, error.message)
+  end
+
   test 'attribute declared twice raises' do
     model = define_model do
       attribute :title

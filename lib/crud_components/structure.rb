@@ -276,6 +276,7 @@ module CrudComponents
     def validate!
       @declarations.each_key { |name| field(name) }
       validate_renderer_gems!
+      validate_nested!
       validate_fieldsets!
     end
 
@@ -295,6 +296,27 @@ module CrudComponents
       true
     rescue LoadError
       false
+    end
+
+    # `nested:` without accepts_nested_attributes_for renders inputs whose params
+    # the model throws away — silently, which is the worst kind of wrong.
+    def validate_nested!
+      @declarations.each do |name, decl|
+        next if decl[:options][:nested].nil?
+
+        reflection = model.reflect_on_association(name)
+        raise DefinitionError, "#{model}.#{name}: nested: needs an association" if reflection.nil?
+
+        if reflection.collection? || reflection.polymorphic?
+          raise DefinitionError, "#{model}.#{name}: nested: works on a belongs_to or has_one; " \
+                                 'a collection keeps its picker'
+        end
+        next if model.nested_attributes_options.key?(name)
+
+        raise DefinitionError, "#{model}.#{name}: nested: needs " \
+                               "accepts_nested_attributes_for :#{name} on the model, or the " \
+                               'submitted attributes are thrown away'
+      end
     end
 
     def validate_fieldsets!
@@ -342,7 +364,7 @@ module CrudComponents
       elsif model.defined_enums.key?(name.to_s)
         Fields::EnumField
       elsif (reflection = model.reflect_on_association(name))
-        reflection.collection? ? Fields::HasManyField : Fields::BelongsToField
+        association_field_class(name, reflection)
       elsif model.respond_to?(:reflect_on_attachment) && model.reflect_on_attachment(name)
         Fields::AttachmentField
       elsif (column = model.columns_hash[name.to_s])
@@ -353,6 +375,16 @@ module CrudComponents
         raise DefinitionError, "#{model} has no column, enum, association or public method '#{name}'. " \
                                "Computed fields need a render facet: attribute(:#{name}) { |record| ... }"
       end
+    end
+
+    def association_field_class(name, reflection)
+      return Fields::NestedField if nested?(name)
+
+      reflection.collection? ? Fields::HasManyField : Fields::BelongsToField
+    end
+
+    def nested?(name)
+      !@declarations.dig(name, :options, :nested).nil?
     end
 
     def column_field_class(column)
