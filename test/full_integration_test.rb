@@ -661,20 +661,50 @@ class FullIntegrationTest < ActionDispatch::IntegrationTest
     assert_equal 'ada@tor.example', @tor.contact.email, 'the field left out kept its value'
   end
 
-  test 'a nested block with no record to edit draws nothing' do
+  test 'a record that is not there yet is built, so the form can create one' do
     get edit_publisher_path(@tor) # this publisher has no contact
-
-    assert_select 'legend', text: 'Contact', count: 0
-    assert_select "input[name='publisher[contact_attributes][name]']", false
-
-    # The host decides whether a missing record may be created: the new form
-    # builds one, so the fields are there.
-    get new_publisher_path
 
     assert_select 'legend', text: 'Contact'
     assert_select "input[name='publisher[contact_attributes][name]']"
+    assert_select "input[name='publisher[contact_attributes][id]']", false, 'nothing to update yet'
+
+    assert_difference 'Contact.count', 1 do
+      patch publisher_path(@tor), params: {
+        publisher: { contact_attributes: { name: 'Ada Press', email: 'ada@tor.example' } }
+      }
+    end
+    assert_equal 'Ada Press', @tor.reload.contact.name
+
+    get new_publisher_path
+
+    assert_select "input[name='publisher[contact_attributes][name]']"
   end
 
+  test 'build: false leaves the block away instead of framing an empty box' do
+    without_building = proc do
+      label :name
+      identify_by :slug
+      attribute :contact, nested: %i[name email], build: false
+      fieldset :form, %i[name contact]
+    end
+
+    with_structure(Publisher, without_building) do
+      get edit_publisher_path(@tor) # still without a contact
+
+      assert_select 'legend', text: 'Contact', count: 0
+      assert_select "input[name='publisher[contact_attributes][name]']", false
+      assert_nil @tor.reload.contact, 'nothing was built behind the host\'s back'
+
+      # An existing record is still edited in place.
+      @tor.create_contact!(name: 'Ada Press')
+      get edit_publisher_path(@tor)
+
+      assert_select "input[name='publisher[contact_attributes][name]'][value='Ada Press']"
+    end
+  end
+
+  # reject_if: :all_blank on the model — without it the built record fails its own
+  # validations and takes the parent's save down with it.
   test 'a new record submitted with the nested fields left empty saves without one' do
     assert_difference 'Publisher.count', 1 do
       assert_no_difference 'Contact.count' do

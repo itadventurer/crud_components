@@ -12,6 +12,12 @@ module CrudComponents
     # the params would arrive and go nowhere — that is checked when the
     # structure is built.
     #
+    # A record that isn't there yet is built, so the form can create one — a
+    # form that cannot enter what it declares is rarely what anybody wants.
+    # `build: false` says the opposite: no record, no block, and the gem builds
+    # nothing. That is the choice for a record only some parents should ever
+    # have.
+    #
     # Singular associations only (belongs_to / has_one). A collection keeps its
     # picker; adding and removing rows is a different feature.
     class NestedField < Base
@@ -27,6 +33,16 @@ module CrudComponents
 
       def default_form_control = :nested
       def default_editable? = true
+
+      # Whether a missing record is built so the form can create one.
+      def build_missing? = options[:build] != false
+
+      # The record the block edits: the parent's own, or a fresh one when this
+      # field builds. nil (and no block at all) when it doesn't — an empty
+      # bordered box with a heading and nothing in it helps nobody.
+      def record_for(parent)
+        parent.public_send(name) || (build_missing? ? parent.public_send(:"build_#{name}") : nil)
+      end
 
       # The target's own form fields, in its own declared order. `nested:` on the
       # attribute narrows them; without it the target's form fieldset decides,

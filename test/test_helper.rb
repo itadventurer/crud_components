@@ -50,6 +50,18 @@ module CrudTestHelpers
     CrudComponents::Structure.const_set(:RENDERER_GEMS, original)
   end
 
+  # Swap a model's whole crud_structure for the duration of the block (the
+  # structure is memoized per model, so it has to be rebuilt around it).
+  def with_structure(model, definition)
+    original = model.instance_variable_get(:@_crud_structure_block)
+    model.reset_crud_structure!
+    model.crud_structure(&definition)
+    yield
+  ensure
+    model.instance_variable_set(:@_crud_structure_block, original)
+    model.instance_variable_set(:@_crud_structure, nil)
+  end
+
   # A translated sidebar group heading for the duration of the block.
   def with_group_translation(heading, key: :custom_properties)
     I18n.backend.store_translations(:en, crud_components: { admin: { groups: { key => heading } } })

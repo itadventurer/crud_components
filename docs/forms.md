@@ -118,7 +118,7 @@ The flavor → simple_form mapping (one `form_fields/_<type>` partial each):
 | boolean                           | `f.input :name, as: :boolean` (a checkbox; a *nullable* column renders a 3-state Yes / No / not-set select instead)                                     |
 | enum                              | `f.input :name, collection: …` (your i18n'd keys; a *nullable* column adds a blank "not set" option)                                                    |
 | `belongs_to`                      | `f.association :publisher, collection: …` — submits the real **id** (forms are POST bodies, not shareable URLs, unlike filters which use `identify_by`) |
-| nested (`nested:`)                | `f.simple_fields_for :contact` around the target's own inputs |
+| nested (`nested:`)                | `f.simple_fields_for :contact` around the target's own inputs (a missing record is built unless `build: false`) |
 | habtm                             | `f.association :authors, as: :select, multiple` + a `crud-multiselect` chip-picker hook (see below)                                                     |
 | single / many attachment          | a file input + current preview + a "keep" checkbox per file (signed_id) — see [Attachments](#attachments)                                               |
 | read-only (not editable)          | rendered by the gem as a compact `label: value`, not submitted                                                                                          |
@@ -152,20 +152,25 @@ wrapper/component config, which the gem inherits.
   a nested "Name" next to the parent's own "Name" is otherwise unreadable. Restyle it
   through `nested_fieldset` / `nested_legend` in the class map.
 
-  Nothing is drawn when there is no record to edit — a `has_one` only some records
-  have would otherwise frame an empty box on every other form. Whether a missing one
-  may be created is your call: build it where the form should offer it, the way
-  `accepts_nested_attributes_for` has always worked.
+  A record that isn't there yet is **built**, so the form can create one. Pair that
+  with `reject_if: :all_blank` on the model, or a form submitted with those fields
+  left empty fails on the blank record's own validations:
 
   ```ruby
-  def new
-    @publisher = Publisher.new
-    @publisher.build_contact
-  end
+  accepts_nested_attributes_for :contact, reject_if: :all_blank
   ```
 
-  Pair that with `reject_if: :all_blank` on the model, or a form submitted with the
-  nested fields left empty fails on the blank record's own validations.
+  `build: false` says the opposite — no record, no block:
+
+  ```ruby
+  attribute :contact, nested: %i[name email], build: false
+  ```
+
+  That is the choice for a record only some parents should ever have: nothing is
+  drawn for the others (rather than an empty bordered box with a heading in it),
+  and the gem builds nothing behind your back. Where such a record *should* be
+  creatable from the form for some parents but not all, build it yourself in the
+  controller — `build: false` only stops the gem from doing it.
 
   belongs_to and has_one only. A collection keeps its picker; adding and removing rows
   is a different feature.

@@ -7,11 +7,8 @@ class PublishersController < ApplicationController
     @publisher = find_publisher
   end
 
-  # build_contact so the nested block has a record to render: without one it
-  # draws nothing, and a publisher could never get a contact through the form.
   def new
     @publisher = Publisher.new
-    @publisher.build_contact
   end
 
   def edit
