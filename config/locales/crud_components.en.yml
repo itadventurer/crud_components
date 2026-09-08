@@ -14,6 +14,9 @@ en:
       apply: "Apply"
       reset: "Reset"
       legend: "Show columns"
+    nested:
+      add: "Add %{name}"
+      remove: "Remove"
     attachment:
       keep: "Keep"
       remove: "Remove"

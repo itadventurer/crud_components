@@ -55,8 +55,11 @@ end
 # A non-image, non-previewable attachment (.adoc) on some publishers — shows as
 # an icon + filename in the table, record view and form.
 publishers.each_with_index do |publisher, i|
-  # One contact per publisher, edited on the publisher's form through `nested:`.
-  publisher.create_contact!(name: "Contact #{i + 1}", email: "press@#{publisher.slug}.example")
+  # One contact per publisher, edited on the publisher's form through `nested:` —
+  # except the last one, so a form without the record is there to look at.
+  unless publisher == publishers.last
+    publisher.create_contact!(name: "Contact #{i + 1}", email: "press@#{publisher.slug}.example")
+  end
   next if i.odd?
 
   adoc = "= #{publisher.name} press kit\n\nFounded #{publisher.founded_on&.year}.\n\nContact: press@example.com\n"
@@ -115,6 +118,14 @@ cover_colors = %w[#264653 #2a9d8f #e9c46a #f4a261 #e76f51 #6d597a #355070 #b5657
   rgb = [hex[0, 2], hex[2, 2], hex[4, 2]].map { |h| h.to_i(16) }
   book.cover.attach(io: StringIO.new(solid_png(120, 180, rgb)),
                     filename: "cover-#{i}.png", content_type: 'image/png')
+
+  # Chapters on most books, edited as rows on the book's form. Every third book
+  # has none, so a collection that starts at zero rows is there to look at.
+  unless (i % 3).zero?
+    rand(2..4).times do |chapter|
+      book.chapters.create!(title: "#{chapter + 1}. #{nouns.sample}", pages: rand(8..60))
+    end
+  end
 
   # a PDF manual on some books — the previewable / icon-fallback attachment demo
   if (i % 4).zero?
@@ -175,6 +186,7 @@ comment_bodies = ['Great reference.', 'Needs an update for 2026.', 'Linked from 
 Book.order(:id).limit(5).each { |b| Comment.create!(commentable: b, body: comment_bodies.sample) }
 docs.each { |d| Comment.create!(commentable: d, body: comment_bodies.sample) }
 
-puts "  #{Publisher.count} publishers, #{Author.count} authors, #{Book.count} books, #{Review.count} reviews, " \
+puts "  #{Publisher.count} publishers, #{Author.count} authors, #{Book.count} books, " \
+     "#{Chapter.count} chapters, #{Review.count} reviews, " \
      "#{PropertyDefinition.count} custom properties (#{PropertyValue.count} values), " \
      "#{Document.count} documents, #{Comment.count} comments."

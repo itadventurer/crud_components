@@ -13,6 +13,9 @@ de:
       apply: "Anwenden"
       reset: "Zurücksetzen"
       legend: "Spalten anzeigen"
+    nested:
+      add: "%{name} hinzufügen"
+      remove: "Entfernen"
     attachment:
       keep: "Behalten"
       remove: "Entfernen"

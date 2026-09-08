@@ -5,7 +5,8 @@ class Publisher < ApplicationRecord
 
   has_many :books, dependent: :nullify
   has_one :contact, dependent: :destroy
-  accepts_nested_attributes_for :contact
+  # reject_if so a block the (+) opened and nobody filled in is dropped.
+  accepts_nested_attributes_for :contact, reject_if: :all_blank
   has_one_attached :brochure # an .adoc — a non-previewable file: shows as an icon + filename
 
   before_validation { self.slug = name.to_s.parameterize if slug.blank? }

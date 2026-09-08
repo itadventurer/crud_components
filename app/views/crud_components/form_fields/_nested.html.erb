@@ -1,14 +1,16 @@
-<%# A record edited in place: the target's own fields are rendered inside this
-    form, and the permit list carries <name>_attributes. The legend says whose
-    fields these are — without it a nested "Name" sits next to the parent's own
-    "Name" with nothing to tell them apart.
+<%# Records edited in place: the target's own fields inside this form, and the
+    permit list carries <name>_attributes. The legend says whose fields these
+    are — without it a nested "Name" sits next to the parent's own "Name" with
+    nothing to tell them apart.
     Locals: f (simple_form builder), field, form. %>
+<% records = field.existing_records(f.object) %>
 <fieldset class="<%= form.css.nested_fieldset %>">
   <legend class="<%= form.css.nested_legend %>"><%= field.human_name %></legend>
-  <%= f.simple_fields_for field.name do |nested| %>
-    <% field.nested_fields.each do |nested_field| %>
-      <%= render "crud_components/form_fields/#{nested_field.form_partial}",
-                 f: nested, field: nested_field, form: form %>
-    <% end %>
+  <% records.each_with_index do |record, index| %>
+    <%= render "crud_components/form_fields/nested_row",
+               f: f, field: field, form: form, record: record, index: index %>
   <% end %>
+  <%= render "crud_components/form_fields/nested_add",
+             f: f, field: field, form: form, existing_count: records.size, ordinal: 0,
+             remaining: form.added_rows(field, records.size) %>
 </fieldset>

@@ -118,7 +118,7 @@ The flavor → simple_form mapping (one `form_fields/_<type>` partial each):
 | boolean                           | `f.input :name, as: :boolean` (a checkbox; a *nullable* column renders a 3-state Yes / No / not-set select instead)                                     |
 | enum                              | `f.input :name, collection: …` (your i18n'd keys; a *nullable* column adds a blank "not set" option)                                                    |
 | `belongs_to`                      | `f.association :publisher, collection: …` — submits the real **id** (forms are POST bodies, not shareable URLs, unlike filters which use `identify_by`) |
-| nested (`nested:`)                | `f.simple_fields_for :contact` around the target's own inputs |
+| nested (`nested:`)                | `f.simple_fields_for :contact` around the target's own inputs, one block per row, plus a (+) |
 | habtm                             | `f.association :authors, as: :select, multiple` + a `crud-multiselect` chip-picker hook (see below)                                                     |
 | single / many attachment          | a file input + current preview + a "keep" checkbox per file (signed_id) — see [Attachments](#attachments)                                               |
 | read-only (not editable)          | rendered by the gem as a compact `label: value`, not submitted                                                                                          |
@@ -133,9 +133,9 @@ wrapper/component config, which the gem inherits.
 
 ## Associations and attachments
 
-- **nested** → the target's own fields, inside this form. For a record that is
-  written through its parent rather than picked from a list — a contact on a
-  publisher, an address on a person. Ask for it on the attribute:
+- **nested** → the target's own fields, inside this form. For records written
+  through their parent rather than picked from a list — a contact on a publisher,
+  the chapters of a book. Ask for it on the attribute:
 
   ```ruby
   accepts_nested_attributes_for :contact          # on the model, as usual
@@ -152,8 +152,29 @@ wrapper/component config, which the gem inherits.
   a nested "Name" next to the parent's own "Name" is otherwise unreadable. Restyle it
   through `nested_fieldset` / `nested_legend` in the class map.
 
-  belongs_to and has_one only. A collection keeps its picker; adding and removing rows
-  is a different feature.
+  **A record that isn't there is added with the (+).** Where there is none, the block
+  holds nothing but that button; a `has_many` starts at no rows at all and grows one
+  click at a time. Nothing is built until somebody asks for it.
+
+  The button is a plain link to the same page with `?crud_add[contact]=1` — the form
+  reads that the way the tables read `?sort=` and their filters, so **no controller
+  does anything for it**. It sits in a `<turbo-frame>` below the fields, and the
+  response brings the next empty frame with it, so a click replaces only the part
+  under what is already filled in. Without Turbo (or without JavaScript at all) the
+  same link is an ordinary page load and works unchanged.
+
+  A `has_many` needs `allow_destroy: true`, or rows could be added and never taken
+  out again — that is checked when the structure is built. Each saved row then gets a
+  "remove" checkbox: tick it, save, the row is gone. The optional `crud-nested`
+  Stimulus controller turns that box into a button that hides the row straight away.
+
+  ```ruby
+  accepts_nested_attributes_for :chapters, allow_destroy: true, reject_if: :all_blank
+  attribute :chapters, nested: %i[title pages]
+  ```
+
+  `reject_if: :all_blank` is worth having: a row somebody opened and left empty is
+  then dropped instead of failing on the blank record's own validations.
 - **belongs_to** → a select valued by record id; permit `:publisher_id`.
 - **habtm** → a `<select multiple>` baseline (works no-JS, scales) that carries
   `data-controller="crud-multiselect"`; permit `{ author_ids: [] }`. The optional
@@ -253,8 +274,9 @@ On that re-render:
 
 ## Scope (v1)
 
-Single record; flat columns plus belongs_to and habtm. No nested forms /
-`accepts_nested_attributes` and no JSON-column editing in v1.
+Single record; flat columns, belongs_to, habtm, and nested records — one per
+singular association, rows added and removed on a `has_many`. No re-ordering of
+those rows and no JSON-column editing in v1.
 
 ## A complete example
 
