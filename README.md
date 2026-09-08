@@ -414,10 +414,11 @@ the inline filter row binds to an external form via the HTML `form` attribute; f
 plain (simple_form) markup. Niceties layer on as **one mechanism, not a fork**: the
 markup is always the plain baseline, and Stimulus controllers enhance it *in place* via
 `data-controller` (no parallel template trees; framework choice lives in the class map).
-The gem ships four optional Stimulus controllers — `crud-filter` (strips empty inputs for
+The gem ships five optional Stimulus controllers — `crud-filter` (strips empty inputs for
 clean URLs), `crud-multiselect` (a habtm `<select multiple>` → chips-list + "add" picker),
-`crud-columns` (drag-to-reorder + tidy `?cols=` in the column picker) and `crud-select`
-("select all" / per-group master checkbox + live count for selectable tables) — and
+`crud-columns` (drag-to-reorder + tidy `?cols=` in the column picker), `crud-select`
+("select all" / per-group master checkbox + live count for selectable tables) and
+`crud-nested` (a nested row's "remove" checkbox → a button that hides the row) — and
 depends on no JS. →
 [Extending → progressive enhancement](docs/extending.md#progressive-enhancement)
 

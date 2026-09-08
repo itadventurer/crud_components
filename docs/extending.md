@@ -193,7 +193,7 @@ register them with Stimulus; the gem depends on none):
 
 ```sh
 bin/rails generate crud_components:install
-# initializer + crud-filter + crud-multiselect + crud-columns + crud-select
+# initializer + crud-filter + crud-multiselect + crud-columns + crud-select + crud-nested
 ```
 
 - **`crud-filter`** strips empty params on submit (clean URLs) and auto-submits selects in
@@ -206,6 +206,10 @@ bin/rails generate crud_components:install
 - **`crud-columns`** lets the user drag the column-picker rows to reorder, and collapses
   the submitted `?cols[]=a&cols[]=b` into a tidier `?cols=a,b`. Without it the picker still
   works (tick + Apply is a plain GET); you just lose drag-reorder and the prettier URL.
+- **`crud-nested`** turns a nested row's "remove" checkbox into a button and hides the row
+  the moment it is clicked. The checkbox stays the source of truth, so the form submits
+  identically either way; without it you tick the box and save. Adding rows needs no
+  JavaScript at all — the (+) is a link.
 - **`crud-select`** adds a "select all visible" / per-group master checkbox and a live
   "N selected" count to selectable tables (bulk/selection actions). Without it the row
   checkboxes still submit; you just tick them individually.

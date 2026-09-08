@@ -19,6 +19,7 @@ module CrudComponents
         copy_file 'crud_multiselect_controller.js', 'app/javascript/controllers/crud_multiselect_controller.js'
         copy_file 'crud_select_controller.js', 'app/javascript/controllers/crud_select_controller.js'
         copy_file 'crud_columns_controller.js', 'app/javascript/controllers/crud_columns_controller.js'
+        copy_file 'crud_nested_controller.js', 'app/javascript/controllers/crud_nested_controller.js'
         say <<~NOTE
 
           Load the gem's stylesheet (it makes the column picker float; everything
@@ -32,6 +33,7 @@ module CrudComponents
           - crud-multiselect: turn a habtm `<select multiple>` into a chips + add picker.
           - crud-select: "select all" / per-group checkboxes + a live count for bulk actions.
           - crud-columns: drag-to-reorder the column picker (ticking columns works without it).
+          - crud-nested: turn a nested row's "remove" checkbox into a button that hides the row.
           Register them (stimulus-rails with importmap does this automatically via
           controllers/index.js; otherwise):
 
@@ -39,6 +41,7 @@ module CrudComponents
             application.register("crud-multiselect", CrudMultiselectController)
             application.register("crud-select", CrudSelectController)
             application.register("crud-columns", CrudColumnsController)
+            application.register("crud-nested", CrudNestedController)
 
         NOTE
       end

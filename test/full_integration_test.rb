@@ -670,6 +670,108 @@ class FullIntegrationTest < ActionDispatch::IntegrationTest
     assert_equal %i[id name email], nested[:contact_attributes]
   end
 
+  # ── adding a nested record: the (+) ───────────────────────────────────────
+  test 'without a record there is only the (+), and following it renders the fields' do
+    get edit_publisher_path(@tor) # this publisher has no contact
+
+    assert_select "input[name='publisher[contact_attributes][name]']", false
+    assert_select 'turbo-frame#crud_add_publisher_contact_0 a[href=?]',
+                  "#{edit_publisher_path(@tor)}?crud_add%5Bcontact%5D=1", text: /Add Contact/
+
+    get edit_publisher_path(@tor), params: { crud_add: { contact: 1 } }
+
+    assert_select "input[name='publisher[contact_attributes][name]']"
+    assert_select "input[name='publisher[contact_attributes][id]']", false, 'nothing to update yet'
+    assert_nil @tor.reload.contact, 'the row is rendered, not saved'
+
+    assert_difference 'Contact.count', 1 do
+      patch publisher_path(@tor), params: { publisher: { contact_attributes: { name: 'Ada Press' } } }
+    end
+    assert_equal 'Ada Press', @tor.reload.contact.name
+  end
+
+  test 'a singular association offers no second row' do
+    @tor.create_contact!(name: 'Ada Press')
+
+    get edit_publisher_path(@tor)
+
+    assert_select 'turbo-frame#crud_add_publisher_contact_0 a', false, 'one record is all it can hold'
+  end
+
+  test 'each (+) nests the next frame, so only the part below the fields is replaced' do
+    get edit_book_path(@hobbit), params: { crud_add: { chapters: 2 } }
+
+    # Two blank rows, numbered on from the rows that are there.
+    assert_select "input[name='book[chapters_attributes][0][title]']"
+    assert_select "input[name='book[chapters_attributes][1][title]']"
+    # Frame 0 holds the first added row and frame 1, which holds the second and frame 2.
+    assert_select 'turbo-frame#crud_add_book_chapters_0 turbo-frame#crud_add_book_chapters_1 ' \
+                  'turbo-frame#crud_add_book_chapters_2 a[href*=?]', 'crud_add%5Bchapters%5D=3'
+  end
+
+  test 'a crafted count cannot ask for a thousand rows' do
+    get edit_book_path(@hobbit), params: { crud_add: { chapters: 1000 } }
+
+    rows = css_select("input[name^='book[chapters_attributes]'][name$='[title]']").size
+
+    assert_equal CrudComponents::Presenters::Form::MAX_ADDED_ROWS, rows
+  end
+
+  test 'rows are numbered on from the ones already there, and save' do
+    @hobbit.chapters.create!(title: 'An Unexpected Party', pages: 30)
+
+    get edit_book_path(@hobbit), params: { crud_add: { chapters: 1 } }
+
+    assert_select "input[name='book[chapters_attributes][0][title]'][value=?]", 'An Unexpected Party'
+    assert_select "input[name='book[chapters_attributes][1][title]']"
+
+    assert_difference 'Chapter.count', 1 do
+      patch book_path(@hobbit), params: {
+        book: { chapters_attributes: { '0' => { id: @hobbit.chapters.first.id, title: 'Party' },
+                                       '1' => { title: 'Roast Mutton' } } }
+      }
+    end
+    assert_equal ['Party', 'Roast Mutton'], @hobbit.reload.chapters.order(:id).map(&:title)
+  end
+
+  test 'a blank row nobody filled in is dropped instead of failing' do
+    assert_no_difference 'Chapter.count' do
+      patch book_path(@hobbit), params: { book: { chapters_attributes: { '0' => { title: '', pages: '' } } } }
+    end
+    assert_response :redirect
+  end
+
+  # ── removing a row ────────────────────────────────────────────────────────
+  test 'a saved row carries a remove box, and ticking it takes the row out' do
+    chapter = @hobbit.chapters.create!(title: 'Riddles in the Dark')
+
+    get edit_book_path(@hobbit)
+
+    assert_select "input[type=checkbox][name='book[chapters_attributes][0][_destroy]']"
+    # The button is the JS layer over that box: rendered hidden, shown by the controller.
+    assert_select "button[data-action='crud-nested#remove'][hidden]"
+
+    assert_difference 'Chapter.count', -1 do
+      patch book_path(@hobbit), params: {
+        book: { chapters_attributes: { '0' => { id: chapter.id, _destroy: '1' } } }
+      }
+    end
+  end
+
+  test 'a row that is not saved yet has nothing to remove' do
+    get edit_book_path(@hobbit), params: { crud_add: { chapters: 1 } }
+
+    assert_select "input[name='book[chapters_attributes][0][_destroy]']", false
+  end
+
+  test 'the permit list of a collection carries id and _destroy' do
+    permitted = CrudComponents.permitted_attributes(Book, action: :edit,
+                                                          ability: CrudTestHelpers::AllowAll.new)
+    nested = permitted.find { |key| key.is_a?(Hash) && key.key?(:chapters_attributes) }
+
+    assert_equal %i[id _destroy title pages], nested[:chapters_attributes]
+  end
+
   test 'a failed save re-renders the form: inline field errors, entered values kept' do
     patch book_path(@hobbit), params: { book: { title: '', price: '42' } }
 

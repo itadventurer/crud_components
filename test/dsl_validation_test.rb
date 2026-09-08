@@ -83,14 +83,26 @@ class DslValidationTest < ActiveSupport::TestCase
     assert_match(/thrown away/, error.message)
   end
 
-  test 'nested: on a collection raises' do
+  test 'nested: on a collection without allow_destroy raises' do
     model = model_with(table: 'publishers') do
       has_many :books, dependent: :nullify
       accepts_nested_attributes_for :books
       crud_structure { attribute :books, nested: true }
     end
     error = assert_raises(CrudComponents::DefinitionError) { structure_of(model) }
-    assert_match(/belongs_to or has_one/, error.message)
+
+    assert_match(/allow_destroy: true/, error.message)
+    assert_match(/never removed/, error.message)
+  end
+
+  test 'nested: on a collection that allows removing is fine' do
+    model = model_with(table: 'publishers') do
+      has_many :books, dependent: :nullify
+      accepts_nested_attributes_for :books, allow_destroy: true
+      crud_structure { attribute :books, nested: true }
+    end
+
+    assert_instance_of CrudComponents::Fields::NestedCollectionField, structure_of(model).field(:books)
   end
 
   test 'nested: on something that is not an association raises' do

@@ -5,6 +5,10 @@ class Book < ApplicationRecord
 
   belongs_to :publisher, optional: true
   has_many :reviews, dependent: :destroy
+  has_many :chapters, dependent: :destroy
+  # allow_destroy so a row can be taken out again, reject_if so an untouched
+  # blank row is dropped instead of failing on its own validations.
+  accepts_nested_attributes_for :chapters, allow_destroy: true, reject_if: :all_blank
   has_many :comments, as: :commentable, dependent: :destroy # polymorphic — the comments demo links back here
   has_and_belongs_to_many :authors
   has_one_attached :cover
@@ -35,6 +39,9 @@ class Book < ApplicationRecord
     attribute :slug, editable: false                        # shown in forms, but read-only
     attribute :active, editable: :manage                    # everyone sees it; only managers edit it
     attribute :internal_token, if: ->(book) { book.active } # record-dependent visibility: only on active books
+    # The chapters are written through the book, so the form edits the rows in
+    # place: one block each, a (+) for the next and a remove box per row.
+    attribute :chapters, nested: %i[title pages]
 
     attribute :author_names, preload: %i[authors] do # render block reaches :authors → preload it
       render { |book| book.authors.map(&:name).to_sentence }
@@ -73,6 +80,6 @@ class Book < ApplicationRecord
     fieldset :picker, %i[title genre price publisher publisher.name publisher.founded_on
                          authors.name authors.email active]
     fieldset :form, %i[title subtitle slug blurb price purchase_price pages
-                       published_on genre active publisher authors cover manual]
+                       published_on genre active publisher authors chapters cover manual]
   end
 end

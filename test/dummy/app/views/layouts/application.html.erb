@@ -140,11 +140,21 @@
       toggle() {}
     }
 
+    // nested rows: the "remove" checkbox becomes a button that hides the row.
+    class CrudNestedController extends Controller {
+      static targets = ["destroy", "flag", "button"]
+      connect() { this.destroyTarget.hidden = true; this.buttonTarget.hidden = false; this.sync() }
+      remove() { this.flagTarget.checked = true; this.sync() }
+      toggle() { this.sync() }
+      sync() { this.element.hidden = this.flagTarget.checked }
+    }
+
     const application = Application.start()
     application.register("crud-filter", CrudFilterController)
     application.register("crud-multiselect", CrudMultiselectController)
     application.register("crud-select", CrudSelectController)
     application.register("crud-columns", CrudColumnsController)
+    application.register("crud-nested", CrudNestedController)
   </script>
 </head>
 <body class="bg-light">

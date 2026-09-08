@@ -1,0 +1,17 @@
+<%# The (+) and the rows it has asked for. Each frame holds one added row and
+    the next frame, so a click only ever replaces what sits below the fields
+    that are already filled in.
+    Locals: f, field, form, existing_count, ordinal, remaining. %>
+<turbo-frame id="<%= form.nested_frame_id(field, ordinal) %>">
+  <% if remaining.positive? %>
+    <%= render "crud_components/form_fields/nested_row",
+               f: f, field: field, form: form,
+               record: field.build_row(f.object), index: existing_count + ordinal %>
+    <%= render "crud_components/form_fields/nested_add",
+               f: f, field: field, form: form, existing_count: existing_count,
+               ordinal: ordinal + 1, remaining: remaining - 1 %>
+  <% elsif form.room_for_another?(field, existing_count + ordinal) %>
+    <%= link_to form.add_label(field), form.add_url(field, ordinal + 1),
+                class: form.css.nested_add %>
+  <% end %>
+</turbo-frame>

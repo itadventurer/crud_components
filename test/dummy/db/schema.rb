@@ -41,6 +41,13 @@ ActiveRecord::Schema[7.1].define(version: 1) do
     t.timestamps
   end
 
+  create_table :chapters, force: :cascade do |t|
+    t.references :book
+    t.string :title
+    t.integer :pages
+    t.timestamps
+  end
+
   create_table :authors_books, id: false, force: :cascade do |t|
     t.references :author
     t.references :book

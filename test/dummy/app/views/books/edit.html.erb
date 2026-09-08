@@ -1,14 +1,17 @@
 <h1>Edit: <%= crud_label(@book) %></h1>
 <%= docs_panel(
-      intro: "The form is fully derived through simple_form. <code>slug</code> is read-only (<code>editable: false</code>); <code>active</code> is an input only for managers (<code>editable: :manage</code> &mdash; toggle admin); <code>purchase_price</code> is hidden from non-managers entirely (<code>if: :manage</code>). One permit list drives both the form and strong-params, so they can't drift.",
+      intro: "The form is fully derived through simple_form. <code>slug</code> is read-only (<code>editable: false</code>); <code>active</code> is an input only for managers (<code>editable: :manage</code> &mdash; toggle admin); <code>purchase_price</code> is hidden from non-managers entirely (<code>if: :manage</code>). One permit list drives both the form and strong-params, so they can't drift. The <strong>chapters</strong> are rows of a <code>has_many</code> edited in place: &ldquo;Add Chapter&rdquo; is a plain link that loads one more row into a turbo-frame below the fields, and each saved row has a remove box.",
       docs: { 'Forms' => 'docs/forms.md', 'Permissions' => 'docs/forms.md#two-permission-dimensions' }) do %>
 <%= code_file('app/models/book.rb') do %>
+accepts_nested_attributes_for :chapters, allow_destroy: true, reject_if: :all_blank
+
 crud_structure do
   attribute :slug,   editable: false      # read-only in the form
   attribute :active, editable: :manage    # an input only for managers
   attribute :purchase_price, if: :manage  # hidden from non-managers everywhere
+  attribute :chapters, nested: %i[title pages]   # rows in this form, not a picker
   fieldset :form, %i[title subtitle slug blurb price purchase_price pages
-                     published_on genre active publisher authors cover]
+                     published_on genre active publisher authors chapters cover manual]
 end
 <% end %>
 <%= code_file('app/controllers/books_controller.rb') do %>

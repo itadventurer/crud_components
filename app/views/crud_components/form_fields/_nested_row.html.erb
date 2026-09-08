@@ -1,0 +1,24 @@
+<%# One record of a nested block. A collection numbers its rows, a singular
+    association has no index at all.
+    Locals: f, field, form, record, index. %>
+<% options = field.collection? ? { child_index: index } : {} %>
+<% row_class = [form.css.nested_row, (form.css.nested_row_separated if field.collection?)].compact.join(' ') %>
+<%= f.simple_fields_for field.name, record, **options do |nested| %>
+  <div class="<%= row_class %>" data-controller="crud-nested">
+    <% field.nested_fields.each do |nested_field| %>
+      <%= render "crud_components/form_fields/#{nested_field.form_partial}",
+                 f: nested, field: nested_field, form: form %>
+    <% end %>
+    <% if field.removable? && record.persisted? %>
+      <div class="<%= form.css.nested_destroy %>" data-crud-nested-target="destroy">
+        <%= nested.check_box :_destroy, class: form.css.nested_destroy_input,
+                             data: { crud_nested_target: "flag", action: "crud-nested#toggle" } %>
+        <%= nested.label :_destroy, form.remove_label, class: form.css.nested_destroy_label %>
+      </div>
+      <button type="button" class="<%= form.css.nested_remove %>" hidden
+              data-crud-nested-target="button" data-action="crud-nested#remove">
+        <%= form.remove_label %>
+      </button>
+    <% end %>
+  </div>
+<% end %>

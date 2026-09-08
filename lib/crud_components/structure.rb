@@ -321,15 +321,23 @@ module CrudComponents
         reflection = model.reflect_on_association(name)
         raise DefinitionError, "#{model}.#{name}: nested: needs an association" if reflection.nil?
 
-        if reflection.collection? || reflection.polymorphic?
-          raise DefinitionError, "#{model}.#{name}: nested: works on a belongs_to or has_one; " \
-                                 'a collection keeps its picker'
+        if reflection.polymorphic?
+          raise DefinitionError, "#{model}.#{name}: nested: needs one target model; " \
+                                 'a polymorphic belongs_to keeps its picker'
         end
-        next if model.nested_attributes_options.key?(name)
 
-        raise DefinitionError, "#{model}.#{name}: nested: needs " \
-                               "accepts_nested_attributes_for :#{name} on the model, or the " \
-                               'submitted attributes are thrown away'
+        options = model.nested_attributes_options[name]
+        if options.nil?
+          raise DefinitionError, "#{model}.#{name}: nested: needs " \
+                                 "accepts_nested_attributes_for :#{name} on the model, or the " \
+                                 'submitted attributes are thrown away'
+        end
+
+        next unless reflection.collection? && !options[:allow_destroy]
+
+        raise DefinitionError, "#{model}.#{name}: nested: on a collection needs " \
+                               "accepts_nested_attributes_for :#{name}, allow_destroy: true — " \
+                               'rows could be added but never removed'
       end
     end
 
@@ -392,9 +400,11 @@ module CrudComponents
     end
 
     def association_field_class(name, reflection)
-      return Fields::NestedField if nested?(name)
-
-      reflection.collection? ? Fields::HasManyField : Fields::BelongsToField
+      if nested?(name)
+        reflection.collection? ? Fields::NestedCollectionField : Fields::NestedField
+      else
+        reflection.collection? ? Fields::HasManyField : Fields::BelongsToField
+      end
     end
 
     def nested?(name)
