@@ -1,10 +1,14 @@
-<%# A record edited in place: the association is declared with
-    accepts_nested_attributes_for, so the target's own fields are rendered
-    inside this one, and the permit list carries <name>_attributes.
+<%# A record edited in place: the target's own fields are rendered inside this
+    form, and the permit list carries <name>_attributes. The legend says whose
+    fields these are — without it a nested "Name" sits next to the parent's own
+    "Name" with nothing to tell them apart.
     Locals: f (simple_form builder), field, form. %>
-<%= f.simple_fields_for field.name do |nested| %>
-  <% field.nested_fields.each do |nested_field| %>
-    <%= render "crud_components/form_fields/#{nested_field.form_partial}",
-               f: nested, field: nested_field, form: form %>
+<fieldset class="<%= form.css.nested_fieldset %>">
+  <legend class="<%= form.css.nested_legend %>"><%= field.human_name %></legend>
+  <%= f.simple_fields_for field.name do |nested| %>
+    <% field.nested_fields.each do |nested_field| %>
+      <%= render "crud_components/form_fields/#{nested_field.form_partial}",
+                 f: nested, field: nested_field, form: form %>
+    <% end %>
   <% end %>
-<% end %>
+</fieldset>

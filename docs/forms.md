@@ -148,6 +148,10 @@ wrapper/component config, which the gem inherits.
   `nested:` without `accepts_nested_attributes_for` raises at build time, because the
   inputs would render and the model would throw the params away.
 
+  The block is rendered inside a `<fieldset>` with the field's name as its legend —
+  a nested "Name" next to the parent's own "Name" is otherwise unreadable. Restyle it
+  through `nested_fieldset` / `nested_legend` in the class map.
+
   belongs_to and has_one only. A collection keeps its picker; adding and removing rows
   is a different feature.
 - **belongs_to** → a select valued by record id; permit `:publisher_id`.

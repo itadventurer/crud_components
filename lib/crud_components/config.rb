@@ -31,6 +31,8 @@ module CrudComponents
       select_input_sm: 'form-select form-select-sm',
       form_label: 'form-label',
       form_summary: 'alert alert-danger',
+      nested_fieldset: 'border rounded p-3 mb-3',
+      nested_legend: 'float-none w-auto px-2 fs-6 text-muted',
       filter_grid: 'row row-cols-1 g-2',
       input_group: 'input-group flex-nowrap',
       boolean_true: 'text-success',

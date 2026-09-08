@@ -4,7 +4,10 @@
       docs: { 'Forms' => 'docs/forms.md', 'Fieldsets' => 'docs/views.md#fieldsets' }) do %>
 <%= code_file('app/models/publisher.rb') do %>
 crud_structure do
-  fieldset :form, %i[name slug founded_on]
+  # the contact is written through the publisher, so it is edited in place
+  attribute :contact, nested: %i[name email]
+
+  fieldset :form, %i[name slug founded_on contact brochure]
 end
 <% end %>
 <%= code_file('app/controllers/publishers_controller.rb') do %>
