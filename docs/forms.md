@@ -175,6 +175,8 @@ wrapper/component config, which the gem inherits.
 
   `reject_if: :all_blank` is worth having: a row somebody opened and left empty is
   then dropped instead of failing on the blank record's own validations.
+
+  ![The chapters of a book as rows in the book's form: each row a bordered block with the target's own fields and a Remove button, an "Add Chapter" button below them](screenshots/nested-rows.png)
 - **belongs_to** → a select valued by record id; permit `:publisher_id`.
 - **habtm** → a `<select multiple>` baseline (works no-JS, scales) that carries
   `data-controller="crud-multiselect"`; permit `{ author_ids: [] }`. The optional
