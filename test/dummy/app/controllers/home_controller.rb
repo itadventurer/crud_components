@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 class HomeController < ApplicationController
   # The playground's landing page: a living index of every feature, each card
   # linking to the demo that shows it working. A sample record gives the

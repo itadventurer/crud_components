@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module CrudComponents
   # `include CrudComponents::Model` adds the crud_structure DSL. It is only
   # needed to declare things — rendering works for any ActiveRecord model.

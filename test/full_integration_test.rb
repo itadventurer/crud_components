@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require 'test_helper'
 
 # End-to-end through the dummy app, JavaScript-free by construction: every

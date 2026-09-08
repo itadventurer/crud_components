@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module CrudComponents
   module Presenters
     # Shared "which columns are shown" logic for any presenter that exposes

@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require_relative 'test_helper'
 
 # The mounted engine, end to end through the dummy app: routes drawn from the

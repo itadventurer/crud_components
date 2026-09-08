@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 class RenderersController < ApplicationController
   # Soft-dependency renderers (markdown, JSON) + manual action placement.
   def index

@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module CrudComponents
   module Fields
     # json/jsonb column: pretty-printed <pre>; no derived filter or sort.

@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module CrudComponents
   module Presenters
     # Passed to value renderers so a cell can offer click-to-filter (enum

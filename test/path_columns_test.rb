@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require 'test_helper'
 
 # Path columns: a dotted field name (publisher.name, authors.email) that reaches

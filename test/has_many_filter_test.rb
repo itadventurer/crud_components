@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require 'test_helper'
 
 # "Filter what you see" for a has_many column: the inline filter row matches the

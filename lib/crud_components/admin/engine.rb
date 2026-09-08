@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module CrudComponents
   module Admin
     # The mountable admin. Does nothing until an app mounts it:

@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 class DocumentsController < ApplicationController
   # STI (Document / Manual), an asciidoc body, and polymorphic comments.
   def index

@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module CrudComponents
   module Fields
     # One subclass per field flavor (one row of the README's combination

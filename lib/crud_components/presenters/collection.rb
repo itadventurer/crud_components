@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module CrudComponents
   module Presenters
     # The single `collection` local every layout partial receives.
@@ -437,7 +439,7 @@ module CrudComponents
 
       private
 
-      GROUP_NONE = 'none'.freeze
+      GROUP_NONE = 'none'
 
       # Validate the group key and order the relation by it (groups contiguous),
       # keeping the active sort as the secondary order.

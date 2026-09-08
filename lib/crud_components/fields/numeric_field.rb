@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module CrudComponents
   module Fields
     # numeric column: min–max range plus exact match; unparsable values ignored.

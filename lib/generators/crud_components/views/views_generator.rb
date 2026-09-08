@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module CrudComponents
   module Generators
     # `rails g crud_components:views` — copies the gem partials into the app so

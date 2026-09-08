@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require_relative 'admin/configuration'
 require_relative 'admin/dependents'
 require_relative 'admin/entry'

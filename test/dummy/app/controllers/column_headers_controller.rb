@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 class ColumnHeadersController < ApplicationController
   # Custom column headers + per-column actions on a DynamicColumn — the matrix
   # shape (books × properties) where every column *is* a domain object. Each

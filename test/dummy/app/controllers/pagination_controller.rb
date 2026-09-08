@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 class PaginationController < ApplicationController
   # Pagination is the host app's job, on purpose: the gem stays
   # pagination-agnostic so it needn't depend on (or guess) your pager. You take

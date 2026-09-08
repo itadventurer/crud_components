@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module CrudComponents
   module Admin
     # Base for the engine's controllers. Inherits from the host's controller

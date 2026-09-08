@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module CrudComponents
   module Admin
     # What the mounted admin needs to know that the models don't say themselves.

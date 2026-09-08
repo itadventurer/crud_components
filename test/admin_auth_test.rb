@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require_relative 'test_helper'
 
 # Who may in at all. What a visitor may see and do once inside is the app's

@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module CrudComponents
   module Fields
     # text column: truncated in collections, line breaks preserved on records.

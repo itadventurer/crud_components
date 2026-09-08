@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 class ColumnsController < ApplicationController
   # The column picker: a user hides/reorders the columns they may see. The picker
   # submits `?cols[]=` to this same URL — exactly like sort and filter — so it

@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module CrudComponents
   module Fields
     # belongs_to / has_one: nil-safe link via the target's label. The filter

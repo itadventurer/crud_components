@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module CrudComponents
   module Fields
     # Active Storage attachment: rendered by content type — image inline,

@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module CrudComponents
   module Fields
     # string column: text cell, text input, escaped case-insensitive contains.
