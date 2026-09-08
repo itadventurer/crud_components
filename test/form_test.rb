@@ -49,6 +49,61 @@ class FormTest < ActiveSupport::TestCase
     assert_not_includes list, :created_at
   end
 
+  # `if:` / `editable:` that look at the record cannot be decided on the class,
+  # and behind the permit list nothing checks again — so it says so instead of
+  # guessing.
+  def per_record_model
+    define_model do
+      attribute :purchase_price, if: ->(book) { book.active? }
+      fieldset :form, %i[title purchase_price]
+    end
+  end
+
+  test 'a permit list without the record refuses to guess a per-record condition' do
+    error = assert_raises(CrudComponents::DefinitionError) do
+      CrudComponents.permitted_attributes(per_record_model, ability: CrudTestHelpers::AllowAll.new)
+    end
+
+    assert_match(/purchase_price/, error.message)
+    assert_match(/if:/, error.message)
+    assert_match(/record:/, error.message, 'the message says how to fix it')
+  end
+
+  test 'with the record, a per-record condition decides the permit list too' do
+    model = per_record_model
+    ability = CrudTestHelpers::AllowAll.new
+
+    assert_includes CrudComponents.permitted_attributes(model, ability: ability, record: model.new(active: true)),
+                    :purchase_price
+    assert_not_includes CrudComponents.permitted_attributes(model, ability: ability, record: model.new(active: false)),
+                        :purchase_price
+  end
+
+  test 'a per-record editable: is decided as well, instead of silently dropped' do
+    model = define_model do
+      attribute :purchase_price, editable: ->(book) { book.active? }
+      fieldset :form, %i[title purchase_price]
+    end
+    ability = CrudTestHelpers::AllowAll.new
+
+    assert_includes CrudComponents.permitted_attributes(model, ability: ability, record: model.new(active: true)),
+                    :purchase_price
+    assert_not_includes CrudComponents.permitted_attributes(model, ability: ability, record: model.new(active: false)),
+                        :purchase_price
+  end
+
+  test 'a condition that only asks the ability still needs no record' do
+    model = define_model do
+      attribute :purchase_price, if: :manage
+      attribute :subtitle, if: -> { can?(:manage, Book) }
+      fieldset :form, %i[title purchase_price subtitle]
+    end
+    list = CrudComponents.permitted_attributes(model, ability: CrudTestHelpers::AllowAll.new)
+
+    assert_includes list, :purchase_price
+    assert_includes list, :subtitle
+  end
+
   test 'control mapping: input vs read-only vs skipped' do
     structure = structure_of(Book)
 

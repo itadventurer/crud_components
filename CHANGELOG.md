@@ -16,6 +16,7 @@ This project follows [semantic versioning](https://semver.org).
 
 ### Fixed
 
+- **The permit list now decides a per-record `if:` / `editable:` instead of guessing it.** `if: ->(book) { book.active? }` hid the field on the form but left its key in the permit list, because there is no record to ask on the class — and behind the permit list nothing checks again, so the field was writable exactly where the form refused to offer it. `permitted_attributes` takes `record:` and evaluates the condition against it; called without one where a condition needs it, it raises and says so, rather than permitting silently (or denying silently, which would make a field that looks saveable not save). A condition that only asks the ability (`if: :manage`, a zero-arity lambda) is unaffected and still needs no record. The bundled admin passes the record it already has. ([#101](https://github.com/itadventurer/crud_components/issues/101))
 - A form fieldset that lists a field without a form control now raises at build time instead of silently rendering nothing. A computed field is a method, not a column, so it has no input and no read-only display in a form — naming one in `fieldset :form` (or `:new`/`:edit`) used to do nothing whatsoever, which reads like a rendering bug from the outside. `:default` stays exempt: it is the catch-all every model has and legitimately carries computed fields for the other views.
 
 ## v0.3.0 — 2026-08-13
