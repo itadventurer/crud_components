@@ -2,13 +2,19 @@
     form, and the permit list carries <name>_attributes. The legend says whose
     fields these are — without it a nested "Name" sits next to the parent's own
     "Name" with nothing to tell them apart.
+
+    Nothing is drawn when there is no record to edit: a has_one only some
+    records have would otherwise frame an empty box on every other form. Build
+    one in the controller where the form should be able to create it.
     Locals: f (simple_form builder), field, form. %>
-<fieldset class="<%= form.css.nested_fieldset %>">
-  <legend class="<%= form.css.nested_legend %>"><%= field.human_name %></legend>
-  <%= f.simple_fields_for field.name do |nested| %>
-    <% field.nested_fields.each do |nested_field| %>
-      <%= render "crud_components/form_fields/#{nested_field.form_partial}",
-                 f: nested, field: nested_field, form: form %>
+<% if f.object.public_send(field.name) %>
+  <fieldset class="<%= form.css.nested_fieldset %>">
+    <legend class="<%= form.css.nested_legend %>"><%= field.human_name %></legend>
+    <%= f.simple_fields_for field.name do |nested| %>
+      <% field.nested_fields.each do |nested_field| %>
+        <%= render "crud_components/form_fields/#{nested_field.form_partial}",
+                   f: nested, field: nested_field, form: form %>
+      <% end %>
     <% end %>
-  <% end %>
-</fieldset>
+  </fieldset>
+<% end %>

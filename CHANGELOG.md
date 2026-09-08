@@ -9,13 +9,11 @@ This project follows [semantic versioning](https://semver.org).
 
 - **A record edited in place instead of picked from a list.** `attribute :contact, nested: %i[name email]` renders the target's own fields inside the parent's form and permits `{ contact_attributes: [:id, :name, :email] }` — the same fields, so form and params still cannot drift. `:id` rides along so an existing record is updated rather than replaced, `:_destroy` where the model allows it, and declaring `nested:` without `accepts_nested_attributes_for` raises at build time rather than rendering inputs the model would throw away. belongs_to and has_one; a collection keeps its picker. The bookstore has one: a publisher's contact.
 - `form_as:` now **gives a field a form control it would not otherwise have**, instead of only renaming the partial of one that already had one. A computed field — a writable method without a column, `tag_list` say — had no control, so it never reached the form's field list and pointing it at a partial did nothing. `attribute :tag_list, form_as: :string` renders it and puts it in the permit list under its own name. `editable: false` still wins.
-
-### Added
-
 - `action ..., data: { … }` in `crud_structure` — data attributes for one action, on the element you click: the `<a>` of a GET action, the `<button>` of any other. A Stimulus controller (`data: { controller: 'clipboard', action: 'click->clipboard#copy' }`) or a `data-turbo-frame` breakout no longer needs a hand-written actions partial for the whole cell. What the gem sets itself stays unless you name the same key, so a GET action keeps `data-turbo-action="advance"` and `confirm:` keeps writing `data-turbo-confirm`.
 
 ### Fixed
 
+- A nested block with no record to edit now renders nothing, instead of an empty bordered box with a heading in it. A `has_one` only some records have — a trainer's booking calendar on every user's form, say — framed that box on every other form. Whether a missing record may be created stays the host's call: build one (`@publisher.build_contact`) where the form should offer it, and pair it with `reject_if: :all_blank` so a form submitted with those fields left empty saves without the record rather than failing on its validations. ([#98](https://github.com/itadventurer/crud_components/issues/98))
 - A form fieldset that lists a field without a form control now raises at build time instead of silently rendering nothing. A computed field is a method, not a column, so it has no input and no read-only display in a form — naming one in `fieldset :form` (or `:new`/`:edit`) used to do nothing whatsoever, which reads like a rendering bug from the outside. `:default` stays exempt: it is the catch-all every model has and legitimately carries computed fields for the other views.
 
 ## v0.3.0 — 2026-08-13

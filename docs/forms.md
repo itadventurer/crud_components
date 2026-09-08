@@ -152,6 +152,21 @@ wrapper/component config, which the gem inherits.
   a nested "Name" next to the parent's own "Name" is otherwise unreadable. Restyle it
   through `nested_fieldset` / `nested_legend` in the class map.
 
+  Nothing is drawn when there is no record to edit — a `has_one` only some records
+  have would otherwise frame an empty box on every other form. Whether a missing one
+  may be created is your call: build it where the form should offer it, the way
+  `accepts_nested_attributes_for` has always worked.
+
+  ```ruby
+  def new
+    @publisher = Publisher.new
+    @publisher.build_contact
+  end
+  ```
+
+  Pair that with `reject_if: :all_blank` on the model, or a form submitted with the
+  nested fields left empty fails on the blank record's own validations.
+
   belongs_to and has_one only. A collection keeps its picker; adding and removing rows
   is a different feature.
 - **belongs_to** → a select valued by record id; permit `:publisher_id`.
@@ -253,8 +268,8 @@ On that re-render:
 
 ## Scope (v1)
 
-Single record; flat columns plus belongs_to and habtm. No nested forms /
-`accepts_nested_attributes` and no JSON-column editing in v1.
+Single record; flat columns, belongs_to, habtm, and one nested singular record per
+`nested:`. No rows added or removed for a collection, and no JSON-column editing in v1.
 
 ## A complete example
 

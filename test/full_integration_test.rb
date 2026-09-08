@@ -661,6 +661,30 @@ class FullIntegrationTest < ActionDispatch::IntegrationTest
     assert_equal 'ada@tor.example', @tor.contact.email, 'the field left out kept its value'
   end
 
+  test 'a nested block with no record to edit draws nothing' do
+    get edit_publisher_path(@tor) # this publisher has no contact
+
+    assert_select 'legend', text: 'Contact', count: 0
+    assert_select "input[name='publisher[contact_attributes][name]']", false
+
+    # The host decides whether a missing record may be created: the new form
+    # builds one, so the fields are there.
+    get new_publisher_path
+
+    assert_select 'legend', text: 'Contact'
+    assert_select "input[name='publisher[contact_attributes][name]']"
+  end
+
+  test 'a new record submitted with the nested fields left empty saves without one' do
+    assert_difference 'Publisher.count', 1 do
+      assert_no_difference 'Contact.count' do
+        post publishers_path, params: {
+          publisher: { name: 'Blank Press', contact_attributes: { name: '', email: '' } }
+        }
+      end
+    end
+  end
+
   test 'nested fields the target does not offer are not permitted' do
     @tor.create_contact!(name: 'Ada Press', email: 'ada@tor.example')
     permitted = CrudComponents.permitted_attributes(Publisher, action: :edit,
