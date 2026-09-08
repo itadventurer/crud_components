@@ -270,6 +270,32 @@ class QuerySecurityTest < ActiveSupport::TestCase
     assert_equal [only_in_blurb], allow.apply(model.where(id: only_in_blurb.id)).to_a
   end
 
+  # `if: false` is the flat way to hide a field from every surface, without an
+  # ability being asked at all. It is a literal false, not a falsy condition, so
+  # anything that turns the condition into a boolean has to keep it false —
+  # `!x.nil?` would make it true and put the column back on every screen.
+  test 'if: false hides a field from everybody, ability or not' do
+    model = define_model(name: 'HiddenColumnBook') do
+      search_in :title, :blurb
+      attribute :blurb, if: false
+    end
+    only_in_blurb = model.create!(title: 'nothing here', slug: 'h1', blurb: 'zzsecret')
+    structure = structure_of(model)
+
+    [CrudTestHelpers::AllowAll.new, CrudTestHelpers::DenyAll.new].each do |ability|
+      context = CrudComponents::PermissionContext.new(ability)
+
+      assert_not structure.field(:blurb).permitted?(context),
+                 "if: false must hide the field from #{ability.class.name.split('::').last}"
+
+      query = CrudComponents::Query.new(model, { 'q' => 'zzsecret' }, ability: ability)
+
+      assert_empty query.apply(model.where(id: only_in_blurb.id)).to_a,
+                   'a hidden column must not be searchable'
+      assert_not_includes query.permitted_keys, 'blurb'
+    end
+  end
+
   # ── plumbing ──────────────────────────────────────────────────────────────
   test 'active? reflects whether any filter or search param is set' do
     assert_predicate query({ 'title' => 'x' }), :active?

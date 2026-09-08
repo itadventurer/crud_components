@@ -7,8 +7,11 @@ plugins:
   - rubocop-rake
 
 AllCops:
-  # The gemspec's floor. Cops that would suggest newer syntax stay quiet.
+  # The gemspec's floors. Cops that would suggest newer syntax stay quiet —
+  # rubocop-rails would otherwise propose `params.expect` and other Rails 8 API
+  # into code that has to keep running on 7.1.
   TargetRubyVersion: 3.2
+  TargetRailsVersion: '7.1'
   NewCops: enable
   Exclude:
     - 'gemfiles/**/*'
@@ -54,3 +57,22 @@ Metrics/BlockLength:
 # alphabetically tears the gems out from under the comment that explains them.
 Bundler/OrderedGems:
   Enabled: false
+
+# `!!x` coerces a truthiness to a boolean, and the cop's alternative does not:
+# `if: false` is a supported way to hide a field, and `!false.nil?` is `true`.
+# The rewrite would have made hidden fields visible.
+Style/DoubleNegation:
+  Enabled: false
+
+# A keyword argument is part of a signature: a filter lambda declares `geq:` and
+# `leq:` to say it takes a range, whether or not its body reads them. Renaming
+# them to `_geq:` would rename the keyword and change what the DSL sees.
+Lint/UnusedBlockArgument:
+  AllowUnusedKeywordArguments: true
+
+# Shipped by simple_form's generator and kept close to upstream so it can be
+# diffed against a newer one.
+Layout/LineLength:
+  Exclude:
+    - 'test/dummy/config/initializers/simple_form.rb'
+    - 'test/dummy/config/initializers/simple_form_bootstrap.rb'

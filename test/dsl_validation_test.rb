@@ -67,7 +67,7 @@ class DslValidationTest < ActiveSupport::TestCase
   end
 
   test 'label takes a method or a block, not both, not neither, not twice' do
-    assert_raises(CrudComponents::DefinitionError) { structure_of(define_model { label(:title) { |r| r.title } }) }
+    assert_raises(CrudComponents::DefinitionError) { structure_of(define_model { label(:title, &:title) }) }
     assert_raises(CrudComponents::DefinitionError) { structure_of(define_model { label }) }
     assert_raises(CrudComponents::DefinitionError) do
       structure_of(define_model do
@@ -140,8 +140,8 @@ class DslValidationTest < ActiveSupport::TestCase
     assert_raises(CrudComponents::DefinitionError) do
       structure_of(define_model do
         attribute :title do
-          render { |r| r.title }
-          render { |r| r.title }
+          render(&:title)
+          render(&:title)
         end
       end)
     end

@@ -77,7 +77,7 @@ module CrudComponents
 
       # @api private — runs in the view context (`view`), via the render block.
       def render_list(view, record)
-        items = Array(value(record)).map { |v| v.to_s.strip }.reject(&:blank?)
+        items = Array(value(record)).map { |v| v.to_s.strip }.compact_blank
         return view.tag.span('—', class: CrudComponents.config.css.muted) if items.empty?
 
         # ask the target's field how it renders (email → mailto, url → link)

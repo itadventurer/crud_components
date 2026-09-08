@@ -47,7 +47,7 @@ class DynamicColumnsTest < ActiveSupport::TestCase
     book = Book.create!(title: 'I', slug: 'dc-infer', price: 1)
 
     assert_equal :boolean, CrudComponents::DynamicColumn.new(:flag) { |_r| true }.to_field(Book).renderer(book)
-    assert_equal :date, CrudComponents::DynamicColumn.new(:on) { |_r| Date.today }.to_field(Book).renderer(book)
+    assert_equal :date, CrudComponents::DynamicColumn.new(:on) { |_r| Time.zone.today }.to_field(Book).renderer(book)
     assert_equal :string, CrudComponents::DynamicColumn.new(:txt) { |_r| 'x' }.to_field(Book).renderer(book)
   end
 

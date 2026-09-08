@@ -60,7 +60,7 @@ module CrudComponents
       aac ai bmp cs css csv doc docx exe gif heic html java jpg js json jsx key
       m4p md mdx mov mp3 mp4 otf pdf php png ppt pptx psd py raw rb sass scss sh
       sql svg tiff tsx ttf txt wav woff xls xlsx xml yml
-    ].to_h { |ext| [ext, "filetype-#{ext}"] }.merge(
+    ].index_with { |ext| "filetype-#{ext}" }.merge(
       'yaml' => 'filetype-yml',          # alias of yml
       'jpeg' => 'filetype-jpg',          # alias of jpg
       'zip' => 'file-earmark-zip' # no filetype- glyph exists

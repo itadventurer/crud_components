@@ -8,7 +8,7 @@ module CrudComponents
       def derived_filterable? = true
       def derived_sortable? = true
       def derived_filter_control = :number_range
-      def default_editable? = !NON_EDITABLE_COLUMNS.include?(name.to_s)
+      def default_editable? = NON_EDITABLE_COLUMNS.exclude?(name.to_s)
       def form_control = :number
 
       def apply_derived_filter(scope, value: nil, geq: nil, leq: nil)

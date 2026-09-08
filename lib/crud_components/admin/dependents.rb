@@ -55,7 +55,9 @@ module CrudComponents
       end
 
       def items
-        @items ||= (association_items + attachment_items).reject { |item| item.count.zero? }
+        # Not `reject(&:none?)`: an Item is a Struct, so Enumerable#none? asks
+        # about its members, not about the count member.
+        @items ||= (association_items + attachment_items).reject { |item| item.count.zero? } # rubocop:disable Style/CollectionQuerying
       end
 
       # Anything that blocks the delete outright.

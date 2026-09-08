@@ -48,7 +48,7 @@ module CrudComponents
       attr_reader :config
 
       def index
-        @index ||= entries.index_by { |entry| entry.name }
+        @index ||= entries.index_by(&:name)
       end
 
       def build
@@ -83,7 +83,7 @@ module CrudComponents
         return unless defined?(Rails) && Rails.respond_to?(:application) && Rails.application
 
         model_dirs.each do |dir|
-          Dir.glob(File.join(dir, '**', '*.rb')).sort.each do |file|
+          Dir.glob(File.join(dir, '**', '*.rb')).each do |file|
             file.delete_prefix("#{dir}/").delete_suffix('.rb').camelize.safe_constantize
           end
         end

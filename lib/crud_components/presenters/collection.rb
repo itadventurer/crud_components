@@ -53,8 +53,9 @@ module CrudComponents
           @fieldset = @structure.fieldset(fieldset || :index)
         when :auto, nil
           @fieldset = @structure.fieldset(fieldset || :index)
-          @query = Query.new(@model, view.request.query_parameters, fieldset: @fieldset,
-                                                                    ability: ability, param_prefix: param_prefix, extra_fields: @dynamic_fields)
+          @query = Query.new(@model, view.request.query_parameters,
+                             fieldset: @fieldset, ability: ability,
+                             param_prefix: param_prefix, extra_fields: @dynamic_fields)
           relation = @query.apply(relation)
         when Query
           @query = query
@@ -102,7 +103,7 @@ module CrudComponents
       # resubmit it) and page (a column change resets paging).
       def picker_preserved_params
         drop = [pn('cols'), pn('page')]
-        view.request.query_parameters.reject { |key, _| drop.include?(key) }
+        view.request.query_parameters.except(*drop)
       end
 
       # ── cells ────────────────────────────────────────────────────────────
@@ -203,7 +204,7 @@ module CrudComponents
 
       # ── header search (?q=) and reset ──────────────────────────────────────
       def searchable?
-        @search_bar_enabled && !static? && query && query.searchable?
+        @search_bar_enabled && !static? && query&.searchable?
       end
 
       def search_param_name
@@ -227,7 +228,7 @@ module CrudComponents
       # Reset clears *this* collection's filter/search/sort/page params and
       # keeps everyone else's (other prefixes, the page's own params).
       def reset_url
-        kept = view.request.query_parameters.reject { |key, _| own_param_keys.include?(key) }
+        kept = view.request.query_parameters.except(*own_param_keys)
         kept.any? ? "#{view.request.path}?#{kept.to_query}" : view.request.path
       end
 
@@ -238,7 +239,7 @@ module CrudComponents
       def preserved_params
         own = filter_fields.flat_map { |f| [pn(f.name.to_s), pn("#{f.name}_geq"), pn("#{f.name}_leq")] }
         own += [pn('q'), pn('page'), pn('per')]
-        view.request.query_parameters.reject { |key, _| own.include?(key) }
+        view.request.query_parameters.except(*own)
       end
 
       # Every param key this collection owns (for reset).
@@ -249,7 +250,7 @@ module CrudComponents
 
       # ── sorting ──────────────────────────────────────────────────────────
       def sortable_field?(field)
-        !static? && query && query.sortable_fields.any? { |f| f.name == field.name }
+        !static? && query&.sortable_fields&.any? { |f| f.name == field.name }
       end
 
       def sort_url(field)
@@ -355,7 +356,7 @@ module CrudComponents
         return [] if total_pages <= 1
 
         shown = ([1, total_pages] + ((current_page - window)..(current_page + window)).to_a)
-                .select { |p| p >= 1 && p <= total_pages }.uniq.sort
+                .select { |p| p.between?(1, total_pages) }.uniq.sort
         shown.each_with_index.flat_map do |p, i|
           i.positive? && p - shown[i - 1] > 1 ? [:gap, p] : [p]
         end
@@ -489,7 +490,7 @@ module CrudComponents
         return @open_keys if defined?(@open_keys)
 
         raw = view.request.query_parameters[pn('open')]
-        @open_keys = raw.nil? ? nil : raw.to_s.split(',')
+        @open_keys = raw&.to_s&.split(',')
       end
 
       def row_action_definitions

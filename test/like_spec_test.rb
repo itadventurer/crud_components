@@ -47,7 +47,7 @@ class LikeSpecTest < ActiveSupport::TestCase
   end
 
   test 'where_like is available on scopes handed to blocks' do
-    scope = Book.all.extending(CrudComponents::WhereLike)
+    scope = Book.extending(CrudComponents::WhereLike)
 
     assert_equal [@hobbit], scope.where_like({ publisher: :name }, 'tor').to_a
   end
@@ -86,7 +86,7 @@ class LikeSpecTest < ActiveSupport::TestCase
     own = apply(Book.all, :title, 'x').to_sql
 
     assert_no_match(/DISTINCT/i, own)
-    assert_no_match(/SELECT/i, own.sub(/\ASELECT/, '')) # only the outer SELECT, no subquery
+    assert_no_match(/SELECT/i, own.delete_prefix('SELECT')) # only the outer SELECT, no subquery
 
     joined = apply(Book.all, { publisher: :name }, 'x').to_sql
 

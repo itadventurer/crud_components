@@ -148,7 +148,7 @@ Book.find_each do |book|
   PropertyValue.create!(property_definition: definitions['weight'], subject: book, value: rand(180..950).to_s)
   PropertyValue.create!(property_definition: definitions['signed'], subject: book, value: [true, false].sample.to_s)
   PropertyValue.create!(property_definition: definitions['acquired'], subject: book,
-                        value: (Date.today - rand(0..2000)).iso8601)
+                        value: (Time.zone.today - rand(0..2000)).iso8601)
 end
 
 # ── STI documents (asciidoc body) + polymorphic comments ────────────────────
