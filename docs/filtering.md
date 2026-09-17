@@ -28,6 +28,10 @@ end
 attribute :token, filter: false               # opt a derived field out of filtering
 ```
 
+A `belongs_to` select lists only the targets the ability lets the viewer see, and
+`choices:` narrows it further — see
+[association choices](security.md#association-choices-and-the-ability).
+
 A `has_many`/habtm column filters by its children's label with no extra config — typing in its
 filter box keeps owners that have a matching child. Here `/publishers` (which lists each
 publisher's **books**) is narrowed to publishers holding a book whose title contains "winter":

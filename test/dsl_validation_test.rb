@@ -73,6 +73,22 @@ class DslValidationTest < ActiveSupport::TestCase
     klass
   end
 
+  test 'choices: on a field that is not an association raises' do
+    model = define_model { attribute :title, choices: ->(scope) { scope } }
+    error = assert_raises(CrudComponents::DefinitionError) { structure_of(model) }
+    assert_match(/choices: needs a belongs_to/, error.message)
+    assert_match(/filter_choices:/, error.message)
+  end
+
+  test 'choices: that is not callable raises' do
+    model = define_model { attribute :title }
+    model.belongs_to :publisher, optional: true
+    model.reset_crud_structure!
+    model.crud_structure { attribute :publisher, choices: [1, 2] }
+    error = assert_raises(CrudComponents::DefinitionError) { structure_of(model) }
+    assert_match(/choices: takes a callable/, error.message)
+  end
+
   test 'nested: without accepts_nested_attributes_for raises' do
     model = model_with(table: 'books') do
       belongs_to :publisher, optional: true
