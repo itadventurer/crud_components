@@ -14,6 +14,7 @@ This project follows [semantic versioning](https://semver.org).
 ### Added
 
 - `action ..., data: { … }` in `crud_structure` — data attributes for one action, on the element you click: the `<a>` of a GET action, the `<button>` of any other. A Stimulus controller (`data: { controller: 'clipboard', action: 'click->clipboard#copy' }`) or a `data-turbo-frame` breakout no longer needs a hand-written actions partial for the whole cell. What the gem sets itself stays unless you name the same key, so a GET action keeps `data-turbo-action="advance"` and `confirm:` keeps writing `data-turbo-confirm`.
+- `secret: true` on a string or text attribute — a write-only credential such as `attribute :api_token, secret: true` on `Publisher`. Its form input is always empty (a password input, or a textarea for a text column so a pasted key keeps its line breaks, with `autocomplete="new-password"`), a hint says whether a value is stored, submitting it empty keeps the stored value, and a `remove_api_token` box clears it. The permit list carries both. Tables, record views, the admin, filters, sorting, search and `as_json` leave it out. Keep-and-remove lives in `CrudComponents::Model`, so it holds for a host controller's `update` and the admin engine alike.
 
 ### Fixed
 

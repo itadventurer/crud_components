@@ -19,7 +19,7 @@ module CrudComponents
           fields = if options[:nested].is_a?(Array)
                      options[:nested].map { |field_name| structure.field(field_name) }
                    else
-                     structure.fieldset_fields(structure.form_fieldset)
+                     structure.fieldset_fields(structure.form_fieldset, form: true)
                    end
           fields.select(&:form_control)
         end
@@ -30,7 +30,7 @@ module CrudComponents
       def permit_param
         keys = [:id]
         keys << :_destroy if removable?
-        { "#{name}_attributes": keys + nested_fields.map(&:permit_param) }
+        { "#{name}_attributes": keys + nested_fields.flat_map(&:permit_params) }
       end
 
       delegate :collection?, to: :reflection

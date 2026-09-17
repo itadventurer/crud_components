@@ -25,7 +25,7 @@ module CrudComponents
 
       # Visible fields that have a form representation (computed/json skipped).
       def fields
-        structure.fieldset_fields(@fieldset)
+        structure.fieldset_fields(@fieldset, form: true)
                  .select { |f| f.form_control && f.permitted?(permission_context, record) }
       end
 

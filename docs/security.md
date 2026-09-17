@@ -67,6 +67,12 @@ a `can?(action, subject)` method.
   authority to say "yes", the answer is "no". (Lambdas that don't call `can?` are
   unaffected.)
 
+### Secrets are write-only
+
+`attribute :api_token, secret: true` keeps a credential out of every rendered surface:
+tables, record views, the admin, filters, sorting, `?q=` and `as_json`. Its form input is
+always empty. See [Forms → Secrets](forms.md#secrets).
+
 ## The whitelist
 
 > **A URL param is applied only if it names a filterable field of the fieldset in play

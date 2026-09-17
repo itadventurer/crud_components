@@ -16,6 +16,11 @@ de:
     nested:
       add: "%{name} hinzufügen"
       remove: "Entfernen"
+    secret:
+      set: "Hinterlegt"
+      stored: "Ein Wert ist hinterlegt. Leer lassen, um ihn zu behalten."
+      not_stored: "Kein Wert hinterlegt."
+      remove: "Hinterlegten Wert entfernen"
     attachment:
       keep: "Behalten"
       remove: "Entfernen"

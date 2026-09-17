@@ -24,6 +24,10 @@ class Publisher < ApplicationRecord
     # place. `nested:` names which of its fields to show.
     attribute :contact, nested: %i[name email]
 
-    fieldset :form, %i[name slug founded_on contact brochure]
+    # Credentials: the form writes them, nothing ever shows them.
+    attribute :api_token, secret: true
+    attribute :signing_key, secret: true
+
+    fieldset :form, %i[name slug founded_on contact brochure api_token signing_key]
   end
 end

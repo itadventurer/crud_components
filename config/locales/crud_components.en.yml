@@ -17,6 +17,11 @@ en:
     nested:
       add: "Add %{name}"
       remove: "Remove"
+    secret:
+      set: "Set"
+      stored: "A value is stored. Leave empty to keep it."
+      not_stored: "No value stored."
+      remove: "Remove the stored value"
     attachment:
       keep: "Keep"
       remove: "Remove"

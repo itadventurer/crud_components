@@ -267,6 +267,11 @@ module CrudComponents
         name
       end
 
+      # Everything this field contributes to the permit list.
+      def permit_params = [permit_param]
+
+      def secret? = false
+
       # ── loading ──────────────────────────────────────────────────────────
       # Includes-specs (symbols/nested hashes for ActiveRecord#includes) to
       # eager-load when this column is shown. Base contributes the per-attribute
