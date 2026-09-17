@@ -78,6 +78,20 @@ class AdminEngineTest < ActionDispatch::IntegrationTest
     assert_select "a[href='/admin/publishers']"
   end
 
+  test 'the sidebar, the dashboard and the index heading use the icon the model declares' do
+    CrudComponents.config.model_icons['publisher'] = 'shop' # Publisher declares `icon 'building'`
+    get '/admin'
+
+    assert_select "a[href='/admin/publishers'] i.bi-building", count: 2 # sidebar + dashboard card
+    assert_select 'i.bi-shop', count: 0
+
+    get '/admin/publishers'
+
+    assert_select 'h1 i.bi-building'
+  ensure
+    CrudComponents.config.model_icons['publisher'] = 'building'
+  end
+
   test 'an unregistered model has no route' do
     get '/admin/no_such_things'
 

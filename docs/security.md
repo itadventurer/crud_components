@@ -67,6 +67,14 @@ a `can?(action, subject)` method.
   authority to say "yes", the answer is "no". (Lambdas that don't call `can?` are
   unaffected.)
 
+### Links follow the ability too
+
+A record is linked only where the viewer may open it: label cells, association cells
+(`book.publisher`, `book.reviews`) and `crud_record_path` ask `can?(:show, record)` (and
+`can?(:edit, record)` for the edit fallback). A review a user may not open still appears
+by name in the book's reviews column, but without a link. Without `can?` every record is
+linked, as before.
+
 ## The whitelist
 
 > **A URL param is applied only if it names a filterable field of the fieldset in play
@@ -137,5 +145,29 @@ The guarantees, each backed by a test:
   (`filter :publisher`) matches the target's **label** only — never the target's other
   columns. So filtering by a `belongs_to :user` can't probe `users.encrypted_password`,
   even when `User` has no `crud_structure` of its own.
+
+## Association choices and the ability
+
+A `belongs_to` filter select and the `belongs_to` / habtm form selects list the target's
+records by name. They list only what the ability lets the viewer see: with a CanCanCan
+ability (anything whose relation answers `accessible_by`) the choices come from
+`Publisher.accessible_by(current_ability)`, so a user who may see two publishers is not
+shown the names of all the others. `crud_collection`, `crud_filter` and `crud_form` pass
+`current_ability` on by themselves; a hand-built `Query` gets it through `ability:`.
+
+Without such an ability — a host whose `can?` is a plain helper, or no ability at all — the
+target's full table is listed, as before. Narrow it per field with `choices:`, a callable
+that receives the target relation (already scoped, when there is a scoping ability) and,
+if it takes a second argument, the ability:
+
+```ruby
+attribute :publisher, choices: ->(scope) { scope.where(active: true) }
+attribute :publisher, choices: ->(scope, ability) { scope.select { |p| ability.can?(:show, p) } }
+```
+
+It returns a relation or an array of records and applies to the filter select and the
+form select alike. A form still offers the record the book already points at, even when
+the ability hides it: otherwise an untouched form would silently move the book to the
+first publisher on the list when saved.
 
   See also: [Performance](performance.md) · [Views](views.md) · [Fields](fields.md) · [Forms](forms.md).

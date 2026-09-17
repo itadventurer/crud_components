@@ -13,13 +13,14 @@ module CrudComponents
     # host's — it lives in the controller, never here — so it is not listed.
     RESERVED_PARAMS = %w[q sort dir].freeze
 
-    attr_reader :model, :structure, :fieldset, :param_prefix
+    attr_reader :model, :structure, :fieldset, :param_prefix, :ability
 
     def initialize(model, params, fieldset: nil, ability: nil, param_prefix: nil, extra_fields: [])
       @model = model
       @structure = Structure.for(model)
       @fieldset = fieldset.is_a?(Fieldset) ? fieldset : @structure.fieldset(fieldset)
       @params = extract(params)
+      @ability = ability
       @permission = PermissionContext.new(ability)
       @param_prefix = param_prefix
       @extra_fields = extra_fields
