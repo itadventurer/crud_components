@@ -64,9 +64,22 @@ module CrudComponents
         tag.i(nil, class: ["#{CrudComponents.config.css.icon_prefix}#{name}", css_class].compact.join(' '))
       end
 
+      # The sidebar and dashboard contents: the models, then the configured
+      # links the viewer may see, grouped as [heading, items].
+      def admin_nav_groups
+        @admin_nav_groups ||= admin_registry.groups(admin_entries + admin_links)
+      end
+
+      def admin_links
+        @admin_links ||= CrudComponents::Admin.config.links.filter_map { |link| link.resolve(self) }
+      end
+
+      # Where a sidebar or dashboard item leads.
+      def admin_nav_path(item) = item.link? ? item.path : admin_index_path(item)
+
       # Whether this entry is the one being looked at.
       def admin_current_entry?(entry)
-        params[:crud_model].to_s == entry.name
+        !entry.link? && params[:crud_model].to_s == entry.name
       end
 
       def admin_title = CrudComponents::Admin.config.resolved_title

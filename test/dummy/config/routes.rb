@@ -41,5 +41,9 @@ Rails.application.routes.draw do
   post 'live/poke', to: 'live#poke'
   post 'toggle_admin', to: 'application#toggle_admin'
 
+  # Stands in for a mounted jobs dashboard; the admin's sidebar links to it.
+  mount ->(_env) { [200, { 'content-type' => 'text/plain' }, ['Background jobs']] },
+        at: '/jobs', as: :jobs_dashboard
+
   mount CrudComponents::Admin::Engine => '/admin' # the optional admin UI, over the whole bookstore
 end
