@@ -306,6 +306,7 @@ module CrudComponents
       validate_renderer_gems!
       validate_nested!
       validate_choices!
+      validate_scope_by_ability!
       validate_secrets!
       validate_fieldsets!
     end
@@ -324,6 +325,21 @@ module CrudComponents
 
         raise DefinitionError, "#{model}.#{name}: choices: takes a callable receiving the target relation, " \
                                "e.g. ->(scope) { scope.where(active: true) } — got #{choices.inspect}"
+      end
+    end
+
+    # `scope_by_ability:` narrows a has_many / habtm cell; anywhere else it would be inert.
+    def validate_scope_by_ability!
+      @declarations.each do |name, decl|
+        next unless decl[:options].key?(:scope_by_ability)
+
+        value = decl[:options][:scope_by_ability]
+        unless field(name).is_a?(Fields::HasManyField)
+          raise DefinitionError, "#{model}.#{name}: scope_by_ability: needs a has_many or habtm association"
+        end
+        next if value.is_a?(TrueClass) || value.is_a?(FalseClass)
+
+        raise DefinitionError, "#{model}.#{name}: scope_by_ability: takes true or false, got #{value.inspect}"
       end
     end
 

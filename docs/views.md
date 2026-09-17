@@ -228,6 +228,10 @@ Resolution tries the most specific conventional route first and falls back outwa
 - The label cell links through the same `show` → `:edit` chain; if the label field isn't
   in the fieldset, there is no implicit link — which is exactly when the derived `:show`
   button appears instead.
+- A has_many cell lists, and its "+n more" counts, only the records the ability lets the
+  viewer see when the ability can scope a query (`accessible_by`); `scope_by_ability: false`
+  on the attribute lists all of them. See
+  [security](security.md#association-cells-and-the-ability).
 - A has_many "+n more" link points at the nested index (`publisher_books_path(owner)`)
   if it resolves, else the target's filtered index (`books_path(publisher: owner)`), else
   plain text.
