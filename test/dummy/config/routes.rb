@@ -13,7 +13,13 @@ Rails.application.routes.draw do
       get :preview
       post :reserve
     end
+    # Reviews are written through their book but read on their own pages: these
+    # nested routes answer POST/PATCH/DELETE only, so no link may point at them.
+    resources :reviews, only: %i[create update destroy]
   end
+  # A resource of its own. Its helper, book_author_path, reads like a nested
+  # route for a book's authors, but it is not one.
+  resources :book_authors, only: :show
   resources :publishers do
     resources :books, only: %i[index edit]
   end
@@ -34,6 +40,10 @@ Rails.application.routes.draw do
   get 'live', to: 'live#index'
   post 'live/poke', to: 'live#poke'
   post 'toggle_admin', to: 'application#toggle_admin'
+
+  # Stands in for a mounted jobs dashboard; the admin's sidebar links to it.
+  mount ->(_env) { [200, { 'content-type' => 'text/plain' }, ['Background jobs']] },
+        at: '/jobs', as: :jobs_dashboard
 
   mount CrudComponents::Admin::Engine => '/admin' # the optional admin UI, over the whole bookstore
 end

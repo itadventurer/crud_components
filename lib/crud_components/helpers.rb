@@ -281,13 +281,25 @@ module CrudComponents
       config.file_icons.fetch(ext, config.file_fallback_icon)
     end
 
-    # The canonical path to a record (its `show`, resolved by {RouteResolver}).
+    # The canonical path to a record (its `show`, resolved by {RouteResolver}),
+    # else its `edit` — each only when the viewer may open it (see {#crud_can?}).
     # @param record [ActiveRecord::Base]
     # @param owner [ActiveRecord::Base, nil] the owner, for a nested route.
-    # @return [String, nil] the path, or nil when none resolves.
+    # @return [String, nil] the path, or nil when none resolves or none is permitted.
     def crud_record_path(record, owner: nil)
       found = RouteResolver.record_path(self, record, owner: owner)
       found&.first
+    end
+
+    # Whether the viewer may perform `action` on `subject`, asked the way
+    # derived actions ask: `can?` when the view has one, else yes.
+    # @param action [Symbol]
+    # @param subject [ActiveRecord::Base, Class]
+    # @return [Boolean]
+    def crud_can?(action, subject)
+      return true unless respond_to?(:can?)
+
+      can?(action, subject)
     end
 
     # The index a has_many cell links to: nested under the owner, else the

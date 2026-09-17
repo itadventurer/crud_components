@@ -6,6 +6,8 @@ ActiveRecord::Schema[7.1].define(version: 1) do
     t.string :name
     t.string :slug
     t.date :founded_on
+    t.string :api_token  # a credential for the publisher's catalogue feed — written, never shown
+    t.text :signing_key  # a multi-line PEM key, likewise
     t.timestamps
   end
 
@@ -45,6 +47,14 @@ ActiveRecord::Schema[7.1].define(version: 1) do
     t.references :book
     t.string :title
     t.integer :pages
+    t.timestamps
+  end
+
+  # The copies of a book in the warehouse. Its `count` column is an attribute,
+  # not a relation's count.
+  create_table :stocks, force: :cascade do |t|
+    t.references :book
+    t.integer :count
     t.timestamps
   end
 

@@ -17,6 +17,12 @@ en:
     nested:
       add: "Add %{name}"
       remove: "Remove"
+    secret:
+      set: "Set"
+      not_set: "Not set"
+      stored: "A value is stored. Leave empty to keep it."
+      not_stored: "No value stored."
+      remove: "Remove the stored value"
     attachment:
       keep: "Keep"
       remove: "Remove"
@@ -56,6 +62,9 @@ en:
       # (`admin group: 'Custom properties'` → custom_properties):
       # groups:
       #   custom_properties: "Extra fields"
+      # Labels of `config.link :name, …`:
+      # links:
+      #   storefront: "Shop front"
       delete:
         title:
           one: "Delete this %{model}?"

@@ -16,6 +16,12 @@ de:
     nested:
       add: "%{name} hinzufügen"
       remove: "Entfernen"
+    secret:
+      set: "Hinterlegt"
+      not_set: "Nicht hinterlegt"
+      stored: "Ein Wert ist hinterlegt. Leer lassen, um ihn zu behalten."
+      not_stored: "Kein Wert hinterlegt."
+      remove: "Hinterlegten Wert entfernen"
     attachment:
       keep: "Behalten"
       remove: "Entfernen"
@@ -55,6 +61,9 @@ de:
       # Gruppe parametrisiert (`admin group: 'Custom properties'` → custom_properties):
       # groups:
       #   custom_properties: "Eigene Felder"
+      # Beschriftungen von `config.link :name, …`:
+      # links:
+      #   storefront: "Ladenansicht"
       delete:
         title:
           one: "%{model} wirklich löschen?"

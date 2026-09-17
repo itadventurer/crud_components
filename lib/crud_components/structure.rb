@@ -15,6 +15,15 @@ module CrudComponents
     FORM_FIELDSET_NAMES = %i[form new edit create update].freeze
 
     class << self
+      # The attributes a model declares `secret: true`, read from its
+      # declaration without building the structure.
+      def secret_attribute_names(model)
+        builder = find_builder(model)
+        return [] unless builder
+
+        builder.declarations.select { |_, decl| decl[:options][:secret] }.keys
+      end
+
       def for(model)
         unless model.respond_to?(:columns_hash)
           raise ArgumentError, "#{model.inspect} is not an ActiveRecord model class"
@@ -135,6 +144,10 @@ module CrudComponents
       names.map { |name| field(name) }
     end
 
+    def secret_field_names
+      @secret_field_names ||= @declarations.select { |_, decl| decl[:options][:secret] }.keys
+    end
+
     def fieldset_filter_fields(fieldset)
       (fieldset_fields(fieldset) + fieldset.filter_names.map { |name| field(name) })
         .uniq.select(&:filterable?)
@@ -163,7 +176,7 @@ module CrudComponents
       fields.each { |field| require_record_for!(field) } if record.nil?
       fields.select do |field|
         field.permitted?(context, record) && field.editable? && field.editable_permitted?(context, record)
-      end.map(&:permit_param)
+      end.flat_map(&:permit_params)
     end
 
     # A condition that decides per record cannot be decided without one. Guessing
@@ -183,7 +196,8 @@ module CrudComponents
       return @label_decl if @label_decl
 
       @label_source ||= %i[name title].find { |attr| model.columns_hash.key?(attr.to_s) } ||
-                        model.columns.find { |col| col.type == :string }&.name&.to_sym
+                        model.columns.find { |col| col.type == :string && secret_field_names.exclude?(col.name.to_sym) }
+                             &.name&.to_sym
     end
 
     def label_for(record, context = nil)
@@ -225,8 +239,8 @@ module CrudComponents
 
     # "Search what you see": with no search_in declared, ?q= covers the text
     # shown on the index — own string/text columns, plus associations through
-    # their label. Columns you never display (and a model's hidden secrets) are
-    # never reached. Derived from the index fieldset; declared search_in wins.
+    # their label. Columns you never display, and secrets, are never reached.
+    # Derived from the index fieldset; declared search_in wins.
     def default_search_spec
       fieldset_fields(fieldset(:index)).filter_map(&:search_spec_entry).uniq
     end
@@ -292,6 +306,7 @@ module CrudComponents
       validate_renderer_gems!
       validate_nested!
       validate_choices!
+      validate_secrets!
       validate_fieldsets!
     end
 
@@ -359,6 +374,43 @@ module CrudComponents
       end
     end
 
+    SECRET_COLUMN_TYPES = %i[string text].freeze
+    private_constant :SECRET_COLUMN_TYPES
+
+    # A secret needs a column that holds text, and nothing may reach its value:
+    # no `filter:`/`sort:` block (presence is built in) and no `search_in`.
+    def validate_secrets!
+      @declarations.each do |name, decl|
+        secret = decl[:options][:secret]
+        next if secret.nil? || secret == false
+        unless secret == true
+          raise DefinitionError, "#{model}.#{name}: secret: takes true or false, got #{secret.inspect}"
+        end
+
+        validate_secret_column!(name)
+        validate_secret_facets!(name, decl[:facets] || {})
+      end
+      searched = (@search_decl.is_a?(Array) ? @search_decl.grep(Symbol) : []) & secret_field_names
+      return if searched.empty?
+
+      raise DefinitionError, "#{model}: search_in cannot search the secret #{searched.first}"
+    end
+
+    def validate_secret_column!(name)
+      column = model.columns_hash[name.to_s]
+      return if column && SECRET_COLUMN_TYPES.include?(column.type)
+
+      raise DefinitionError, "#{model}.#{name}: secret: needs a string or text column to write to"
+    end
+
+    def validate_secret_facets!(name, facets)
+      facet = %i[filter sort].find { |key| facets.key?(key) && facets[key] != false }
+      return unless facet
+
+      raise DefinitionError, "#{model}.#{name}: a secret filters and sorts by presence only; " \
+                             "#{facet} takes only false"
+    end
+
     def validate_fieldsets!
       @declared_fieldsets.each_value do |fs|
         fs.field_names.each { |name| field(name) } unless fs.all_fields?
@@ -394,6 +446,8 @@ module CrudComponents
 
     def resolve_field(name)
       decl = @declarations[name] || {}
+      return Fields::SecretField.new(name, model, decl[:options], decl[:facets] || {}) if decl.dig(:options, :secret)
+
       field_class_for(name, decl[:facets] || {})
         .new(name, model, decl[:options] || {}, decl[:facets] || {})
     end

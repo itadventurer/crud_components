@@ -67,6 +67,24 @@ a `can?(action, subject)` method.
   authority to say "yes", the answer is "no". (Lambdas that don't call `can?` are
   unaffected.)
 
+### Links follow the ability too
+
+A record is linked only where the viewer may open it: label cells, association cells
+(`book.publisher`, `book.reviews`) and `crud_record_path` ask `can?(:show, record)` (and
+`can?(:edit, record)` for the edit fallback). A review a user may not open still appears
+by name in the book's reviews column, but without a link. Without `can?` every record is
+linked, as before.
+
+### Secrets are write-only
+
+`attribute :api_token, secret: true` keeps a credential's value out of every rendered
+surface. Tables, record views and the admin show only whether a value is set. Filtering and
+sorting go by that presence (`?api_token=present|absent`, `?sort=api_token` orders by
+set / not set); a value in `?api_token=` changes nothing, and neither `?q=` nor `search_in`
+reaches the column. `as_json` leaves it out entirely. A `filter`/`sort` block or a
+`search_in` naming a secret raises at boot. Its form input is always empty. See
+[Forms → Secrets](forms.md#secrets).
+
 ## The whitelist
 
 > **A URL param is applied only if it names a filterable field of the fieldset in play
@@ -130,8 +148,8 @@ The guarantees, each backed by a test:
 - A **declared, permission-gated** column (`attribute :notes, if: :manage`) is dropped from
   the search spec for a user who can't see it — `?q=` upholds "hidden everywhere".
 - The **zero-config default is "search what you see"**: the index's own string/text columns
-  plus its associations' labels. A column you never display — including a model's secret
-  columns (`encrypted_password`, `*_token`, `api_key`) — is never searched. Declare
+  plus its associations' labels. A column you never display is never searched, and neither
+  is an attribute declared `secret: true`, displayed or not. Declare
   `search_in` to override (a narrower column list, or a block for full-text).
 - An **association** reached by `?q=`, the belongs_to text fallback, or a spec naming it
   (`filter :publisher`) matches the target's **label** only — never the target's other

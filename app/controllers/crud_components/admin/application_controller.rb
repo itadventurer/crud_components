@@ -31,7 +31,7 @@ module CrudComponents
         render plain: error.message, status: :forbidden
       end
 
-      helper_method :admin_config, :admin_registry, :admin_entries, :admin_entry_groups
+      helper_method :admin_config, :admin_registry, :admin_entries, :admin_entry_groups, :admin_ability
 
       private
 

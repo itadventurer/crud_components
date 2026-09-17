@@ -1,10 +1,17 @@
 <%# Locals: field, query, form_id, compact, autosubmit, param_name, css
-    Present / absent control for an attachment column — the query turns the value
-    into an EXISTS / NOT EXISTS (see Fields::AttachmentField). %>
+    Present / absent control for an attachment column (an EXISTS / NOT EXISTS,
+    see Fields::AttachmentField) or a secret (set / not set, see Fields::SecretField). %>
+<% present, absent = if field.secret?
+                       [t('crud_components.secret.set', default: 'Set'),
+                        t('crud_components.secret.not_set', default: 'Not set')]
+                     else
+                       [t('crud_components.filter.present', default: 'Present'),
+                        t('crud_components.filter.absent', default: 'Absent')]
+                     end %>
 <% choices = [
      [t('crud_components.filter.any', default: '–'), ''],
-     [t('crud_components.filter.present', default: 'Present'), CrudComponents::PRESENT_FILTER_VALUE],
-     [t('crud_components.filter.absent', default: 'Absent'), CrudComponents::ABSENT_FILTER_VALUE]
+     [present, CrudComponents::PRESENT_FILTER_VALUE],
+     [absent, CrudComponents::ABSENT_FILTER_VALUE]
    ] %>
 <%= select_tag param_name,
                options_for_select(choices, query.value(field.name.to_s)),

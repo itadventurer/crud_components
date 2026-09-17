@@ -281,6 +281,41 @@ class FullIntegrationTest < ActionDispatch::IntegrationTest
     assert_select "form[action='#{book_path(@hobbit)}']"
   end
 
+  # A one-star review is refused to non-admins (see the dummy's can?).
+  test 'a record the viewer may not open is named, not linked' do
+    troll = Review.create!(book: @hobbit, rating: 1, reviewer_name: 'Troll', body: 'Meh.')
+    get book_path(@hobbit)
+
+    assert_select "a[href='#{review_path(@review)}']", text: /Ada/
+    assert_select "a[href='#{review_path(troll)}']", count: 0
+    assert_select "a[href='#{edit_review_path(troll)}']", count: 0
+    assert_includes response.body, 'Troll on The Hobbit'
+
+    get review_path(troll)
+
+    assert_response :forbidden
+  end
+
+  test 'a record the viewer may open stays linked' do
+    troll = Review.create!(book: @hobbit, rating: 1, reviewer_name: 'Troll', body: 'Meh.')
+    post toggle_admin_path
+    get book_path(@hobbit)
+
+    assert_select "a[href='#{review_path(troll)}']", text: /Troll/
+  end
+
+  test 'a table does not link the label of a record the viewer may not open' do
+    hidden = @dispossessed
+    view = ApplicationController.new.tap { |c| c.request = ActionDispatch::TestRequest.create }.view_context
+    view.define_singleton_method(:can?) { |action, subject| !(%i[show edit].include?(action) && subject == hidden) }
+    html = view.crud_collection(Book.where(id: [@hobbit.id, hidden.id]), fieldset: :compact, query: :static)
+
+    assert_includes html, %(href="#{book_path(@hobbit)}")
+    assert_not_includes html, %(href="#{book_path(hidden)}")
+    assert_not_includes html, %(href="#{edit_book_path(hidden)}")
+    assert_includes html, hidden.title
+  end
+
   # ── actions & routes ──────────────────────────────────────────────────────
   test 'derived actions resolve conventional routes; customs too' do
     get books_path
