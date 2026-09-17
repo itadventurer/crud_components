@@ -49,7 +49,7 @@ module CrudComponents
     #   whatever the model declares (e.g. replacing `:destroy` with a button of
     #   your own). Applies to row, collection and selection actions.
     # @return [ActiveSupport::SafeBuffer] the rendered HTML — or, when the request
-    #   asks for a combobox filter's suggestions, just those (see
+    #   asks for a value filter's search matches, just those (see
     #   {Query::CHOICES_PARAM}).
     def crud_collection(records, fieldset: nil, layout: :table, query: :auto, param_prefix: nil,
                         actions: true, search_bar: true, group_by: nil, extra_columns: nil,

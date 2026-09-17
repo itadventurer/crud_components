@@ -20,7 +20,7 @@ module CrudComponents
         copy_file 'crud_select_controller.js', 'app/javascript/controllers/crud_select_controller.js'
         copy_file 'crud_columns_controller.js', 'app/javascript/controllers/crud_columns_controller.js'
         copy_file 'crud_nested_controller.js', 'app/javascript/controllers/crud_nested_controller.js'
-        copy_file 'crud_combobox_controller.js', 'app/javascript/controllers/crud_combobox_controller.js'
+        copy_file 'crud_value_filter_controller.js', 'app/javascript/controllers/crud_value_filter_controller.js'
       end
 
       def explain_stimulus_controllers
@@ -38,7 +38,7 @@ module CrudComponents
           - crud-select: "select all" / per-group checkboxes + a live count for bulk actions.
           - crud-columns: drag-to-reorder the column picker (ticking columns works without it).
           - crud-nested: turn a nested row's "remove" checkbox into a button that hides the row.
-          - crud-combobox: suggestions under a belongs_to filter with many choices.
+          - crud-value-filter: a belongs_to filter's multiple select → a searchable checkbox popover.
           Register them (stimulus-rails with importmap does this automatically via
           controllers/index.js; otherwise):
 
@@ -47,7 +47,7 @@ module CrudComponents
             application.register("crud-select", CrudSelectController)
             application.register("crud-columns", CrudColumnsController)
             application.register("crud-nested", CrudNestedController)
-            application.register("crud-combobox", CrudComboboxController)
+            application.register("crud-value-filter", CrudValueFilterController)
 
         NOTE
       end

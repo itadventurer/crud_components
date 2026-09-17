@@ -14,7 +14,7 @@ see") see [security.md](security.md).
 
 Every column is filterable by default through the control its type implies — a string by
 substring, a number/date by range, an enum/boolean by select, an association by its target's
-**label** (the name shown in the cell): a `belongs_to` as a select/text, a `has_many`/habtm as
+**label** (the name shown in the cell): a `belongs_to` as a list of values, a `has_many`/habtm as
 text matching any child. A *computed* column, or an association whose label has no column
 behind it — a block, or a method name like `label :display_title` — opts in with the `filter`
 facet (a [search spec](#the-search-spec) or a block):
@@ -37,13 +37,18 @@ before any filter, search or sort, so picking a publisher never shrinks the choi
 publisher. `crud_filter` narrows the same way when it is given that scope instead of the
 model class (`crud_filter @books`).
 
-Up to `config.combobox_threshold` choices (default 15) the filter is a select. Above it, it
-is a text input that the optional `crud-combobox` controller turns into a combobox: typing
-lists up to `config.combobox_suggestions` (default 20) matching labels, fetched from the
-same page (`?crud_choices=publisher&crud_term=tor`); `crud_collection`/`crud_filter` answer
-such a request with just those matches instead of the list. Only a visible, filterable
-`belongs_to` without a `filter` block answers; any other name gets an empty list. Picking
-a suggestion submits the target's `identify_by` value, free text still matches the label.
+The filter is a `<select multiple>` of those values, "not set" first when the foreign key is
+nullable, submitted as `?publisher[]=tor-books&publisher[]=ace` and applied as `IN (…)`,
+`OR IS NULL` for "not set". A single `?publisher=tor` keeps working as before: it matches the
+`identify_by` value or the label. The optional `crud-value-filter` controller turns the select
+into a button with a searchable checkbox popover (see
+[progressive enhancement](extending.md#progressive-enhancement)). The page lists at most
+`config.value_filter_inline_limit` values (default 200) plus the selected ones; beyond that,
+the popover's search asks the same page (`?crud_choices=publisher&crud_term=tor`), and
+`crud_collection`/`crud_filter` answer such a request with just the matches instead of the
+list. Only a visible, filterable `belongs_to` without a `filter` block answers; any other name
+gets an empty list. `Query#permitted_keys` ends with `{ "publisher" => [] }` for such fields,
+and `Query#values(:publisher)` reads the selection.
 
 A `has_many`/habtm column filters by its children's label with no extra config — typing in its
 filter box keeps owners that have a matching child. Here `/publishers` (which lists each

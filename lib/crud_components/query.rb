@@ -13,7 +13,7 @@ module CrudComponents
     # host's — it lives in the controller, never here — so it is not listed.
     RESERVED_PARAMS = %w[q sort dir].freeze
 
-    # The params a combobox filter asks its suggestions with: which field, and
+    # The params a value filter searches its choices with: which field, and
     # the text typed so far. Read by the collection/filter helpers, never by
     # #apply.
     CHOICES_PARAM = 'crud_choices'
@@ -65,13 +65,23 @@ module CrudComponents
     # Current value of a (logical, unprefixed) param — for filter controls.
     def value(key) = param(key)
 
+    # Current values of a (logical, unprefixed) param that may carry several:
+    # the array's non-blank strings, or the single string as a one-element
+    # array — for multi-value filter controls.
+    def values(key) = Array(multi_param(key))
+
     # The (prefixed) request-param names this query reads: every visible filter
     # field's value and `_geq`/`_leq` bounds, plus the reserved q/sort/dir. The
     # single source of truth for a strong-params permit list, so it can't drift
     # from the columns:
     #   params.permit(*query.permitted_keys)
+    #
+    # A field taking several values (`field[]=`) is also permitted as an array,
+    # in a trailing hash: `[..., { "publisher" => [] }]`.
     def permitted_keys
-      (filter_param_keys + RESERVED_PARAMS).map { |key| param_name(key) }
+      keys = (filter_param_keys + RESERVED_PARAMS).map { |key| param_name(key) }
+      arrays = multi_value_names.to_h { |name| [param_name(name), []] }
+      arrays.empty? ? keys : keys + [arrays]
     end
 
     # The subset of the current request params this query reads, present values
@@ -79,18 +89,22 @@ module CrudComponents
     # filter-preserving links (pagers, breadcrumbs, "reset" targets) instead of
     # keeping a hand-maintained copy of the params.
     def filter_params
-      permitted_keys.each_with_object({}) do |key, kept|
+      multi = multi_value_names.map { |name| param_name(name) }
+      (filter_param_keys + RESERVED_PARAMS).map { |key| param_name(key) }.each_with_object({}) do |key, kept|
         raw = @params[key]
-        kept[key] = raw if raw.is_a?(String) && raw.present?
+        raw = multi.include?(key) ? string_values(raw) : nil if raw.is_a?(Array)
+        kept[key] = raw if (raw.is_a?(String) || raw.is_a?(Array)) && raw.present?
       end
     end
 
     # The active filter and search values keyed by their logical (unprefixed)
     # name — for rendering active-filter chips. Range bounds appear as
-    # `<field>_geq` / `<field>_leq`; the search box as `q`.
+    # `<field>_geq` / `<field>_leq`; the search box as `q`. A field taking
+    # several values may carry an array.
     def active_filters
+      multi = multi_value_names
       (filter_param_keys + ['q']).each_with_object({}) do |key, active|
-        val = param(key)
+        val = multi.include?(key) ? multi_param(key) : param(key)
         active[key] = val if val
       end
     end
@@ -105,7 +119,7 @@ module CrudComponents
 
     def param_name(key) = "#{prefix}#{key}"
 
-    # The combobox suggestion request in `params`, if any, as
+    # The value filter's search request in `params`, if any, as
     # [requested name, field, typed term]. The field must be one this query
     # filters by (visible to the ability) and one that offers suggestions;
     # anything else yields a nil field, so an unknown or hidden name learns
@@ -131,6 +145,23 @@ module CrudComponents
 
     def prefix = param_prefix ? "#{param_prefix}_" : ''
 
+    def multi_value_names
+      filter_fields.select(&:multi_value_filter?).map { |field| field.name.to_s }
+    end
+
+    # A single non-blank string as is (it may mean free text), an array as its
+    # non-blank strings, anything else nil.
+    def multi_param(key)
+      raw = @params[param_name(key)]
+      return raw.presence if raw.is_a?(String)
+
+      string_values(raw).presence
+    end
+
+    def string_values(raw)
+      raw.is_a?(Array) ? raw.grep(String).compact_blank : []
+    end
+
     def param(key)
       raw = @params[param_name(key)]
       raw.is_a?(String) && raw.present? ? raw : nil
@@ -147,7 +178,7 @@ module CrudComponents
 
     def apply_filters(scope)
       filter_fields.reduce(scope) do |current, field|
-        value = param(field.name.to_s)
+        value = field.multi_value_filter? ? multi_param(field.name.to_s) : param(field.name.to_s)
         geq = param("#{field.name}_geq")
         leq = param("#{field.name}_leq")
         next current unless value || geq || leq

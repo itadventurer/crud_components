@@ -193,7 +193,7 @@ shown the names of all the others. `crud_collection`, `crud_filter` and `crud_fo
 `current_ability` on by themselves; a hand-built `Query` gets it through `ability:`.
 
 A `belongs_to` filter additionally lists only the targets occurring in the list's own scope
-(see [filtering](filtering.md)). Its combobox suggestions go through the same two limits:
+(see [filtering](filtering.md)). The value filter's server-side search goes through the same two limits:
 they are answered by the page the list is on, with that page's ability and scope, and only
 for a filter field the viewer may see — an unknown, hidden or non-association name gets an
 empty answer.

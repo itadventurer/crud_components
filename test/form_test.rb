@@ -180,7 +180,7 @@ class FormTest < ActiveSupport::TestCase
 
     assert_equal [['Tor Books', tor.id]], field.form_choices
     assert_equal [['Tor Books', 'tor-choices']], field.filter_choices
-    assert_equal :select, field.filter_control
+    assert_equal :values, field.filter_control
   end
 
   test 'a two-argument choices: receives the ability too' do

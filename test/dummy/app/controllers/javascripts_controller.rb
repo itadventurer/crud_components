@@ -4,7 +4,7 @@
 # so the playground runs the file an app copies in.
 class JavascriptsController < ApplicationController
   TEMPLATES = File.expand_path('../../../../lib/generators/crud_components/install/templates', __dir__)
-  SERVED = %w[crud_combobox_controller].freeze
+  SERVED = %w[crud_value_filter_controller].freeze
 
   # Loaded by a module script; the file is the gem's public source.
   skip_forgery_protection only: :show

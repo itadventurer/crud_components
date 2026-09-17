@@ -3,10 +3,10 @@
 module CrudComponents
   module Fields
     # belongs_to / has_one: nil-safe link via the target's label. The filter
-    # (belongs_to only) accepts both the target's identify_by value (what the
-    # select submits) and free text matched against the target's label — the
-    # name shown in the cell — one param, two OR-combined parameterized
-    # subqueries.
+    # (belongs_to only) takes the identify_by values the value filter submits,
+    # or a single string matched against the identify_by value and the
+    # target's label — the name shown in the cell — as OR-combined
+    # parameterized subqueries.
     class BelongsToField < Base
       include AssociationChoices
 
@@ -49,20 +49,9 @@ module CrudComponents
         scope.left_joins(name).reorder(target.arel_table[sort_column].public_send(dir))
       end
 
-      # A select of the targets occurring in the list up to
-      # `combobox_threshold` of them, above that a text input with suggestions
-      # (`:combobox`). Counted per render, not memoized: the field instance lives
-      # on the process-cached Structure, and the count depends on the query. One
-      # COUNT per filter-row render is negligible next to rendering the table.
-      # A declared `choices:` is a short list by intent, so always a select.
-      def filter_control(query = nil)
-        control = super
-        return control unless suggests_choices? && !declared_choices?
-
-        filter_choice_scope(query).count > CrudComponents.config.combobox_threshold ? :combobox : :select
-      end
-
-      def derived_filter_control = :select
+      # A value filter: a multiple select (checkboxes in a popover with the
+      # crud-value-filter controller) of the targets occurring in the list.
+      def derived_filter_control = :values
 
       # [label, identify_by] pairs: the targets the ability may see that occur
       # in the query's base scope — the rows the list could show before any
@@ -71,45 +60,41 @@ module CrudComponents
         choice_records(query&.ability, within: occurring_in(query)).map { |_, record| choice_pair(record) }
       end
 
-      # Only the derived filter asks for suggestions; a `filter` block or
-      # typed filter decides its own control.
+      # Only the derived filter takes several values and answers searches; a
+      # `filter` block or typed filter reads a single string.
       def suggests_choices? = derived_filterable? && !typed_filter && !filter_facet
+      def multi_value_filter? = suggests_choices?
+
+      def nullable? = !!model.columns_hash[reflection.foreign_key.to_s]&.null
+      def filter_includes_null? = nullable?
 
       # Up to `limit` [label, identify_by] pairs out of #filter_choices whose
-      # label contains `term` — the same match the free text applies.
-      def filter_suggestions(query, term, limit: CrudComponents.config.combobox_suggestions)
+      # label contains `term` (the free-text match), plus the `selected` values
+      # beyond that limit, and how many choices match in all.
+      def filter_values(query, term: '', selected: [], limit: CrudComponents.config.value_filter_inline_limit)
         records = filter_choice_scope(query)
-        label = target_structure.label_column_name
-        found = if records.is_a?(ActiveRecord::Relation) && label
-                  records = LikeSpec.apply(records, [label], term) if term.present?
-                  records.reorder(target.arel_table[label]).limit(limit).to_a
-                else
-                  matching_records(records, term).first(limit)
-                end
-        found.map { |record| choice_pair(record) }
+        found, total = matching(records, term, limit)
+        pairs = found.map { |record| choice_pair(record) }
+        missing = selected.map(&:to_s) - pairs.map { |_, value| value.to_s }
+        pairs += selected_records(records, missing).map { |record| choice_pair(record) } if missing.any?
+        [pairs.sort_by(&:first), total]
       end
 
-      # The label of the choice `value` identifies, or nil — what a combobox
-      # shows for the current filter value.
-      def filter_value_label(query, value)
-        return nil if value.blank?
-
-        records = filter_choice_scope(query)
-        identify_by = target_structure.identify_by
-        record = if records.is_a?(ActiveRecord::Relation)
-                   records.find_by(identify_by => value)
-                 else
-                   records.find { |candidate| candidate.public_send(identify_by).to_s == value.to_s }
-                 end
-        record && target_structure.label_for(record).to_s
-      end
-
+      # A single string (`?publisher=tor`) matches the identify_by value or the
+      # label; an array (`?publisher[]=tor&publisher[]=ace`) matches the
+      # identify_by values exactly. NULL_FILTER_VALUE among them adds IS NULL.
       def apply_derived_filter(scope, value: nil, **)
-        return scope unless value
+        values = Array(value).map(&:to_s).compact_blank
+        return scope if values.empty?
 
-        identified = scope.where(name => target.where(target_structure.identify_by => value))
-        searched = like_subquery(scope, value)
-        searched ? identified.or(searched) : identified
+        blank = values.delete(CrudComponents::NULL_FILTER_VALUE)
+        parts = []
+        if values.any?
+          parts << scope.where(name => target.where(target_structure.identify_by => values))
+          parts << like_subquery(scope, value) if value.is_a?(String)
+        end
+        parts << scope.where(reflection.foreign_key => nil) if blank
+        parts.compact.reduce(:or)
       end
 
       # Load the association, nesting the target's identity_preloads (its label's
@@ -154,14 +139,29 @@ module CrudComponents
         { reflection.association_primary_key => keys }
       end
 
-      # A label block has no column to match in SQL, so match the labels.
-      def matching_records(records, term)
+      # [the first `limit` records whose label contains `term`, their total].
+      # A label block has no column to match in SQL, so the labels are matched
+      # in Ruby.
+      def matching(records, term, limit)
+        label = target_structure.label_column_name
+        if records.is_a?(ActiveRecord::Relation) && label
+          records = LikeSpec.apply(records, [label], term) if term.present?
+          return [records.reorder(target.arel_table[label]).limit(limit).to_a, records.count]
+        end
+
         needle = term.to_s.downcase
-        records.to_a
-               .map { |record| [target_structure.label_for(record).to_s, record] }
-               .select { |label, _| label.downcase.include?(needle) }
-               .sort_by(&:first)
-               .map(&:last)
+        found = records.to_a
+                       .map { |record| [target_structure.label_for(record).to_s, record] }
+                       .select { |text, _| text.downcase.include?(needle) }
+                       .sort_by(&:first)
+        [found.first(limit).map(&:last), found.size]
+      end
+
+      def selected_records(records, values)
+        identify_by = target_structure.identify_by
+        return records.where(identify_by => values).to_a if records.is_a?(ActiveRecord::Relation)
+
+        records.select { |record| values.include?(record.public_send(identify_by).to_s) }
       end
 
       # The target column to ORDER BY: the field behind its label when that's a

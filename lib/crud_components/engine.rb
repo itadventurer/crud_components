@@ -13,6 +13,7 @@ require_relative 'presenters/actions'
 require_relative 'presenters/collection'
 require_relative 'presenters/record'
 require_relative 'presenters/filter'
+require_relative 'presenters/value_filter'
 require_relative 'presenters/form'
 require_relative 'helpers'
 

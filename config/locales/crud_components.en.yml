@@ -47,6 +47,16 @@ en:
       direction: "Direction"
       asc: "Ascending"
       desc: "Descending"
+      values:
+        all: "All"
+        some: "%{count} of %{total}"
+        blank: "(empty)"
+        search: "Search values"
+        select_all: "Select all (%{count})"
+        select_none: "Select none"
+        shown: "%{count} shown"
+        shown_of: "%{count} of %{total} shown"
+        cancel: "Cancel"
     pager:
       label: "Pagination"
       summary: "Page %{page} of %{total} · %{count} total"

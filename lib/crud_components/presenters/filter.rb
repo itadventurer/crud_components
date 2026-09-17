@@ -8,7 +8,7 @@ module CrudComponents
     class Filter < Base
       include ChoicesRequest
 
-      # The `source` its comboboxes and its suggestion fragments carry.
+      # The `source` its value filters and their search answers carry.
       CHOICES_SOURCE = 'filter'
 
       attr_reader :model, :structure, :query

@@ -318,50 +318,21 @@ class StructureTest < ActiveSupport::TestCase
     assert_equal %i[publisher reviews], s.identity_preloads
   end
 
-  # ── belongs_to select/combobox threshold (config.combobox_threshold) ──────
-  test 'belongs_to filter control flips to a combobox above combobox_threshold' do
-    Publisher.create!(name: 'A', slug: 'a')
-    Publisher.create!(name: 'B', slug: 'b')
-    original = CrudComponents.config.combobox_threshold
-    CrudComponents.config.combobox_threshold = 5
-
-    assert_equal :select, CrudComponents::Fields::BelongsToField.new(:publisher, Book).filter_control
-    CrudComponents.config.combobox_threshold = 1
-
-    assert_equal :combobox, CrudComponents::Fields::BelongsToField.new(:publisher, Book).filter_control
-  ensure
-    CrudComponents.config.combobox_threshold = original
+  # ── belongs_to value filter ─────────────────────────────────────────────────
+  test 'a belongs_to filters with a value list, however many targets there are' do
+    assert_equal :values, CrudComponents::Fields::BelongsToField.new(:publisher, Book).filter_control
   end
 
-  # Regression: the field instance lives on the process-cached Structure, so the
-  # control must NOT freeze at its first-seen count — a table that grows past the
-  # limit after boot has to start rendering a combobox instead of a stale select.
-  test 'belongs_to filter control re-counts on the same (cached) field instance' do
-    Publisher.create!(name: 'P1', slug: 'p1')
-    original = CrudComponents.config.combobox_threshold
-    CrudComponents.config.combobox_threshold = 2
-    field = CrudComponents::Fields::BelongsToField.new(:publisher, Book)
-
-    assert_equal :select, field.filter_control            # 1 row ≤ 2
-
-    Publisher.create!(name: 'P2', slug: 'p2')
-    Publisher.create!(name: 'P3', slug: 'p3')
-
-    assert_equal :combobox, field.filter_control          # same instance, now 3 rows > 2
-  ensure
-    CrudComponents.config.combobox_threshold = original
-  end
-
-  test 'config.select_limit is a deprecated alias of combobox_threshold' do
-    original = CrudComponents.config.combobox_threshold
+  test 'config.select_limit is a deprecated alias of value_filter_inline_limit' do
+    original = CrudComponents.config.value_filter_inline_limit
 
     assert_deprecated(/select_limit/, CrudComponents.deprecator) { CrudComponents.config.select_limit = 7 }
-    assert_equal 7, CrudComponents.config.combobox_threshold
+    assert_equal 7, CrudComponents.config.value_filter_inline_limit
     assert_deprecated(/select_limit/, CrudComponents.deprecator) do
       assert_equal 7, CrudComponents.config.select_limit
     end
   ensure
-    CrudComponents.config.combobox_threshold = original
+    CrudComponents.config.value_filter_inline_limit = original
   end
 
   # ── reflection categories ──────────────────────────────────────────────────

@@ -29,11 +29,20 @@ module CrudComponents
       # named *_input to avoid OrderedOptions#select (Hash#select) collisions
       select_input: 'form-select',
       select_input_sm: 'form-select form-select-sm',
-      # the suggestion list under a combobox filter (a belongs_to with many choices)
-      combobox: 'position-relative',
-      combobox_menu: 'dropdown-menu show',
-      combobox_option: 'dropdown-item text-truncate',
-      combobox_option_active: 'active',
+      # the popover the crud-value-filter controller builds around a value
+      # filter's multiple select (a belongs_to)
+      value_filter: 'position-relative',
+      value_filter_button: 'btn btn-sm btn-outline-secondary text-truncate mw-100',
+      value_filter_menu: 'dropdown-menu show p-2 shadow',
+      value_filter_search: 'form-control form-control-sm mb-2',
+      value_filter_links: 'd-flex flex-wrap align-items-center column-gap-2 small mb-1',
+      value_filter_link: 'btn btn-link btn-sm p-0 text-nowrap',
+      value_filter_count: 'ms-auto text-muted text-nowrap',
+      value_filter_list: 'overflow-auto border-top border-bottom py-1 mb-2',
+      value_filter_option: 'form-check text-truncate',
+      value_filter_checkbox: 'form-check-input',
+      value_filter_label: 'form-check-label',
+      value_filter_actions: 'd-flex justify-content-end gap-2',
       form_label: 'form-label',
       form_summary: 'alert alert-danger',
       nested_fieldset: 'border rounded p-3 mb-3',
@@ -114,17 +123,15 @@ module CrudComponents
       'setting' => 'gear', 'permission' => 'shield-lock'
     }.freeze
 
-    attr_accessor :combobox_threshold, :combobox_suggestions, :group_collapse_threshold, :action_icons,
+    attr_accessor :value_filter_inline_limit, :group_collapse_threshold, :action_icons,
                   :file_icons, :file_fallback_icon, :fast_cells, :max_path_depth,
                   :model_icons, :model_fallback_icon
     attr_reader :css
 
     def initialize
-      # A belongs_to filter offers the targets that occur in the list as a
-      # select up to this many, and as a text input with suggestions above it.
-      @combobox_threshold = 15
-      # How many suggestions a combobox filter shows at most.
-      @combobox_suggestions = 20
+      # How many values a belongs_to filter lists in the page; beyond that,
+      # the crud-value-filter controller searches the rest on the server.
+      @value_filter_inline_limit = 200
       # Grouped collections open every group when the total row count is below
       # this, and only the first group above it (the rest collapse).
       @group_collapse_threshold = 50
@@ -147,17 +154,16 @@ module CrudComponents
       @model_fallback_icon = nil
     end
 
-    # Deprecated: the belongs_to filter switches to a combobox at
-    # `combobox_threshold` now. Kept as an alias so an existing initializer
-    # still sets the switch point.
+    # Deprecated alias of `value_filter_inline_limit`: a belongs_to filter no
+    # longer switches to a text input.
     def select_limit
-      CrudComponents.deprecator.warn('config.select_limit is deprecated, use config.combobox_threshold')
-      combobox_threshold
+      CrudComponents.deprecator.warn('config.select_limit is deprecated, use config.value_filter_inline_limit')
+      value_filter_inline_limit
     end
 
     def select_limit=(value)
-      CrudComponents.deprecator.warn('config.select_limit is deprecated, use config.combobox_threshold')
-      self.combobox_threshold = value
+      CrudComponents.deprecator.warn('config.select_limit is deprecated, use config.value_filter_inline_limit')
+      self.value_filter_inline_limit = value
     end
   end
 end
