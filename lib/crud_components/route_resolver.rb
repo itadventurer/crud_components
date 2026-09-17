@@ -39,19 +39,29 @@ module CrudComponents
     end
 
     # The plain link to a record (label cells, association cells):
-    # show route, then edit. Returns [path, kind] or nil.
+    # show route, then edit, each only when the viewer may open it.
+    # Returns [path, kind] or nil.
     def record_path(view, record, owner: nil)
-      path = try_helpers(view, member_candidates(nil, record, owner), verb: :get)
+      path = permitted?(view, :show, record) && try_helpers(view, member_candidates(nil, record, owner), verb: :get)
       return [path, :show] if path
 
-      path = try_helpers(view, member_candidates('edit_', record, owner), verb: :get)
+      path = permitted?(view, :edit, record) && try_helpers(view, member_candidates('edit_', record, owner), verb: :get)
       path ? [path, :edit] : nil
     end
 
-    # Whether the record has a plain (show) route — feeds the
-    # ":show button only without a label link" rule.
+    # Whether the record has a plain (show) route the viewer may open — feeds
+    # the ":show button only without a label link" rule.
     def show_path(view, record, owner: nil)
+      return nil unless permitted?(view, :show, record)
+
       try_helpers(view, member_candidates(nil, record, owner), verb: :get)
+    end
+
+    def permitted?(view, action, record)
+      return view.crud_can?(action, record) if view.respond_to?(:crud_can?)
+      return view.can?(action, record) if view.respond_to?(:can?)
+
+      true
     end
 
     # The index a has_many "+n more" link points at:

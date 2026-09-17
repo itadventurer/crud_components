@@ -64,6 +64,8 @@ module CrudComponents
 
       def allows?(action) = actions.include?(action.to_sym)
 
+      def link? = false
+
       # The base relation the admin renders, before filtering and sorting.
       def scope
         base = model.all

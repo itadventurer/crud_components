@@ -72,7 +72,8 @@ module CrudComponents
 
     # The icon (no library prefix — paired with `css.icon_prefix`) that badges
     # this model wherever it appears: column-picker groups, association links,
-    # path-column cells. Overrides the name-based guess in `config.model_icons`.
+    # path-column cells, the admin's sidebar and dashboard. Overrides the
+    # name-based guess in `config.model_icons`.
     # @param name [String, Symbol] a Bootstrap-icon name, e.g. `'building'`.
     # @return [void]
     def icon(name)

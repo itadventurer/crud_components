@@ -111,14 +111,7 @@ By default: every model in `app/models` with a table. Framework tables (Active S
 Action Text, the job and cache backends), other gems' bookkeeping models, HABTM join models
 and STI subclasses stay out.
 
-**Drop or pick models in the initializer:**
-
-```ruby
-config.except = %w[Review]                    # everything but these
-config.only   = %w[Book Publisher Author]     # exactly these, in this order
-```
-
-**Or decide it on the model**, in the `crud_structure` it already has:
+**Leave a model out on the model itself**, in the `crud_structure` it already has:
 
 ```ruby
 class Review < ApplicationRecord
@@ -127,24 +120,56 @@ class Review < ApplicationRecord
 end
 ```
 
-## Configuring a model
+The initializer has global switches for the cases a model cannot answer for itself — a model
+from another gem, or an allow-list for a small admin:
 
 ```ruby
-crud_structure do
-  admin group: 'Catalog', actions: %i[index show], label: 'Back catalogue'
+config.except = %w[Review]                    # everything but these
+config.only   = %w[Book Publisher Author]     # exactly these, in this order
+```
+
+Prefer `admin false` where you own the model: the decision then sits next to the model it is
+about, and a renamed or deleted model cannot leave a stale name behind in the initializer.
+
+## Per model
+
+Everything the admin shows about one model is declared on that model, in its
+`crud_structure`:
+
+```ruby
+class Publisher < ApplicationRecord
+  include CrudComponents::Model
+
+  crud_structure do
+    icon 'building'                                  # sidebar, dashboard card, index heading
+    admin group: 'Catalog', label: 'Imprints', actions: %i[index show]
+  end
+end
+
+class Review < ApplicationRecord
+  include CrudComponents::Model
+  crud_structure { admin false }                     # not in the admin at all
 end
 ```
 
-| Option | What it does |
+| Declaration | What it does |
 | --- | --- |
-| `false` | keeps the model out entirely |
-| `actions:` | which of `%i[index show new create edit update destroy]` exist. What you leave out has **no route** — a hand-crafted `POST` 404s |
-| `group:` | the sidebar heading (defaults to the model's namespace, if any) — [translatable](#translating-the-group-headings) |
-| `label:` | the sidebar label (defaults to the model's human name — translate `activerecord.models.*` and it follows) |
-| `fieldset:` | which fieldset the admin renders (default: `:admin` if you declare one, else every field) |
-| `scope:` | narrows the base relation, e.g. `scope: -> { where(archived: false) }` |
+| `icon 'building'` | the model's icon — in the sidebar, on its dashboard card and in its index heading, and outside the admin wherever the model is badged ([Fields](fields.md#identity-label-identify_by-search_in-icon)) |
+| `admin false` | keeps the model out entirely |
+| `admin actions:` | which of `%i[index show new create edit update destroy]` exist. What you leave out has **no route** — a hand-crafted `POST` 404s |
+| `admin group:` | the sidebar heading (defaults to the model's namespace, if any) — [translatable](#translating-the-group-headings) |
+| `admin label:` | the sidebar label (defaults to the model's human name — translate `activerecord.models.*` and it follows) |
+| `admin fieldset:` | which fieldset the admin renders (default: `:admin` if you declare one, else every field) |
+| `admin scope:` | narrows the base relation, e.g. `scope: -> { where(archived: false) }` |
 
-**Read-only** is `actions: %i[index show]`.
+**Read-only** is `admin actions: %i[index show]`.
+
+**The initializer only fills gaps.** `config.model_icons` is the name-based guess for a model
+that declares no `icon` (`Publisher → building` ships with the gem), and
+`config.model_fallback_icon` badges whatever is still left; a declared `icon` always wins.
+`config.except` and `config.only` are global switches next to `admin false`. What belongs
+in the initializer is what no single model can say: the [group order](#translating-the-group-headings)
+(`config.groups`), the title, the layout, the parent controller.
 
 ### Translating the group headings
 
@@ -172,6 +197,34 @@ the column-picker gear narrows a wide table per view.
 fieldset :index, %i[cover title genre price]              # what the shop shows
 fieldset :admin, %i[title genre price stock slug active]  # what an operator needs
 ```
+
+## Links of your own
+
+The sidebar and the dashboard list the models, and can list any other page you want an
+operator to find next to them: a mounted jobs dashboard, a report, a page of your own app.
+
+```ruby
+CrudComponents::Admin.configure do |config|
+  config.link 'Background jobs', path: -> { main_app.jobs_dashboard_path },
+                                 group: 'Operations', icon: 'cpu',
+                                 if: -> { can?(:manage, :jobs) }
+  config.link :storefront, path: -> { main_app.root_path }, icon: 'shop'
+end
+```
+
+![The admin dashboard: the models, a "Storefront" link among the ungrouped ones, and an "Operations" group holding a "Background jobs" link, in the sidebar and as cards](screenshots/admin-links.png)
+
+| Option | |
+| --- | --- |
+| label | a String as is, or a Symbol looked up under `crud_components.admin.links.<label>` (default: humanized) |
+| `path:` | a String, or a block run in the admin's view, where `main_app.…_path` and a mounted engine's route helpers are in reach. A block returning nil, or naming a `…_path` helper the app does not have, leaves the link out |
+| `group:` | the sidebar group, as for a model: the link joins a model group of the same name (after its models), [translates](#translating-the-group-headings) the same way, and `config.groups` orders it |
+| `icon:` | an icon name without the library prefix, as for a model |
+| `if:` | a block run in the admin's view; a falsy result leaves the link out. `can?` is there when your ability is a view helper, as CanCanCan's is |
+
+`if:` only decides whether the link is shown. The page behind it still has to check access
+on its own: a mounted dashboard has its own authentication, and the admin's gate does
+not cover it.
 
 ## Who may do what
 
@@ -211,7 +264,9 @@ It lists, from what the model declares:
 
 - **what goes with it** — `dependent: :destroy` / `:destroy_async` / `:delete_all`, with
   counts, plus the record's attachments. Associations whose own targets cascade further are
-  marked as such; the count is the first level;
+  marked as such; the count is the first level. A collection is counted in SQL, a
+  `has_one` / `belongs_to` is one record or none, even when its target has a `count`
+  column of its own (a book's `stock`, say);
 - **what stays but loses the reference** — `dependent: :nullify`;
 - **what blocks it** — `:restrict_with_error` / `:restrict_with_exception` with rows still
   attached. The Delete button stays disabled while any of those hold.
@@ -296,11 +351,13 @@ CrudComponents::Admin.configure do |config|
   config.layout = 'crud_components/admin'  # the bundled shell, or one of yours
 
   config.only   = nil                    # Array of model names, or nil for all
-  config.except = []                     # Array of model names (or the classes)
+  config.except = []                     # Array of model names (or the classes); per model: `admin false`
   config.groups = ['Catalog', 'People']  # group order, by declared name; the rest follow alphabetically
   config.excluded_namespaces << 'Legacy' # more model-name prefixes to skip
 
   config.counts   = true                 # record counts on the dashboard
+  config.link 'Background jobs', path: -> { main_app.jobs_dashboard_path },
+              group: 'Operations', icon: 'cpu', if: -> { can?(:manage, :jobs) }  # a page of your own
   config.per_page = 50                   # rows per index page
   config.parent_controller = '::ApplicationController'  # what the admin's controllers inherit
 end

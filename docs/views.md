@@ -245,6 +245,13 @@ A helper counts as resolving only when the route behind it fits the link:
   another resource with a single `:id`, so a book's authors link to `author_path(author)`.
   Leading segments the url options fill in, such as a `scope ':locale'`, are fine.
 
+A record link (a label cell, an association cell, `crud_record_path`) also asks the
+ability first: the `show` route only when `can?(:show, record)` holds, the `edit` fallback
+only when `can?(:edit, record)` does, otherwise the record's name is plain text. A viewer
+is never handed a link to a page that refuses them. The check goes through
+`crud_can?(action, record)`, which asks the view's `can?` and says yes where there is none.
+The mounted admin answers it with the ability its controller authorizes with.
+
 ### Per-surface actions
 
 A button that belongs to *this page* rather than to the model goes in `extra_actions:`,

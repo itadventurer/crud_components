@@ -67,6 +67,14 @@ a `can?(action, subject)` method.
   authority to say "yes", the answer is "no". (Lambdas that don't call `can?` are
   unaffected.)
 
+### Links follow the ability too
+
+A record is linked only where the viewer may open it: label cells, association cells
+(`book.publisher`, `book.reviews`) and `crud_record_path` ask `can?(:show, record)` (and
+`can?(:edit, record)` for the edit fallback). A review a user may not open still appears
+by name in the book's reviews column, but without a link. Without `can?` every record is
+linked, as before.
+
 ## The whitelist
 
 > **A URL param is applied only if it names a filterable field of the fieldset in play

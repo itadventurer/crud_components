@@ -5,10 +5,12 @@ class ReviewsController < ApplicationController
 
   def show
     @review = Review.find(params[:id])
+    head :forbidden unless can?(:show, @review)
   end
 
   def edit
     @review = Review.find(params[:id])
+    head :forbidden unless can?(:edit, @review)
   end
 
   def update
