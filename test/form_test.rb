@@ -163,4 +163,53 @@ class FormTest < ActiveSupport::TestCase
     # a model with neither falls all the way back to :default
     assert_equal :default, structure_of(Author).form_fieldset(:edit).name
   end
+
+  # ── association choices ────────────────────────────────────────────────────
+  def publisher_model(&)
+    model = define_model
+    model.belongs_to :publisher, optional: true
+    model.crud_structure(&)
+    model
+  end
+
+  test 'choices: narrows a belongs_to select, in the form and in the filter' do
+    tor = Publisher.create!(name: 'Tor Books', slug: 'tor-choices')
+    Publisher.create!(name: 'Ace', slug: 'ace-choices')
+    model = publisher_model { attribute :publisher, choices: ->(scope) { scope.where(slug: 'tor-choices') } }
+    field = structure_of(model).field(:publisher)
+
+    assert_equal [['Tor Books', tor.id]], field.form_choices
+    assert_equal [['Tor Books', 'tor-choices']], field.filter_choices
+    assert_equal :select, field.filter_control
+  end
+
+  test 'a two-argument choices: receives the ability too' do
+    tor = Publisher.create!(name: 'Tor Books', slug: 'tor-choices-ability')
+    ace = Publisher.create!(name: 'Ace', slug: 'ace-choices-ability')
+    model = publisher_model do
+      attribute :publisher, choices: ->(scope, ability) { scope.select { |p| ability.can?(:show, p) } }
+    end
+    ability = CrudTestHelpers::ScopingAbility.new(ace)
+
+    assert_equal [['Ace', ace.id]], structure_of(model).field(:publisher).form_choices(ability)
+    assert_not_includes structure_of(model).field(:publisher).form_choices(ability).map(&:last), tor.id
+  end
+
+  class ChoicesController < ApplicationController
+    helper_method :current_ability
+    cattr_accessor :ability
+    def current_ability = ability
+  end
+
+  test 'the rendered form offers only the publishers the ability may see' do
+    tor = Publisher.create!(name: 'Tor Books', slug: 'tor-rendered')
+    Publisher.create!(name: 'Secret Press', slug: 'secret-rendered')
+    book = Book.create!(title: 'Dune', slug: 'dune-rendered')
+    ChoicesController.ability = CrudTestHelpers::ScopingAbility.new(tor, book)
+
+    html = ChoicesController.render(inline: '<%= crud_form(@book) %>', assigns: { book: book })
+
+    assert_includes html, 'Tor Books'
+    assert_not_includes html, 'Secret Press'
+  end
 end

@@ -14,6 +14,11 @@ This project follows [semantic versioning](https://semver.org).
 ### Added
 
 - `action ..., data: { … }` in `crud_structure` — data attributes for one action, on the element you click: the `<a>` of a GET action, the `<button>` of any other. A Stimulus controller (`data: { controller: 'clipboard', action: 'click->clipboard#copy' }`) or a `data-turbo-frame` breakout no longer needs a hand-written actions partial for the whole cell. What the gem sets itself stays unless you name the same key, so a GET action keeps `data-turbo-action="advance"` and `confirm:` keeps writing `data-turbo-confirm`.
+- `choices:` on a `belongs_to`, has_one, has_many or habtm attribute — a callable that narrows the records its filter select and form select offer: `attribute :publisher, choices: ->(scope) { scope.where(active: true) }`. It receives the target relation (already scoped by the ability) and, with a second parameter, the ability itself — the way to filter by `can?` for a host without CanCanCan. A belongs_to with `choices:` always filters with a select.
+
+### Changed
+
+- **The admin docs lead with the model.** A new "Per model" section in [docs/admin.md](docs/admin.md#per-model) lists everything a model declares for the admin — `icon`, `admin group:`, `label:`, `actions:`, `admin false` — in one place, and says what the initializer is for: `config.model_icons` is only the name-based guess for a model that declares no icon, `config.except`/`config.only` are global switches next to `admin false`, and `config.groups`, the title and the parent controller are what no single model can say.
 
 ### Fixed
 
@@ -21,6 +26,7 @@ This project follows [semantic versioning](https://semver.org).
 - **The bundled admin loads Turbo.** Its markup has always carried `data-turbo-action` and `data-turbo-confirm`, and a nested block's (+) loads its row into a frame — with no Turbo on the page all of that fell back to full page loads, and a `confirm:` never asked. The layout now includes it from the same CDN it already takes Bootstrap from; override the layout to load your own build. Clicking (+) in the admin now swaps the frame instead of reloading the page, so what is typed above it stays and the page does not jump to the top.
 - A form fieldset that lists a field without a form control now raises at build time instead of silently rendering nothing. A computed field is a method, not a column, so it has no input and no read-only display in a form — naming one in `fieldset :form` (or `:new`/`:edit`) used to do nothing whatsoever, which reads like a rendering bug from the outside. `:default` stays exempt: it is the catch-all every model has and legitimately carries computed fields for the other views.
 - Label cells, association cells and `crud_record_path` link a record only when the viewer may open it: the show route when `can?(:show, record)` holds, the edit fallback when `can?(:edit, record)` does, otherwise plain text. A review the viewer may not open used to be linked from a book's reviews column all the same, to a page that refused them. The check is the new `crud_can?(action, subject)` helper, which the admin engine answers with its own controller's ability (now also a view helper, `admin_ability`).
+- The `belongs_to` filter select and the `belongs_to` / habtm form selects no longer list every target record regardless of the ability. With a CanCanCan ability they offer `Publisher.accessible_by(current_ability)`, so a user who may see some publishers is no longer shown the names of all of them. A form still offers the publisher the book already points at, so saving it unchanged never reassigns the book. `Query#ability` exposes the ability a query was built with.
 
 ## v0.3.0 — 2026-08-13
 

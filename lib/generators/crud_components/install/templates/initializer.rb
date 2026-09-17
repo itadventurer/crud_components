@@ -18,10 +18,10 @@ CrudComponents.configure do |config|
   # config.file_icons['zip'] = 'file-earmark-zip'
   # config.file_fallback_icon = 'file-earmark-text'
 
-  # Per-model icon (column-picker groups, association links, path-column cells),
-  # guessed from the model name unless a model declares `icon '…'`. Add your own
-  # mapping (key = singular underscored model name) or badge every model with a
-  # fallback. Full key list: Config::DEFAULT_MODEL_ICONS.
+  # Model icons are declared on the model: `icon '…'` in its crud_structure.
+  # This map is only the name-based guess for models that declare none (key =
+  # singular underscored model name), plus a fallback to badge every model.
+  # Full key list: Config::DEFAULT_MODEL_ICONS.
   # config.model_icons['widget'] = 'box-seam'
   # config.model_fallback_icon = 'box'   # default nil = no icon when unmapped
 
