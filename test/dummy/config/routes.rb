@@ -13,7 +13,13 @@ Rails.application.routes.draw do
       get :preview
       post :reserve
     end
+    # Reviews are written through their book but read on their own pages: these
+    # nested routes answer POST/PATCH/DELETE only, so no link may point at them.
+    resources :reviews, only: %i[create update destroy]
   end
+  # A resource of its own. Its helper, book_author_path, reads like a nested
+  # route for a book's authors, but it is not one.
+  resources :book_authors, only: :show
   resources :publishers do
     resources :books, only: %i[index edit]
   end
