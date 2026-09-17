@@ -49,21 +49,59 @@ module CrudComponents
         scope.left_joins(name).reorder(target.arel_table[sort_column].public_send(dir))
       end
 
-      # select (a dropdown of all targets) below `select_limit` rows, else free
-      # text. Counted per render, not memoized: the field instance lives on the
-      # process-cached Structure, so a memoized count would freeze at its boot-time
-      # value and render the wrong control once the table grows past the limit.
-      # One COUNT per filter-row render is negligible next to rendering the table.
+      # A select of the targets occurring in the list up to
+      # `combobox_threshold` of them, above that a text input with suggestions
+      # (`:combobox`). Counted per render, not memoized: the field instance lives
+      # on the process-cached Structure, and the count depends on the query. One
+      # COUNT per filter-row render is negligible next to rendering the table.
       # A declared `choices:` is a short list by intent, so always a select.
-      def derived_filter_control
-        return :select if declared_choices?
+      def filter_control(query = nil)
+        control = super
+        return control unless suggests_choices? && !declared_choices?
 
-        target.count <= CrudComponents.config.select_limit ? :select : :text
+        filter_choice_scope(query).count > CrudComponents.config.combobox_threshold ? :combobox : :select
       end
 
+      def derived_filter_control = :select
+
+      # [label, identify_by] pairs: the targets the ability may see that occur
+      # in the query's base scope — the rows the list could show before any
+      # filter, so picking one never shrinks the choice to itself.
       def filter_choices(query = nil)
+        choice_records(query&.ability, within: occurring_in(query)).map { |_, record| choice_pair(record) }
+      end
+
+      # Only the derived filter asks for suggestions; a `filter` block or
+      # typed filter decides its own control.
+      def suggests_choices? = derived_filterable? && !typed_filter && !filter_facet
+
+      # Up to `limit` [label, identify_by] pairs out of #filter_choices whose
+      # label contains `term` — the same match the free text applies.
+      def filter_suggestions(query, term, limit: CrudComponents.config.combobox_suggestions)
+        records = filter_choice_scope(query)
+        label = target_structure.label_column_name
+        found = if records.is_a?(ActiveRecord::Relation) && label
+                  records = LikeSpec.apply(records, [label], term) if term.present?
+                  records.reorder(target.arel_table[label]).limit(limit).to_a
+                else
+                  matching_records(records, term).first(limit)
+                end
+        found.map { |record| choice_pair(record) }
+      end
+
+      # The label of the choice `value` identifies, or nil — what a combobox
+      # shows for the current filter value.
+      def filter_value_label(query, value)
+        return nil if value.blank?
+
+        records = filter_choice_scope(query)
         identify_by = target_structure.identify_by
-        choice_records(query&.ability).map { |label, record| [label, record.public_send(identify_by)] }
+        record = if records.is_a?(ActiveRecord::Relation)
+                   records.find_by(identify_by => value)
+                 else
+                   records.find { |candidate| candidate.public_send(identify_by).to_s == value.to_s }
+                 end
+        record && target_structure.label_for(record).to_s
       end
 
       def apply_derived_filter(scope, value: nil, **)
@@ -96,6 +134,35 @@ module CrudComponents
       def permit_param = reflection.foreign_key.to_sym
 
       private
+
+      def choice_pair(record)
+        [target_structure.label_for(record).to_s, record.public_send(target_structure.identify_by)]
+      end
+
+      def filter_choice_scope(query)
+        choice_scope(query&.ability, within: occurring_in(query))
+      end
+
+      # A where-condition on the target: its key is among the foreign keys of
+      # the query's base scope. Ordering and pagination of the base don't
+      # matter to which targets occur, so they are dropped.
+      def occurring_in(query)
+        base = query&.base_scope
+        return nil unless base
+
+        keys = base.unscope(:order, :limit, :offset).reselect(base.klass.arel_table[reflection.foreign_key])
+        { reflection.association_primary_key => keys }
+      end
+
+      # A label block has no column to match in SQL, so match the labels.
+      def matching_records(records, term)
+        needle = term.to_s.downcase
+        records.to_a
+               .map { |record| [target_structure.label_for(record).to_s, record] }
+               .select { |label, _| label.downcase.include?(needle) }
+               .sort_by(&:first)
+               .map(&:last)
+      end
 
       # The target column to ORDER BY: the field behind its label when that's a
       # real column, else nil (a block label or computed attribute can't be sorted

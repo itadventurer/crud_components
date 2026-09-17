@@ -136,10 +136,10 @@ module CrudComponents
         true
       end
 
-      def filter_control
+      def filter_control(query = nil)
         return :text if filter_facet
 
-        delegating? ? target_field.filter_control : :text
+        delegating? ? target_field.filter_control(query) : :text
       end
 
       def filter_choices(query = nil)

@@ -29,6 +29,11 @@ module CrudComponents
       # named *_input to avoid OrderedOptions#select (Hash#select) collisions
       select_input: 'form-select',
       select_input_sm: 'form-select form-select-sm',
+      # the suggestion list under a combobox filter (a belongs_to with many choices)
+      combobox: 'position-relative',
+      combobox_menu: 'dropdown-menu show',
+      combobox_option: 'dropdown-item text-truncate',
+      combobox_option_active: 'active',
       form_label: 'form-label',
       form_summary: 'alert alert-danger',
       nested_fieldset: 'border rounded p-3 mb-3',
@@ -109,13 +114,17 @@ module CrudComponents
       'setting' => 'gear', 'permission' => 'shield-lock'
     }.freeze
 
-    attr_accessor :select_limit, :group_collapse_threshold, :action_icons,
+    attr_accessor :combobox_threshold, :combobox_suggestions, :group_collapse_threshold, :action_icons,
                   :file_icons, :file_fallback_icon, :fast_cells, :max_path_depth,
                   :model_icons, :model_fallback_icon
     attr_reader :css
 
     def initialize
-      @select_limit = 250
+      # A belongs_to filter offers the targets that occur in the list as a
+      # select up to this many, and as a text input with suggestions above it.
+      @combobox_threshold = 15
+      # How many suggestions a combobox filter shows at most.
+      @combobox_suggestions = 20
       # Grouped collections open every group when the total row count is below
       # this, and only the first group above it (the rest collapse).
       @group_collapse_threshold = 50
@@ -136,6 +145,19 @@ module CrudComponents
       # No generic badge for an unmapped, undeclared model — set a glyph here to
       # icon every model (e.g. 'box') if you prefer.
       @model_fallback_icon = nil
+    end
+
+    # Deprecated: the belongs_to filter switches to a combobox at
+    # `combobox_threshold` now. Kept as an alias so an existing initializer
+    # still sets the switch point.
+    def select_limit
+      CrudComponents.deprecator.warn('config.select_limit is deprecated, use config.combobox_threshold')
+      combobox_threshold
+    end
+
+    def select_limit=(value)
+      CrudComponents.deprecator.warn('config.select_limit is deprecated, use config.combobox_threshold')
+      self.combobox_threshold = value
     end
   end
 end

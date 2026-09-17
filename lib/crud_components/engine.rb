@@ -4,6 +4,7 @@ require 'simple_form' # form rendering delegates to simple_form (a runtime dep)
 require_relative 'route_resolver'
 require_relative 'markup'
 require_relative 'presenters/base'
+require_relative 'presenters/choices_request'
 require_relative 'presenters/column_selection'
 require_relative 'presenters/cells'
 require_relative 'presenters/association_scope'
@@ -19,6 +20,10 @@ module CrudComponents
   # Dependency-free engine: adds the gem's view path (partials under
   # app/views/crud_components/), the helpers, and the generators.
   class Engine < ::Rails::Engine
+    initializer 'crud_components.deprecator' do |app|
+      app.deprecators[:crud_components] = CrudComponents.deprecator if app.respond_to?(:deprecators)
+    end
+
     initializer 'crud_components.helpers' do
       ActiveSupport.on_load(:action_view) do
         include CrudComponents::Helpers

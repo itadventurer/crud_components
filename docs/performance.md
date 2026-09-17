@@ -11,10 +11,14 @@ config can't guess.
   once — see [Eager-loading render dependencies](#eager-loading-render-dependencies).
 - **Fast cells** — built-in cell types are rendered inline, not a partial per cell — see
   [Fast cell rendering](#fast-cell-rendering).
-- **belongs_to filters degrade gracefully.** A belongs_to filter renders a `<select>` of
-  the target's records up to `config.select_limit` (default 250); beyond that it switches
-  to a text input over the target's `label`, so a 50k-row association never builds a
-  giant `<select>`. (A typeahead/autocomplete is a later version.)
+- **belongs_to filters degrade gracefully.** A belongs_to filter offers the targets that
+  occur in the list (one `IN (SELECT foreign_key …)` subquery over the list's scope). Up to
+  `config.combobox_threshold` of them (default 15) it renders a `<select>`; beyond that a
+  text input over the target's `label` that the `crud-combobox` controller turns into a
+  combobox, so a 50k-row association never builds a giant `<select>`. Deciding costs one
+  `COUNT` per render. Each suggestion request renders the page again with the list
+  replaced by at most `config.combobox_suggestions` (default 20) matches; the controller
+  waits for a pause in typing and cancels the previous request.
 - **Long text truncates** in collections — the full value renders on the record page.
 
 ## Eager-loading render dependencies

@@ -2,9 +2,12 @@
 
 # CrudComponents — everything has a working default; uncomment to deviate.
 CrudComponents.configure do |config|
-  # belongs_to filter selects switch to a text input over the target's
-  # search_in beyond this many records:
-  # config.select_limit = 250
+  # A belongs_to filter offers the targets occurring in the list as a select
+  # up to this many, and as a text input with suggestions (the crud-combobox
+  # controller) beyond it; the suggestion list shows at most
+  # `combobox_suggestions` entries:
+  # config.combobox_threshold = 15
+  # config.combobox_suggestions = 20
 
   # Grouped collections (`group_by:`) open all groups below this row count, the
   # first only above it:

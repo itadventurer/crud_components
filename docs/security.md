@@ -192,6 +192,12 @@ ability (anything whose relation answers `accessible_by`) the choices come from
 shown the names of all the others. `crud_collection`, `crud_filter` and `crud_form` pass
 `current_ability` on by themselves; a hand-built `Query` gets it through `ability:`.
 
+A `belongs_to` filter additionally lists only the targets occurring in the list's own scope
+(see [filtering](filtering.md)). Its combobox suggestions go through the same two limits:
+they are answered by the page the list is on, with that page's ability and scope, and only
+for a filter field the viewer may see — an unknown, hidden or non-association name gets an
+empty answer.
+
 Without such an ability — a host whose `can?` is a plain helper, or no ability at all — the
 target's full table is listed, as before. Narrow it per field with `choices:`, a callable
 that receives the target relation (already scoped, when there is a scoping ability) and,

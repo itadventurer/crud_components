@@ -28,9 +28,22 @@ end
 attribute :token, filter: false               # opt a derived field out of filtering
 ```
 
-A `belongs_to` select lists only the targets the ability lets the viewer see, and
-`choices:` narrows it further — see
-[association choices](security.md#association-choices-and-the-ability).
+A `belongs_to` filter offers the targets that occur in the list — on `/authors/3/books` the
+publishers of that author's books, not every publisher — and of those only the ones the
+ability lets the viewer see; `choices:` narrows it further — see
+[association choices](security.md#association-choices-and-the-ability). "The list" is the
+scope handed to `crud_collection` (or to `Query#apply`, or `base_scope:` of a `Query`)
+before any filter, search or sort, so picking a publisher never shrinks the choice to that
+publisher. `crud_filter` narrows the same way when it is given that scope instead of the
+model class (`crud_filter @books`).
+
+Up to `config.combobox_threshold` choices (default 15) the filter is a select. Above it, it
+is a text input that the optional `crud-combobox` controller turns into a combobox: typing
+lists up to `config.combobox_suggestions` (default 20) matching labels, fetched from the
+same page (`?crud_choices=publisher&crud_term=tor`); `crud_collection`/`crud_filter` answer
+such a request with just those matches instead of the list. Only a visible, filterable
+`belongs_to` without a `filter` block answers; any other name gets an empty list. Picking
+a suggestion submits the target's `identify_by` value, free text still matches the label.
 
 A `has_many`/habtm column filters by its children's label with no extra config — typing in its
 filter box keeps owners that have a matching child. Here `/publishers` (which lists each

@@ -1,0 +1,10 @@
+<%# The answer to a combobox's suggestion request, rendered by crud_collection /
+    crud_filter in place of the list. Locals: suggestions ([label, value]
+    pairs), param_name (the filter param asked about), source (which
+    collection or filter form answers). The crud-combobox controller reads the
+    items; the element itself is never shown. %>
+<%= tag.ul hidden: true, data: { crud_choices: param_name, crud_choices_source: source } do %>
+  <% suggestions.each do |label, value| %>
+    <%= tag.li label, data: { value: value } %>
+  <% end %>
+<% end %>

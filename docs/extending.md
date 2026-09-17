@@ -188,12 +188,12 @@ same markup in place via Stimulus controllers attached with `data-controller`. T
 lives in the [class map](#styling), not in template variants. A controller that isn't
 loaded simply leaves the baseline as-is.
 
-The gem ships **four** optional controllers, copied in by the install generator (you
+The gem ships **six** optional controllers, copied in by the install generator (you
 register them with Stimulus; the gem depends on none):
 
 ```sh
 bin/rails generate crud_components:install
-# initializer + crud-filter + crud-multiselect + crud-columns + crud-select + crud-nested
+# initializer + crud-filter + crud-multiselect + crud-columns + crud-select + crud-nested + crud-combobox
 ```
 
 - **`crud-filter`** strips empty params on submit (clean URLs) and auto-submits selects in
@@ -210,6 +210,12 @@ bin/rails generate crud_components:install
   the moment it is clicked. The checkbox stays the source of truth, so the form submits
   identically either way; without it you tick the box and save. Adding rows needs no
   JavaScript at all — the (+) is a link.
+- **`crud-combobox`** turns the text input of a belongs_to filter with many choices into a
+  combobox (ARIA `combobox`/`listbox`; arrows, Enter, Escape). It fetches suggestions from
+  the page it sits on (`?crud_choices=<field>&crud_term=<text>`, prefixed like every other
+  param), so they come from the same controller, ability and parent as the list; picking
+  one submits the target's `identify_by` value. Without it the input is the plain text
+  filter: free text over the target's label, or an `identify_by` value.
 - **`crud-select`** adds a "select all visible" / per-group master checkbox and a live
   "N selected" count to selectable tables (bulk/selection actions). Without it the row
   checkboxes still submit; you just tick them individually.
@@ -235,7 +241,7 @@ CrudComponents.configure do |config|
   config.css.table  = 'table table-sm table-hover'
   config.css.button = 'btn btn-outline-dark'
   config.css.badge  = 'badge text-bg-secondary'
-  config.select_limit = 250    # belongs_to filter: select → text input threshold
+  config.combobox_threshold = 15   # belongs_to filter: select → combobox threshold
 end
 ```
 

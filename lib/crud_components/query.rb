@@ -13,9 +13,23 @@ module CrudComponents
     # host's — it lives in the controller, never here — so it is not listed.
     RESERVED_PARAMS = %w[q sort dir].freeze
 
+    # The params a combobox filter asks its suggestions with: which field, and
+    # the text typed so far. Read by the collection/filter helpers, never by
+    # #apply.
+    CHOICES_PARAM = 'crud_choices'
+    TERM_PARAM = 'crud_term'
+
     attr_reader :model, :structure, :fieldset, :param_prefix, :ability
 
-    def initialize(model, params, fieldset: nil, ability: nil, param_prefix: nil, extra_fields: [])
+    # The relation this query narrows, before any filter, search or sort: the
+    # rows the list could show at all (already scoped by the caller — nested,
+    # authorized). Association filters offer only the targets occurring in it.
+    # nil until #apply has run, unless given; without it, they offer every
+    # target the ability may see.
+    attr_reader :base_scope
+
+    def initialize(model, params, fieldset: nil, ability: nil, param_prefix: nil, extra_fields: [],
+                   base_scope: nil)
       @model = model
       @structure = Structure.for(model)
       @fieldset = fieldset.is_a?(Fieldset) ? fieldset : @structure.fieldset(fieldset)
@@ -24,9 +38,11 @@ module CrudComponents
       @permission = PermissionContext.new(ability)
       @param_prefix = param_prefix
       @extra_fields = extra_fields
+      @base_scope = base_scope
     end
 
     def apply(scope)
+      @base_scope ||= scope if scope.is_a?(ActiveRecord::Relation)
       scope = apply_filters(scope)
       scope = apply_search(scope)
       apply_sort(scope)
@@ -88,6 +104,20 @@ module CrudComponents
     end
 
     def param_name(key) = "#{prefix}#{key}"
+
+    # The combobox suggestion request in `params`, if any, as
+    # [requested name, field, typed term]. The field must be one this query
+    # filters by (visible to the ability) and one that offers suggestions;
+    # anything else yields a nil field, so an unknown or hidden name learns
+    # nothing.
+    def choices_request
+      name = @params[param_name(CHOICES_PARAM)]
+      return nil unless name.is_a?(String)
+
+      field = filter_fields.find { |f| f.name.to_s == name && f.suggests_choices? }
+      term = @params[param_name(TERM_PARAM)]
+      [name, field, term.is_a?(String) ? term : '']
+    end
 
     private
 

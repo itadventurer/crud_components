@@ -134,9 +134,10 @@ module CrudComponents
         false
       end
 
-      # Which filter control partial to render: :text, :select, :boolean,
-      # :number_range or :date_range.
-      def filter_control
+      # Which filter control partial to render: :text, :select, :combobox,
+      # :boolean, :number_range or :date_range. The query is what the control
+      # filters, for a control that depends on the rows in play.
+      def filter_control(_query = nil)
         return typed_filter.control if typed_filter
 
         filter_facet ? :text : derived_filter_control
@@ -149,6 +150,9 @@ module CrudComponents
       def filter_choices(query = nil)
         typed_filter&.filter_choices(query)
       end
+
+      # Whether a combobox filter may ask this field for suggestions.
+      def suggests_choices? = false
 
       def range_filter?
         %i[number_range date_range].include?(filter_control)

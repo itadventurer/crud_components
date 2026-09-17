@@ -6,6 +6,11 @@ module CrudComponents
     # Renders the fieldset's filterable fields (including its `filters:`
     # extension); never auto-submits — users compose several filters here.
     class Filter < Base
+      include ChoicesRequest
+
+      # The `source` its comboboxes and its suggestion fragments carry.
+      CHOICES_SOURCE = 'filter'
+
       attr_reader :model, :structure, :query
 
       def initialize(view:, model:, fieldset: nil, query: nil, param_prefix: nil, extra_columns: nil, sort: false)
@@ -22,7 +27,8 @@ module CrudComponents
                  else
                    Query.new(@model, view.request.query_parameters,
                              fieldset: @structure.fieldset(fieldset || :index),
-                             ability: ability, param_prefix: param_prefix, extra_fields: dynamic_fields)
+                             ability: ability, param_prefix: param_prefix, extra_fields: dynamic_fields,
+                             base_scope: model.is_a?(Class) ? nil : model)
                  end
       end
 

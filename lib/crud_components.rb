@@ -76,6 +76,12 @@ module CrudComponents
       yield config
     end
 
+    # Warns about options on their way out; the engine registers it with the
+    # host app, so the app's deprecation settings apply.
+    def deprecator
+      @deprecator ||= ActiveSupport::Deprecation.new('0.5', 'crud_components')
+    end
+
     def structure_for(model)
       Structure.for(model)
     end

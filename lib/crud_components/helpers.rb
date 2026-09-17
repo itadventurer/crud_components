@@ -48,7 +48,9 @@ module CrudComponents
     # @param except_actions [Array<Symbol>, nil] action names this render drops,
     #   whatever the model declares (e.g. replacing `:destroy` with a button of
     #   your own). Applies to row, collection and selection actions.
-    # @return [ActiveSupport::SafeBuffer] the rendered HTML.
+    # @return [ActiveSupport::SafeBuffer] the rendered HTML — or, when the request
+    #   asks for a combobox filter's suggestions, just those (see
+    #   {Query::CHOICES_PARAM}).
     def crud_collection(records, fieldset: nil, layout: :table, query: :auto, param_prefix: nil,
                         actions: true, search_bar: true, group_by: nil, extra_columns: nil,
                         picker: false, picked_columns: :auto, extra_actions: nil, except_actions: nil)
@@ -58,6 +60,8 @@ module CrudComponents
                                              extra_columns: extra_columns,
                                              picker: picker, picked_columns: picked_columns,
                                              extra_actions: extra_actions, except_actions: except_actions)
+      return presenter.render_choices(source: presenter.filter_form_id) if presenter.choices_request?
+
       render "crud_components/layouts/#{presenter.layout}", collection: presenter
     end
 
@@ -128,7 +132,9 @@ module CrudComponents
     # A standalone labelled filter form (modal / sidebar) — separate from the
     # inline filter row a table renders.
     #
-    # @param model [Class] the ActiveRecord model whose fields drive the form.
+    # @param model [Class, ActiveRecord::Relation] the model whose fields drive
+    #   the form. Pass the list's scope instead of the class and association
+    #   filters offer only the targets occurring in it.
     # @param fieldset [Symbol, nil] which fieldset's filterable fields to offer.
     # @param query [CrudComponents::Query, nil] reuse an existing query's values;
     #   nil reads the request params.
@@ -147,6 +153,8 @@ module CrudComponents
                     layout: :filter)
       presenter = Presenters::Filter.new(view: self, model: model, fieldset: fieldset, query: query,
                                          param_prefix: param_prefix, extra_columns: extra_columns, sort: sort)
+      return presenter.render_choices(source: Presenters::Filter::CHOICES_SOURCE) if presenter.choices_request?
+
       render "crud_components/#{layout}", filter: presenter
     end
 
