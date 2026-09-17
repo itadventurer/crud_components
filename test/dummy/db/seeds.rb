@@ -42,7 +42,7 @@ PDF
 
 puts 'Seeding the bookstore…'
 
-[Comment, Review, Book, Author, Publisher, Document].each(&:delete_all)
+[Comment, Review, Stock, Book, Author, Publisher, Document].each(&:delete_all)
 ActiveRecord::Base.connection.execute('DELETE FROM authors_books')
 
 publishers = [
@@ -126,6 +126,10 @@ cover_colors = %w[#264653 #2a9d8f #e9c46a #f4a261 #e76f51 #6d597a #355070 #b5657
       book.chapters.create!(title: "#{chapter + 1}. #{nouns.sample}", pages: rand(8..60))
     end
   end
+
+  # Warehouse stock, sold out on every fourth book. The admin's delete page
+  # lists it either way: one record, whatever its `count` says.
+  book.create_stock!(count: (i % 4).zero? ? 0 : rand(1..40))
 
   # a PDF manual on some books — the previewable / icon-fallback attachment demo
   if (i % 4).zero?
