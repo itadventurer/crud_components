@@ -232,6 +232,26 @@ Resolution tries the most specific conventional route first and falls back outwa
   if it resolves, else the target's filtered index (`books_path(publisher: owner)`), else
   plain text.
 
+A helper counts as resolving only when the route behind it fits the link:
+
+- **The verb.** A link or GET button needs a route that answers GET; a `:destroy` button
+  needs one that answers DELETE. `resources :reviews, only: %i[create update destroy]`
+  nested under books still defines `book_review_path` and `book_reviews_path`, but no
+  review page is reached through them, so a review in a book's row links to
+  `review_path(review)` and the "+n more" link falls back to `reviews_path(book: owner)`.
+- **The arguments.** The route may not take fewer path segments than the helper is given,
+  and a nested candidate must take the owner's key (`:book_id`, or `:book_slug` with
+  `param: :slug`). `resources :book_authors` defines `book_author_path` too, but for
+  another resource with a single `:id`, so a book's authors link to `author_path(author)`.
+  Leading segments the url options fill in, such as a `scope ':locale'`, are fine.
+
+A record link (a label cell, an association cell, `crud_record_path`) also asks the
+ability first: the `show` route only when `can?(:show, record)` holds, the `edit` fallback
+only when `can?(:edit, record)` does, otherwise the record's name is plain text. A viewer
+is never handed a link to a page that refuses them. The check goes through
+`crud_can?(action, record)`, which asks the view's `can?` and says yes where there is none.
+The mounted admin answers it with the ability its controller authorizes with.
+
 ### Per-surface actions
 
 A button that belongs to *this page* rather than to the model goes in `extra_actions:`,

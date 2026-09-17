@@ -56,6 +56,9 @@ module CrudComponents
       # What the :cancan gate asks about: `can?(:access, auth_subject)`.
       attr_accessor :auth_subject
 
+      # Navigation entries beyond the models, in declaration order. See {#link}.
+      attr_reader :links
+
       def initialize
         @title = nil
         @layout = 'crud_components/admin'
@@ -69,6 +72,22 @@ module CrudComponents
         @auth_mode = :cancan
         @auth_subject = :crud_admin
         @auth_block = nil
+        @links = []
+      end
+
+      # A page of your own in the admin's sidebar and on its dashboard:
+      #
+      #   config.link 'Background jobs', path: -> { main_app.jobs_dashboard_path },
+      #                                  group: 'Operations', icon: 'cpu',
+      #                                  if: -> { can?(:manage, :jobs) }
+      #   config.link :storefront, path: '/'
+      #
+      # `path:` and `if:` blocks run in the admin's view. A Symbol label is
+      # translated under `crud_components.admin.links`. `group:` works as it
+      # does for models, `config.groups` order included.
+      def link(label, path:, group: nil, icon: nil, if: nil)
+        @links << Link.new(label, path: path, group: group, icon: icon, condition: binding.local_variable_get(:if))
+        self
       end
 
       # The resolved parent controller class, falling back to ActionController::Base

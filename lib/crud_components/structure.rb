@@ -308,8 +308,26 @@ module CrudComponents
       @declarations.each_key { |name| field(name) }
       validate_renderer_gems!
       validate_nested!
+      validate_choices!
       validate_secrets!
       validate_fieldsets!
+    end
+
+    # `choices:` narrows an association's select; anywhere else it would be inert.
+    def validate_choices!
+      @declarations.each do |name, decl|
+        choices = decl[:options][:choices]
+        next if choices.nil?
+
+        unless field(name).is_a?(Fields::AssociationChoices)
+          raise DefinitionError, "#{model}.#{name}: choices: needs a belongs_to, has_one, has_many or habtm " \
+                                 'association; a typed filter takes filter_choices:'
+        end
+        next if choices.respond_to?(:call)
+
+        raise DefinitionError, "#{model}.#{name}: choices: takes a callable receiving the target relation, " \
+                               "e.g. ->(scope) { scope.where(active: true) } — got #{choices.inspect}"
+      end
     end
 
     def validate_renderer_gems!

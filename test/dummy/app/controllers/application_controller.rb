@@ -15,6 +15,10 @@ class ApplicationController < ActionController::Base
     # The admin's gate, what the default `auth_with :cancan` asks.
     return false if action.to_sym == :access && subject == :crud_admin
 
+    # A one-star review waits for moderation: only admins open it. Everyone
+    # else sees it named in lists, but not linked.
+    return false if %i[show edit].include?(action.to_sym) && subject.is_a?(Review) && subject.rating == 1
+
     # Only admins may even open the property definitions — the admin UI drops a
     # model you cannot :index from its sidebar and dashboard.
     return false if action.to_sym == :index && subject == PropertyDefinition

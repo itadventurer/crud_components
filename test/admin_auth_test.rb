@@ -68,4 +68,25 @@ class AdminAuthTest < ActiveSupport::TestCase
     assert_raises(ArgumentError) { config { |c| c.auth_with :devise } }
     assert_raises(ArgumentError) { config { |c| c.auth_with(:cancan) { nil } } }
   end
+
+  # Past the gate: which records an admin page links to.
+  def admin_view(ability, view_can: true)
+    view = Object.new
+    view.extend(CrudComponents::Helpers)
+    view.extend(CrudComponents::Admin::ViewHelpers)
+    view.define_singleton_method(:admin_ability) { ability }
+    view.define_singleton_method(:can?) { |*| view_can }
+    view
+  end
+
+  test "an admin page asks the admin's ability whether a record may be opened" do
+    book = Book.new
+
+    assert_not admin_view(Grants.new, view_can: true).crud_can?(:show, book)
+    assert admin_view(Grants.new([:show, book]), view_can: false).crud_can?(:show, book)
+  end
+
+  test 'without an ability an admin page links every record' do
+    assert admin_view(nil, view_can: false).crud_can?(:show, Book.new)
+  end
 end

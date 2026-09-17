@@ -60,6 +60,9 @@ de:
       # Gruppe parametrisiert (`admin group: 'Custom properties'` → custom_properties):
       # groups:
       #   custom_properties: "Eigene Felder"
+      # Beschriftungen von `config.link :name, …`:
+      # links:
+      #   storefront: "Ladenansicht"
       delete:
         title:
           one: "%{model} wirklich löschen?"

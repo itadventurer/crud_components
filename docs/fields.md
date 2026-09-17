@@ -345,9 +345,11 @@ icon 'book'               # default: guessed from the model name (config.model_i
   **label** only, never its `search_in`.
 - **`icon`** — a Bootstrap-icon name (no `bi-` prefix — paired with `config.css.icon_prefix`,
   swap the whole library there) that badges the model wherever it appears: column-picker
-  groups, association links, path-column cells. Undeclared, it's guessed from the model name
-  via `config.model_icons` (`User → person`, `Publisher → building`, …); an unmapped model
-  with no declaration shows no icon (set `config.model_fallback_icon` to badge every model).
+  groups, association links, path-column cells, and the [admin](admin.md#per-model)'s
+  sidebar, dashboard and index heading. Declare it here, on the model — the initializer is
+  only the fallback: undeclared, it's guessed from the model name via `config.model_icons`
+  (`User → person`, `Publisher → building`, …); an unmapped model with no declaration shows
+  no icon (set `config.model_fallback_icon` to badge every model).
   Reach it in your own views with `crud_model_icon(record_or_class)` (the `<i>` tag) or
   `crud_model_icon_name(…)` (just the name).
 

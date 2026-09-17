@@ -132,7 +132,8 @@ No CanCanCan? `config.auth_with { … }` takes a gate of your own.
 
 `admin false` keeps a model out, `admin actions: %i[index show]` makes it read-only (the
 write routes are never drawn), and every record links back to the page a visitor would see.
-→ [The admin UI](docs/admin.md)
+`config.link` puts pages that are not models, such as a mounted jobs dashboard, in the
+sidebar next to them. → [The admin UI](docs/admin.md)
 
 ## The tour
 
@@ -476,6 +477,7 @@ attributes(*names, **shared_options)
   # form_as:  — form-input partial (defaults to the field's type)
   # if:       — visibility (everywhere: column, filter, sort, form)
   # editable: — writability in forms (read-only when false / unpermitted)
+  # choices:  — narrows an association's filter/form select: ->(scope) { … }
   # secret:   — write-only credential: an empty input, never displayed (docs/forms.md#secrets)
 action(name, icon:, title:, class:, confirm:, method:, on:, if:, data:, &path_block)
 fieldset(name, fields = :all, actions: nil, filters: nil)
