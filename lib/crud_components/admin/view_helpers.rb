@@ -12,6 +12,13 @@ module CrudComponents
         CrudComponents::Admin.path_for(entry.model, :index)
       end
 
+      # The admin asks the ability its controller authorizes with, which need
+      # not be a view helper.
+      def crud_can?(action, subject)
+        ability = admin_ability
+        ability.nil? || ability.can?(action, subject)
+      end
+
       # Whether these could be deleted on their own. A cascade takes them either
       # way; the confirmation page says so. No ability means no opinion.
       def admin_may_destroy?(model)

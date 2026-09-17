@@ -232,6 +232,13 @@ Resolution tries the most specific conventional route first and falls back outwa
   if it resolves, else the target's filtered index (`books_path(publisher: owner)`), else
   plain text.
 
+A record link (a label cell, an association cell, `crud_record_path`) also asks the
+ability first: the `show` route only when `can?(:show, record)` holds, the `edit` fallback
+only when `can?(:edit, record)` does, otherwise the record's name is plain text. A viewer
+is never handed a link to a page that refuses them. The check goes through
+`crud_can?(action, record)`, which asks the view's `can?` and says yes where there is none.
+The mounted admin answers it with the ability its controller authorizes with.
+
 ### Per-surface actions
 
 A button that belongs to *this page* rather than to the model goes in `extra_actions:`,
