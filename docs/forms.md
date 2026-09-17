@@ -252,10 +252,19 @@ attribute :signing_key, secret: true   # text → an empty textarea; a pasted PE
 - **A "Remove the stored value" box** (`remove_api_token`) clears it. It appears only when
   there is something to remove. A new value typed in wins over the box.
 - **The permit list carries both**: `:api_token` and `:remove_api_token`.
-- **Nothing shows it.** The implicit all-fields set leaves a secret out of tables, record
-  views and the admin; a display fieldset that names it explicitly gets a cell saying only
-  "Set" or "—". It is never filtered, sorted or searched, and `as_json` / `to_json`
-  leave it out.
+- **Displays show set / not set, never the value.** Tables, record views and the admin
+  (implicit fieldsets included) render a ✓ or ✗ like a boolean, labelled "Set" / "Not set".
+
+  ![The admin's publisher table sorted by API token: each row shows a green ✓ under "Api token" and a red ✗ under "Signing key", and both columns have a "–" presence filter select above them.](screenshots/secret-set-not-set.png)
+
+- **Filtering and sorting go by presence.** The filter is a select with "Set" / "Not set"
+  (`?api_token=present` / `absent`; an empty string counts as not set). Sorting orders
+  not set before set, ascending. A `filter` or `sort` block on a secret raises, since it
+  would reach the value; `filter false` / `sort false` still turn them off.
+- **Search never reaches it**, neither the default `?q=` nor a `search_in` naming it
+  (that raises).
+- **`as_json` / `to_json` leave it out**, presence included. The JSON is the model's own
+  contract; add `methods:` or your own key if an API consumer needs to know.
 
 ![The publisher form with a stored API token: an empty password input, the hint "A value is stored. Leave empty to keep it." and a "Remove the stored value" box, then an empty signing-key textarea with "No value stored."](screenshots/secret-stored.png)
 

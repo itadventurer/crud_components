@@ -19,6 +19,7 @@ en:
       remove: "Remove"
     secret:
       set: "Set"
+      not_set: "Not set"
       stored: "A value is stored. Leave empty to keep it."
       not_stored: "No value stored."
       remove: "Remove the stored value"

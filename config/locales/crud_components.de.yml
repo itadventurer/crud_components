@@ -18,6 +18,7 @@ de:
       remove: "Entfernen"
     secret:
       set: "Hinterlegt"
+      not_set: "Nicht hinterlegt"
       stored: "Ein Wert ist hinterlegt. Leer lassen, um ihn zu behalten."
       not_stored: "Kein Wert hinterlegt."
       remove: "Hinterlegten Wert entfernen"

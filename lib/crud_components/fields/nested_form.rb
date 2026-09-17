@@ -19,7 +19,7 @@ module CrudComponents
           fields = if options[:nested].is_a?(Array)
                      options[:nested].map { |field_name| structure.field(field_name) }
                    else
-                     structure.fieldset_fields(structure.form_fieldset, form: true)
+                     structure.fieldset_fields(structure.form_fieldset)
                    end
           fields.select(&:form_control)
         end

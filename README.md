@@ -478,7 +478,7 @@ attributes(*names, **shared_options)
   # if:       — visibility (everywhere: column, filter, sort, form)
   # editable: — writability in forms (read-only when false / unpermitted)
   # choices:  — narrows an association's filter/form select: ->(scope) { … }
-  # secret:   — write-only credential: an empty input, never displayed (docs/forms.md#secrets)
+  # secret:   — write-only credential: an empty input, shown only as set / not set (docs/forms.md#secrets)
 action(name, icon:, title:, class:, confirm:, method:, on:, if:, data:, &path_block)
 fieldset(name, fields = :all, actions: nil, filters: nil)
 ```

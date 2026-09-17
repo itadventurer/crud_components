@@ -139,11 +139,8 @@ module CrudComponents
     # The fieldsets this model actually declared (no derived defaults).
     def declared_fieldset_names = @declared_fieldsets.keys
 
-    # A secret is part of the implicit all-fields set only where it is written:
-    # `form: true`. Display surfaces list it only when a fieldset names it.
-    def fieldset_fields(fieldset, form: false)
+    def fieldset_fields(fieldset)
       names = fieldset.all_fields? ? default_field_names : fieldset.field_names
-      names -= secret_field_names if fieldset.all_fields? && !form
       names.map { |name| field(name) }
     end
 
@@ -175,7 +172,7 @@ module CrudComponents
     # permit list (symbols and nested hashes) — the controller's single
     # source of truth, so form and params can never drift.
     def permitted_params(action, context, record = nil)
-      fields = fieldset_fields(form_fieldset(action), form: true).select(&:form_control)
+      fields = fieldset_fields(form_fieldset(action)).select(&:form_control)
       fields.each { |field| require_record_for!(field) } if record.nil?
       fields.select do |field|
         field.permitted?(context, record) && field.editable? && field.editable_permitted?(context, record)
@@ -242,8 +239,8 @@ module CrudComponents
 
     # "Search what you see": with no search_in declared, ?q= covers the text
     # shown on the index — own string/text columns, plus associations through
-    # their label. Columns you never display (and a model's hidden secrets) are
-    # never reached. Derived from the index fieldset; declared search_in wins.
+    # their label. Columns you never display, and secrets, are never reached.
+    # Derived from the index fieldset; declared search_in wins.
     def default_search_spec
       fieldset_fields(fieldset(:index)).filter_map(&:search_spec_entry).uniq
     end
@@ -380,7 +377,8 @@ module CrudComponents
     SECRET_COLUMN_TYPES = %i[string text].freeze
     private_constant :SECRET_COLUMN_TYPES
 
-    # A secret needs a column to write to, and one that holds text.
+    # A secret needs a column that holds text, and nothing may reach its value:
+    # no `filter:`/`sort:` block (presence is built in) and no `search_in`.
     def validate_secrets!
       @declarations.each do |name, decl|
         secret = decl[:options][:secret]
@@ -389,11 +387,28 @@ module CrudComponents
           raise DefinitionError, "#{model}.#{name}: secret: takes true or false, got #{secret.inspect}"
         end
 
-        column = model.columns_hash[name.to_s]
-        next if column && SECRET_COLUMN_TYPES.include?(column.type)
-
-        raise DefinitionError, "#{model}.#{name}: secret: needs a string or text column to write to"
+        validate_secret_column!(name)
+        validate_secret_facets!(name, decl[:facets] || {})
       end
+      searched = (@search_decl.is_a?(Array) ? @search_decl.grep(Symbol) : []) & secret_field_names
+      return if searched.empty?
+
+      raise DefinitionError, "#{model}: search_in cannot search the secret #{searched.first}"
+    end
+
+    def validate_secret_column!(name)
+      column = model.columns_hash[name.to_s]
+      return if column && SECRET_COLUMN_TYPES.include?(column.type)
+
+      raise DefinitionError, "#{model}.#{name}: secret: needs a string or text column to write to"
+    end
+
+    def validate_secret_facets!(name, facets)
+      facet = %i[filter sort].find { |key| facets.key?(key) && facets[key] != false }
+      return unless facet
+
+      raise DefinitionError, "#{model}.#{name}: a secret filters and sorts by presence only; " \
+                             "#{facet} takes only false"
     end
 
     def validate_fieldsets!
