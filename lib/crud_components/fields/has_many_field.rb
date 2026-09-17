@@ -5,6 +5,8 @@ module CrudComponents
     # has_many / habtm: truncated list of links ("a, b +3 more"). Filters by the
     # children's label (the names shown in the list); no derived sort.
     class HasManyField < Base
+      include AssociationChoices
+
       def default_renderer = :association_list
 
       def reflection
@@ -40,11 +42,6 @@ module CrudComponents
       def default_form_control = :habtm
       def ids_method = :"#{name.to_s.singularize}_ids"
       def permit_param = { ids_method => [] }
-
-      def form_choices
-        structure = target_structure
-        target.all.map { |record| [structure.label_for(record).to_s, record.id] }.sort_by(&:first)
-      end
 
       def target_structure = Structure.for(target)
 

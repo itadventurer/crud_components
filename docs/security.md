@@ -138,4 +138,28 @@ The guarantees, each backed by a test:
   columns. So filtering by a `belongs_to :user` can't probe `users.encrypted_password`,
   even when `User` has no `crud_structure` of its own.
 
+## Association choices and the ability
+
+A `belongs_to` filter select and the `belongs_to` / habtm form selects list the target's
+records by name. They list only what the ability lets the viewer see: with a CanCanCan
+ability (anything whose relation answers `accessible_by`) the choices come from
+`Publisher.accessible_by(current_ability)`, so a user who may see two publishers is not
+shown the names of all the others. `crud_collection`, `crud_filter` and `crud_form` pass
+`current_ability` on by themselves; a hand-built `Query` gets it through `ability:`.
+
+Without such an ability — a host whose `can?` is a plain helper, or no ability at all — the
+target's full table is listed, as before. Narrow it per field with `choices:`, a callable
+that receives the target relation (already scoped, when there is a scoping ability) and,
+if it takes a second argument, the ability:
+
+```ruby
+attribute :publisher, choices: ->(scope) { scope.where(active: true) }
+attribute :publisher, choices: ->(scope, ability) { scope.select { |p| ability.can?(:show, p) } }
+```
+
+It returns a relation or an array of records and applies to the filter select and the
+form select alike. A form still offers the record the book already points at, even when
+the ability hides it: otherwise an untouched form would silently move the book to the
+first publisher on the list when saved.
+
   See also: [Performance](performance.md) · [Views](views.md) · [Fields](fields.md) · [Forms](forms.md).

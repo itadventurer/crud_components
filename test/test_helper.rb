@@ -83,6 +83,23 @@ module CrudTestHelpers
   class DenyAll
     def can?(*) = false
   end
+
+  # A CanCanCan-shaped ability that can scope a query: it answers
+  # `model_adapter` (what `accessible_by` asks) and sees only the given records
+  # (plus every class-level question).
+  class ScopingAbility
+    def initialize(*visible) = @visible = visible
+    def can?(_action, subject) = !subject.is_a?(ActiveRecord::Base) || @visible.include?(subject)
+    def model_adapter(*) = self
+    def visible_ids(model) = @visible.select { |record| record.is_a?(model) }.map(&:id)
+  end
+end
+
+# The dummy app has no CanCanCan; this stands in for the `accessible_by` it adds
+# to every model. Only a ScopingAbility answers `model_adapter`, so no other
+# ability ever reaches it.
+ApplicationRecord.define_singleton_method(:accessible_by) do |ability, *|
+  where(id: ability.visible_ids(self))
 end
 
 module ActiveSupport

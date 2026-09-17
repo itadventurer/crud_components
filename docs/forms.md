@@ -191,7 +191,10 @@ wrapper/component config, which the gem inherits.
   then dropped instead of failing on the blank record's own validations.
 
   ![The chapters of a book as rows in the book's form: each row a bordered block with the target's own fields and a Remove button, an "Add Chapter" button below them](screenshots/nested-rows.png)
-- **belongs_to** → a select valued by record id; permit `:publisher_id`.
+- **belongs_to** → a select valued by record id; permit `:publisher_id`. The select lists
+  the publishers the ability lets the viewer see, and `choices:` narrows it per field —
+  see [association choices](security.md#association-choices-and-the-ability). The same
+  goes for habtm.
 - **habtm** → a `<select multiple>` baseline (works no-JS, scales) that carries
   `data-controller="crud-multiselect"`; permit `{ author_ids: [] }`. The optional
   `crud-multiselect` Stimulus controller (shipped by `crud_components:install`) replaces the

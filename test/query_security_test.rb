@@ -376,4 +376,36 @@ class QuerySecurityTest < ActiveSupport::TestCase
   test 'unknown fieldset raises' do
     assert_raises(CrudComponents::UnknownFieldsetError) { query({}, fieldset: :playgruond) }
   end
+
+  # ── 6. choices never name what the ability hides ─────────────────────────
+  test 'a belongs_to filter select offers only the publishers the ability may see' do
+    field = query({}).filter_fields.find { |f| f.name == :publisher }
+    choices = field.filter_choices(query({}, ability: CrudTestHelpers::ScopingAbility.new(@tor)))
+
+    assert_equal [['Tor Books', 'tor-books']], choices
+  end
+
+  test 'without an ability that can scope, a belongs_to filter select offers every publisher' do
+    field = query({}).filter_fields.find { |f| f.name == :publisher }
+
+    assert_equal %w[ace tor-books], field.filter_choices(query({}, ability: CrudTestHelpers::AllowAll.new)).map(&:last)
+    assert_equal %w[ace tor-books], field.filter_choices(query({})).map(&:last)
+  end
+
+  test 'belongs_to and habtm form selects offer only what the ability may see' do
+    ability = CrudTestHelpers::ScopingAbility.new(@ace, @le_guin)
+    structure = CrudComponents::Structure.for(Book)
+
+    assert_equal [['Ace', @ace.id]], structure.field(:publisher).form_choices(ability)
+    assert_equal [['Ursula K. Le Guin', @le_guin.id]], structure.field(:authors).form_choices(ability)
+  end
+
+  test 'a form select still offers what the record already points at' do
+    ability = CrudTestHelpers::ScopingAbility.new(@ace, @le_guin)
+    structure = CrudComponents::Structure.for(Book)
+
+    assert_equal [['Ace', @ace.id], ['Tor Books', @tor.id]],
+                 structure.field(:publisher).form_choices(ability, @hobbit)
+    assert_equal [@le_guin.id, @tolkien.id], structure.field(:authors).form_choices(ability, @hobbit).map(&:last)
+  end
 end

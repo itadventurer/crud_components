@@ -40,6 +40,16 @@ module CrudComponents
       !condition.nil? && condition.respond_to?(:call)
     end
 
+    # The records of `relation` the ability may see — `accessible_by` when the
+    # ability can scope a query (CanCanCan: it answers `model_adapter`, which
+    # `accessible_by` asks), else the relation unchanged. A `can?`-only ability
+    # cannot narrow SQL; such hosts pass `choices:` instead.
+    def accessible(relation, ability)
+      return relation unless ability.respond_to?(:model_adapter) && relation.respond_to?(:accessible_by)
+
+      relation.accessible_by(ability)
+    end
+
     def permitted?(condition, model, context, record = nil, recordless: true)
       return true if condition.nil?
 
