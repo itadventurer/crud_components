@@ -62,6 +62,9 @@ publishers.each_with_index do |publisher, i|
   end
   next if i.odd?
 
+  # A feed token on every other publisher, so the edit form shows both states.
+  publisher.update!(api_token: SecureRandom.hex(16))
+
   adoc = "= #{publisher.name} press kit\n\nFounded #{publisher.founded_on&.year}.\n\nContact: press@example.com\n"
   publisher.brochure.attach(io: StringIO.new(adoc), filename: "#{publisher.slug}-brochure.adoc",
                             content_type: 'text/asciidoc')

@@ -89,6 +89,21 @@ class DslValidationTest < ActiveSupport::TestCase
     assert_match(/choices: takes a callable/, error.message)
   end
 
+  test 'secret: without a string or text column raises' do
+    model = define_model { attribute :price, secret: true }
+    error = assert_raises(CrudComponents::DefinitionError) { structure_of(model) }
+    assert_match(/secret: needs a string or text column/, error.message)
+
+    model = define_model { attribute(:shop_margin, secret: true, &:title) }
+    assert_raises(CrudComponents::DefinitionError) { structure_of(model) }
+  end
+
+  test 'secret: takes only true or false' do
+    model = define_model { attribute :internal_token, secret: 'yes' }
+    error = assert_raises(CrudComponents::DefinitionError) { structure_of(model) }
+    assert_match(/secret: takes true or false/, error.message)
+  end
+
   test 'nested: without accepts_nested_attributes_for raises' do
     model = model_with(table: 'books') do
       belongs_to :publisher, optional: true

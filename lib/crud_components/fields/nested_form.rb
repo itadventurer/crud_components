@@ -30,7 +30,7 @@ module CrudComponents
       def permit_param
         keys = [:id]
         keys << :_destroy if removable?
-        { "#{name}_attributes": keys + nested_fields.map(&:permit_param) }
+        { "#{name}_attributes": keys + nested_fields.flat_map(&:permit_params) }
       end
 
       delegate :collection?, to: :reflection

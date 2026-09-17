@@ -6,6 +6,8 @@ ActiveRecord::Schema[7.1].define(version: 1) do
     t.string :name
     t.string :slug
     t.date :founded_on
+    t.string :api_token  # a credential for the publisher's catalogue feed — written, never shown
+    t.text :signing_key  # a multi-line PEM key, likewise
     t.timestamps
   end
 

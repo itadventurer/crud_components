@@ -135,6 +135,7 @@ The flavor → simple_form mapping (one `form_fields/_<type>` partial each):
 | nested (`nested:`)                | `f.simple_fields_for :contact` around the target's own inputs, one block per row, plus a (+) |
 | habtm                             | `f.association :authors, as: :select, multiple` + a `crud-multiselect` chip-picker hook (see below)                                                     |
 | single / many attachment          | a file input + current preview + a "keep" checkbox per file (signed_id) — see [Attachments](#attachments)                                               |
+| secret (`secret: true`)           | `f.input :api_token, as: :password` (a text column: `as: :text`), always empty, plus a `remove_api_token` box — see [Secrets](#secrets) |
 | read-only (not editable)          | rendered by the gem as a compact `label: value`, not submitted                                                                                          |
 
 Errors: simple_form shows per-field errors inline; the gem adds a summary for base
@@ -233,6 +234,47 @@ extension → icon name, e.g. `'pdf' => 'filetype-pdf'`, `'zip' => 'file-earmark
 falling back to `config.file_fallback_icon`. The icon *library* is the `icon_prefix` entry
 in the [class map](extending.md#styling). Add or remap an extension in the config, or
 override `crud_components/fields/_attachment_thumb.html.erb` to change the markup.
+
+## Secrets
+
+A credential is written through the form and never shown again. Declare it `secret: true`
+on a string or text column:
+
+```ruby
+attribute :api_token,   secret: true   # string → a password input
+attribute :signing_key, secret: true   # text → an empty textarea; a pasted PEM keeps its line breaks
+```
+
+- **The input starts empty**, whatever is stored, with `autocomplete="new-password"` and
+  spellchecking off. A hint says whether a value is stored.
+- **Leaving it empty keeps the stored value.** A form cannot send back what it never
+  received, so an empty field means "unchanged", not "erase".
+- **A "Remove the stored value" box** (`remove_api_token`) clears it. It appears only when
+  there is something to remove. A new value typed in wins over the box.
+- **The permit list carries both**: `:api_token` and `:remove_api_token`.
+- **Displays show set / not set, never the value.** Tables, record views and the admin
+  (implicit fieldsets included) render a ✓ or ✗ like a boolean, labelled "Set" / "Not set".
+
+  ![The admin's publisher table sorted by API token: each row shows a green ✓ under "Api token" and a red ✗ under "Signing key", and both columns have a "–" presence filter select above them.](screenshots/secret-set-not-set.png)
+
+- **Filtering and sorting go by presence.** The filter is a select with "Set" / "Not set"
+  (`?api_token=present` / `absent`; an empty string counts as not set). Sorting orders
+  not set before set, ascending. A `filter` or `sort` block on a secret raises, since it
+  would reach the value; `filter false` / `sort false` still turn them off.
+- **Search never reaches it**, neither the default `?q=` nor a `search_in` naming it
+  (that raises).
+- **`as_json` / `to_json` leave it out**, presence included. The JSON is the model's own
+  contract; add `methods:` or your own key if an API consumer needs to know.
+
+![The publisher form with a stored API token: an empty password input, the hint "A value is stored. Leave empty to keep it." and a "Remove the stored value" box, then an empty signing-key textarea with "No value stored."](screenshots/secret-stored.png)
+
+The keep-and-remove rule lives in the model (`include CrudComponents::Model`), not in a
+controller: it applies to `update(params)` in your own controllers and in the admin engine
+alike, and to any other assignment. Setting the attribute to `""` or `nil` in code keeps
+the stored value too. Clear it with `remove_api_token = '1'` (or `update_column`).
+
+The value still passes through the request, so add the attribute to
+`config.filter_parameters` to keep it out of your logs.
 
 ## Customising an input
 
