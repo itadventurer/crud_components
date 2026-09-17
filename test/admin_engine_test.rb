@@ -241,6 +241,67 @@ class AdminEngineTest < ActionDispatch::IntegrationTest
     end
   end
 
+  # ── links of your own ────────────────────────────────────────────────────
+  # The dummy app links a mounted jobs dashboard (admins only) and the storefront.
+  test 'a configured link sits in the sidebar and on the dashboard' do
+    get '/admin'
+
+    assert_response :success
+    assert_select ".crud-admin-nav a[href='/']", text: /Storefront/
+    assert_select "a.card[href='/']", text: /Storefront/
+    assert_select '.crud-admin-nav a.active', count: 0
+  end
+
+  test "a link's if: decides who sees it" do
+    get '/admin'
+
+    assert_select "a[href='/jobs']", count: 0
+    assert_select '.crud-admin-nav', text: /Operations/, count: 0
+
+    post '/toggle_admin'
+    get '/admin'
+
+    assert_select ".crud-admin-nav a[href='/jobs']", text: /Background jobs/
+    assert_select "a.card[href='/jobs']", text: /Background jobs/
+    assert_select '.crud-admin-nav > div', text: /Operations/
+    assert_select "a.card[href='/jobs'] .badge", count: 0
+  end
+
+  test 'a link joins the group of the same name, after its models' do
+    with_admin_config do |config|
+      config.auth_with :none
+      config.link 'Property report', path: '/reports/properties', group: 'Custom properties'
+      get '/admin/books'
+
+      assert_response :success
+      links = css_select('.crud-admin-nav ul').find { |ul| ul.text.include?('Property report') }.css('a')
+
+      assert_equal '/reports/properties', links.last['href']
+      assert_operator links.size, :>, 1
+    end
+  end
+
+  test 'a link whose path names a route this app does not have is left out' do
+    with_admin_config do |config|
+      config.auth_with :none
+      config.link 'Metrics', path: -> { main_app.metrics_dashboard_path }
+      config.link 'Nothing', path: -> {}
+      get '/admin'
+
+      assert_response :success
+      assert_select '.crud-admin-nav', text: /Metrics|Nothing/, count: 0
+    end
+  end
+
+  test 'a Symbol label is translated' do
+    I18n.backend.store_translations(:en, crud_components: { admin: { links: { storefront: 'Shop front' } } })
+    get '/admin'
+
+    assert_select '.crud-admin-nav a', text: /Shop front/
+  ensure
+    I18n.backend.reload!
+  end
+
   test 'the dashboard counts the records' do
     get '/admin'
 

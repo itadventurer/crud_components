@@ -14,6 +14,7 @@ This project follows [semantic versioning](https://semver.org).
 ### Added
 
 - `action ..., data: { … }` in `crud_structure` — data attributes for one action, on the element you click: the `<a>` of a GET action, the `<button>` of any other. A Stimulus controller (`data: { controller: 'clipboard', action: 'click->clipboard#copy' }`) or a `data-turbo-frame` breakout no longer needs a hand-written actions partial for the whole cell. What the gem sets itself stays unless you name the same key, so a GET action keeps `data-turbo-action="advance"` and `confirm:` keeps writing `data-turbo-confirm`.
+- `config.link` in `CrudComponents::Admin.configure` — pages that are not models in the admin's sidebar and on its dashboard: a mounted jobs dashboard, a report, any path of the host app. `config.link 'Background jobs', path: -> { main_app.jobs_dashboard_path }, group: 'Operations', icon: 'cpu', if: -> { can?(:manage, :jobs) }`. `path:` and `if:` run in the admin's view; a link joins the model group of the same name and follows `config.groups`; a Symbol label is translated under `crud_components.admin.links`. A path naming a route helper the app does not have leaves the link out.
 
 ### Fixed
 

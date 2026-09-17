@@ -210,4 +210,33 @@ class AdminRegistryTest < ActiveSupport::TestCase
     assert_same first, registry.entries
     assert_not_same first, registry.reload!.entries
   end
+
+  # ── links ────────────────────────────────────────────────────────────────
+  test 'config.link keeps the links in declaration order' do
+    config = CrudComponents::Admin.config
+    config.link 'Jobs', path: '/jobs', group: :operations, icon: 'cpu'
+    config.link :storefront, path: -> { '/' }
+
+    assert_equal %w[Jobs Storefront], config.links.map(&:label)
+    assert_equal ['operations', nil], config.links.map(&:group_key)
+    assert_equal 'cpu', config.links.first.icon
+  end
+
+  test 'config.link rejects what it could not show' do
+    config = CrudComponents::Admin.config
+
+    assert_raises(ArgumentError) { config.link 'Jobs', path: nil }
+    assert_raises(ArgumentError) { config.link 42, path: '/jobs' }
+    assert_raises(ArgumentError) { config.link 'Jobs', path: '/jobs', if: true }
+  end
+
+  test 'a link falls in with the configured group order' do
+    config = CrudComponents::Admin.config
+    config.groups = %w[Operations]
+    config.link 'Jobs', path: '/jobs', group: 'Operations'
+
+    headings = registry.groups(registry.entries + config.links).map(&:first)
+
+    assert_equal 'Operations', headings.first
+  end
 end

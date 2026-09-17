@@ -56,6 +56,9 @@ en:
       # (`admin group: 'Custom properties'` → custom_properties):
       # groups:
       #   custom_properties: "Extra fields"
+      # Labels of `config.link :name, …`:
+      # links:
+      #   storefront: "Shop front"
       delete:
         title:
           one: "Delete this %{model}?"

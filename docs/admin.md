@@ -173,6 +173,34 @@ fieldset :index, %i[cover title genre price]              # what the shop shows
 fieldset :admin, %i[title genre price stock slug active]  # what an operator needs
 ```
 
+## Links of your own
+
+The sidebar and the dashboard list the models, and can list any other page you want an
+operator to find next to them: a mounted jobs dashboard, a report, a page of your own app.
+
+```ruby
+CrudComponents::Admin.configure do |config|
+  config.link 'Background jobs', path: -> { main_app.jobs_dashboard_path },
+                                 group: 'Operations', icon: 'cpu',
+                                 if: -> { can?(:manage, :jobs) }
+  config.link :storefront, path: -> { main_app.root_path }, icon: 'shop'
+end
+```
+
+![The admin dashboard: the models, a "Storefront" link among the ungrouped ones, and an "Operations" group holding a "Background jobs" link, in the sidebar and as cards](screenshots/admin-links.png)
+
+| Option | |
+| --- | --- |
+| label | a String as is, or a Symbol looked up under `crud_components.admin.links.<label>` (default: humanized) |
+| `path:` | a String, or a block run in the admin's view, where `main_app.…_path` and a mounted engine's route helpers are in reach. A block returning nil, or naming a `…_path` helper the app does not have, leaves the link out |
+| `group:` | the sidebar group, as for a model: the link joins a model group of the same name (after its models), [translates](#translating-the-group-headings) the same way, and `config.groups` orders it |
+| `icon:` | an icon name without the library prefix, as for a model |
+| `if:` | a block run in the admin's view; a falsy result leaves the link out. `can?` is there when your ability is a view helper, as CanCanCan's is |
+
+`if:` only decides whether the link is shown. The page behind it still has to check access
+on its own: a mounted dashboard has its own authentication, and the admin's gate does
+not cover it.
+
 ## Who may do what
 
 Beyond the gate, your existing permissions apply unchanged:
@@ -301,6 +329,8 @@ CrudComponents::Admin.configure do |config|
   config.excluded_namespaces << 'Legacy' # more model-name prefixes to skip
 
   config.counts   = true                 # record counts on the dashboard
+  config.link 'Background jobs', path: -> { main_app.jobs_dashboard_path },
+              group: 'Operations', icon: 'cpu', if: -> { can?(:manage, :jobs) }  # a page of your own
   config.per_page = 50                   # rows per index page
   config.parent_controller = '::ApplicationController'  # what the admin's controllers inherit
 end
