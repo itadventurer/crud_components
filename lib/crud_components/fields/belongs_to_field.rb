@@ -8,6 +8,8 @@ module CrudComponents
     # name shown in the cell — one param, two OR-combined parameterized
     # subqueries.
     class BelongsToField < Base
+      include AssociationChoices
+
       def default_renderer = :association
 
       def reflection
@@ -52,14 +54,16 @@ module CrudComponents
       # process-cached Structure, so a memoized count would freeze at its boot-time
       # value and render the wrong control once the table grows past the limit.
       # One COUNT per filter-row render is negligible next to rendering the table.
+      # A declared `choices:` is a short list by intent, so always a select.
       def derived_filter_control
+        return :select if declared_choices?
+
         target.count <= CrudComponents.config.select_limit ? :select : :text
       end
 
-      def filter_choices(_query = nil)
-        structure = target_structure
-        target.all.map { |record| [structure.label_for(record).to_s, record.public_send(structure.identify_by)] }
-              .sort_by(&:first)
+      def filter_choices(query = nil)
+        identify_by = target_structure.identify_by
+        choice_records(query&.ability).map { |label, record| [label, record.public_send(identify_by)] }
       end
 
       def apply_derived_filter(scope, value: nil, **)
@@ -90,11 +94,6 @@ module CrudComponents
       def default_editable? = reflection.belongs_to? && !reflection.polymorphic?
       def default_form_control = :belongs_to
       def permit_param = reflection.foreign_key.to_sym
-
-      def form_choices
-        structure = target_structure
-        target.all.map { |record| [structure.label_for(record).to_s, record.id] }.sort_by(&:first)
-      end
 
       private
 
