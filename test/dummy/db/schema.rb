@@ -48,6 +48,14 @@ ActiveRecord::Schema[7.1].define(version: 1) do
     t.timestamps
   end
 
+  # The copies of a book in the warehouse. Its `count` column is an attribute,
+  # not a relation's count.
+  create_table :stocks, force: :cascade do |t|
+    t.references :book
+    t.integer :count
+    t.timestamps
+  end
+
   create_table :authors_books, id: false, force: :cascade do |t|
     t.references :author
     t.references :book

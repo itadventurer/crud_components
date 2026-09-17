@@ -6,6 +6,7 @@ class Book < ApplicationRecord
   belongs_to :publisher, optional: true
   has_many :reviews, dependent: :destroy
   has_many :chapters, dependent: :destroy
+  has_one :stock, dependent: :destroy
   # allow_destroy so a row can be taken out again, reject_if so an untouched
   # blank row is dropped instead of failing on its own validations.
   accepts_nested_attributes_for :chapters, allow_destroy: true, reject_if: :all_blank

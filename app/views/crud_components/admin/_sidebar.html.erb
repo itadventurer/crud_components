@@ -2,16 +2,16 @@
     (`render 'crud_components/admin/sidebar'`) when the admin runs in a layout
     of your own. %>
 <nav class="crud-admin-nav" aria-label="<%= t('crud_components.admin.models', default: 'Models') %>">
-  <% admin_entry_groups.each do |heading, entries| %>
+  <% admin_nav_groups.each do |heading, items| %>
     <% if heading %>
       <div class="text-uppercase text-muted small fw-semibold px-2 mt-3 mb-1"><%= heading %></div>
     <% end %>
     <ul class="nav nav-pills flex-column mb-1">
-      <% entries.each do |entry| %>
+      <% items.each do |item| %>
         <li class="nav-item">
-          <%= link_to admin_index_path(entry),
-                      class: "nav-link py-1 px-2 #{'active' if admin_current_entry?(entry)}" do %>
-            <%= admin_icon(entry.icon, css_class: 'me-1') %><%= entry.label %>
+          <%= link_to admin_nav_path(item),
+                      class: "nav-link py-1 px-2 #{'active' if admin_current_entry?(item)}" do %>
+            <%= admin_icon(item.icon, css_class: 'me-1') %><%= item.label %>
           <% end %>
         </li>
       <% end %>
