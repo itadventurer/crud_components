@@ -529,6 +529,10 @@ module CrudComponents
         query ? query.param_name(key) : key
       end
 
+      def association_rows = records
+
+      def cell_ability = query&.ability || super
+
       def eager_load(relation)
         return relation unless relation.is_a?(ActiveRecord::Relation)
 

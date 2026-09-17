@@ -28,6 +28,10 @@ module CrudComponents
         [nested.empty? ? name : { name => nested }]
       end
 
+      # Whether the cell lists only the records the ability may see
+      # (`scope_by_ability: false` lists all of them).
+      def scope_by_ability? = options.fetch(:scope_by_ability, true) != false
+
       # The index a "+n more" / list link points at: the nested route under
       # the owner if it resolves, else the target's index filtered by the
       # owner. Resolved in the view (RouteResolver); here we just expose the

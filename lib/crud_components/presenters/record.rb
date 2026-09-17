@@ -59,6 +59,8 @@ module CrudComponents
 
       private
 
+      def association_rows = [record]
+
       # Actions this render drops, whatever the model declares.
       def declared_row_actions
         actions = structure.fieldset_actions(fieldset, on: :row)

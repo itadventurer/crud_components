@@ -80,6 +80,20 @@ class DslValidationTest < ActiveSupport::TestCase
     assert_match(/filter_choices:/, error.message)
   end
 
+  test 'scope_by_ability: on a field that is not a has_many raises' do
+    model = define_model { attribute :title, scope_by_ability: false }
+    error = assert_raises(CrudComponents::DefinitionError) { structure_of(model) }
+    assert_match(/scope_by_ability: needs a has_many or habtm/, error.message)
+  end
+
+  test 'scope_by_ability: that is not a boolean raises' do
+    model = define_model
+    model.has_many :reviews, foreign_key: :book_id, class_name: 'Review', inverse_of: false
+    model.crud_structure { attribute :reviews, scope_by_ability: :admin }
+    error = assert_raises(CrudComponents::DefinitionError) { structure_of(model) }
+    assert_match(/scope_by_ability: takes true or false/, error.message)
+  end
+
   test 'choices: that is not callable raises' do
     model = define_model { attribute :title }
     model.belongs_to :publisher, optional: true

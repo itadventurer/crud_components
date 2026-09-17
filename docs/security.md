@@ -72,8 +72,10 @@ a `can?(action, subject)` method.
 A record is linked only where the viewer may open it: label cells, association cells
 (`book.publisher`, `book.reviews`) and `crud_record_path` ask `can?(:show, record)` (and
 `can?(:edit, record)` for the edit fallback). A review a user may not open still appears
-by name in the book's reviews column, but without a link. Without `can?` every record is
-linked, as before.
+by name in the book's reviews column, but without a link — unless the ability can scope a
+query, in which case a review the viewer may not see is not listed at all (see
+[Association cells and the ability](#association-cells-and-the-ability)). Without `can?`
+every record is linked, as before.
 
 ### Secrets are write-only
 
@@ -155,6 +157,31 @@ The guarantees, each backed by a test:
   (`filter :publisher`) matches the target's **label** only — never the target's other
   columns. So filtering by a `belongs_to :user` can't probe `users.encrypted_password`,
   even when `User` has no `crud_structure` of its own.
+
+## Association cells and the ability
+
+A book's reviews column, its reviews on the record page and the same cells in the admin
+list only the reviews the ability lets the viewer see, and "+n more" counts only those:
+with a CanCanCan ability (anything whose relation answers `accessible_by`), a review
+hidden from a reader is neither named nor counted. The reviews are still preloaded in one
+query; one more query per column, for all rows of the page at once, asks
+`Review.accessible_by(current_ability)` which of them to keep. `crud_collection` uses the
+ability of its `Query` (`current_ability` unless you passed another), `crud_record` uses
+`current_ability`, and the admin the ability it authorizes with.
+
+Without such an ability — a host whose `can?` is a plain helper, or no ability at all —
+every associated record is listed, as before, and one the viewer may not open appears by
+name without a link. A column that should list everything regardless takes
+`scope_by_ability: false`, for instance where the ability narrows by a condition that
+does not matter for naming a record:
+
+```ruby
+attribute :reviews, scope_by_ability: false
+```
+
+The option is for has_many and habtm attributes; anywhere else it raises at build time.
+A render block or a custom renderer receives the narrowed list as its value; code that
+reads `book.reviews` itself sees every review.
 
 ## Association choices and the ability
 

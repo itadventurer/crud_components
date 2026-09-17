@@ -50,10 +50,11 @@ module CrudComponents
         # The render block gets the record *and* the field's value — so a block on
         # a DynamicColumn can read its `preload:`-ed value without an `as:` partial.
         # Extra arg is harmless for one-arg blocks/procs (Proc ignores surplus args).
-        return view.instance_exec(record, field.value(record), &field.render_block) if field.render_block
+        value = association_scope.value(field, record)
+        return view.instance_exec(record, value, &field.render_block) if field.render_block
 
         renderer = field.renderer(record) || :string
-        locals = { value: field.value(record), record: record, field: field,
+        locals = { value: value, record: record, field: field,
                    surface: surface, cell_context: cell_context }
         if fast_cell?(renderer)
           cells.render(renderer, **locals)
@@ -71,6 +72,20 @@ module CrudComponents
       end
 
       private
+
+      # The ability association cells are narrowed by: the admin's own when
+      # rendered inside the admin, else the view's.
+      def cell_ability
+        view.respond_to?(:admin_ability) ? view.admin_ability : ability
+      end
+
+      # The records this presenter renders, so association cells are scoped in
+      # one query per field; nil scopes per record.
+      def association_rows = nil
+
+      def association_scope
+        @association_scope ||= AssociationScope.new(cell_ability, -> { association_rows })
+      end
 
       def cells
         @cells ||= Cells.new(view)
