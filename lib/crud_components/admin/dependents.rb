@@ -109,9 +109,11 @@ module CrudComponents
         nil
       end
 
+      # Only a collection is counted in SQL; a singular target is there or not,
+      # whatever `count` or `limit` it may answer as an attribute of its own.
       def count_for(reflection)
         value = record.public_send(reflection.name)
-        return value.count if value.respond_to?(:count)
+        return value.count if reflection.collection?
 
         value.nil? ? 0 : 1
       rescue ActiveRecord::ActiveRecordError, NameError
@@ -121,7 +123,7 @@ module CrudComponents
       # The first records the delete would reach, for naming them.
       def preview_of(reflection)
         value = record.public_send(reflection.name)
-        return Array(value) unless value.respond_to?(:limit)
+        return [value].compact unless reflection.collection?
 
         value.limit(PREVIEW).to_a
       rescue ActiveRecord::ActiveRecordError, NameError

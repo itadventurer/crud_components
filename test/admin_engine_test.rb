@@ -411,6 +411,28 @@ class AdminEngineTest < ActionDispatch::IntegrationTest
     assert_select "button[formaction='/admin/authors/delete']", count: 0
   end
 
+  # Stock has a `count` column, which is not the number of records.
+  test 'a has_one target is listed once, whatever its own count attribute says' do
+    post '/toggle_admin'
+
+    [0, nil, 7].each do |copies|
+      Stock.where(book: @hobbit).delete_all
+      @hobbit.reload.create_stock!(count: copies)
+      get '/admin/books/hobbit/delete'
+
+      assert_select 'li', text: /1 Stock\b/, count: 1
+      assert_select 'li', text: /#{copies.to_i} in stock/
+    end
+  end
+
+  test 'the counts of a has_one ignore its count attribute' do
+    Stock.create!(book: @hobbit, count: 0)
+    item = CrudComponents::Admin::Dependents.for(@hobbit.reload).find { |i| i.name == :stock }
+
+    assert_equal 1, item&.total
+    assert_equal [@hobbit.stock], item.records
+  end
+
   # One page for both: the member route is a selection of one.
   test 'one record and a selection reach the same page' do
     post '/toggle_admin'

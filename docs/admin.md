@@ -211,7 +211,9 @@ It lists, from what the model declares:
 
 - **what goes with it** — `dependent: :destroy` / `:destroy_async` / `:delete_all`, with
   counts, plus the record's attachments. Associations whose own targets cascade further are
-  marked as such; the count is the first level;
+  marked as such; the count is the first level. A collection is counted in SQL, a
+  `has_one` / `belongs_to` is one record or none, even when its target has a `count`
+  column of its own (a book's `stock`, say);
 - **what stays but loses the reference** — `dependent: :nullify`;
 - **what blocks it** — `:restrict_with_error` / `:restrict_with_exception` with rows still
   attached. The Delete button stays disabled while any of those hold.
