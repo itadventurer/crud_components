@@ -212,15 +212,14 @@ bin/rails generate crud_components:install
   JavaScript at all — the (+) is a link.
 - **`crud-value-filter`** turns a belongs_to filter's `<select multiple>` into a compact
   button ("All", the single value, or "3 of 12") that opens a popover in the manner of a
-  spreadsheet's value filter: a search box, "Select all (N)" / "Select none", the values as
-  checkboxes ("(empty)" first when the column is nullable) and Apply / Cancel. Apply writes
-  the select and, in the inline filter row, submits the form; ticking every value means no
-  filter. Keyboard: arrows move between the checkboxes, Space toggles, Enter applies, Escape
-  and a click outside cancel; the popover is an ARIA `dialog`. When the list has more values
-  than the page carries (`config.value_filter_inline_limit`), the search asks the page it
-  sits on (`?crud_choices=<field>&crud_term=<text>`, prefixed like every other param), so
-  the matches come from the same controller, ability and parent as the list. Without it the
-  select is the control; the bundled admin layout loads no Stimulus and shows it that way.
+  spreadsheet's value filter: a search box over the options the select already carries,
+  "Select all (N)" / "Select none", the values as checkboxes ("(empty)" first when the column
+  is nullable) and Apply / Cancel. Apply writes the select and, in the inline filter row,
+  submits the form; ticking every value means no filter. Keyboard: arrows move between the
+  checkboxes, Space toggles, Enter applies, Escape and a click outside cancel; the popover is
+  an ARIA `dialog`. Everything happens in the browser — the controller asks the server for
+  nothing. Without it the select is the control; the bundled admin layout loads no Stimulus
+  and shows it that way.
 - **`crud-select`** adds a "select all visible" / per-group master checkbox and a live
   "N selected" count to selectable tables (bulk/selection actions). Without it the row
   checkboxes still submit; you just tick them individually.
@@ -246,7 +245,7 @@ CrudComponents.configure do |config|
   config.css.table  = 'table table-sm table-hover'
   config.css.button = 'btn btn-outline-dark'
   config.css.badge  = 'badge text-bg-secondary'
-  config.value_filter_inline_limit = 200   # belongs_to filter: values listed in the page
+  config.select_limit = 200    # belongs_to filter: values listed, beyond it a text box
 end
 ```
 

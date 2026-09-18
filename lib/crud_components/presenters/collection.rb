@@ -13,7 +13,6 @@ module CrudComponents
     #                 selection (no param read — the backend resolved it)
     class Collection < Base
       include ColumnSelection
-      include ChoicesRequest
 
       attr_reader :model, :structure, :fieldset, :query, :layout, :param_prefix, :owner
 

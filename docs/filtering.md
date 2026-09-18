@@ -37,18 +37,18 @@ before any filter, search or sort, so picking a publisher never shrinks the choi
 publisher. `crud_filter` narrows the same way when it is given that scope instead of the
 model class (`crud_filter @books`).
 
-The filter is a `<select multiple>` of those values, "not set" first when the foreign key is
+The filter is a `<select multiple>` of those values, "(empty)" first when the foreign key is
 nullable, submitted as `?publisher[]=tor-books&publisher[]=ace` and applied as `IN (…)`,
-`OR IS NULL` for "not set". A single `?publisher=tor` keeps working as before: it matches the
+`OR IS NULL` for "(empty)". A single `?publisher=tor` keeps working as before: it matches the
 `identify_by` value or the label. The optional `crud-value-filter` controller turns the select
-into a button with a searchable checkbox popover (see
-[progressive enhancement](extending.md#progressive-enhancement)). The page lists at most
-`config.value_filter_inline_limit` values (default 200) plus the selected ones; beyond that,
-the popover's search asks the same page (`?crud_choices=publisher&crud_term=tor`), and
-`crud_collection`/`crud_filter` answer such a request with just the matches instead of the
-list. Only a visible, filterable `belongs_to` without a `filter` block answers; any other name
-gets an empty list. `Query#permitted_keys` ends with `{ "publisher" => [] }` for such fields,
-and `Query#values(:publisher)` reads the selection.
+into a button with a checkbox popover whose search box narrows the options already in the page
+— no request of its own (see
+[progressive enhancement](extending.md#progressive-enhancement)).
+
+Beyond `config.select_limit` values (default 200) the page would carry a pointlessly long
+list, so the filter is the plain text box over the target's label instead, as for any other
+field. `Query#permitted_keys` ends with `{ "publisher" => [] }` for a value list, and
+`Query#values(:publisher)` reads the selection.
 
 A `has_many`/habtm column filters by its children's label with no extra config — typing in its
 filter box keeps owners that have a matching child. Here `/publishers` (which lists each

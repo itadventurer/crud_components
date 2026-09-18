@@ -54,7 +54,6 @@ de:
         select_all: "Alle auswählen (%{count})"
         select_none: "Keine auswählen"
         shown: "%{count} angezeigt"
-        shown_of: "%{count} von %{total} angezeigt"
         cancel: "Abbrechen"
     pager:
       label: "Seitennummerierung"

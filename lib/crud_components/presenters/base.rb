@@ -65,7 +65,7 @@ module CrudComponents
 
       # Renders one filter control partial `crud_components/filters/_<control>`.
       def render_filter_control(field, query, form_id: nil, compact: false, autosubmit: false)
-        view.render("crud_components/filters/#{field.filter_control}",
+        view.render("crud_components/filters/#{field.filter_control(query)}",
                     field: field, query: query, form_id: form_id, compact: compact,
                     autosubmit: autosubmit, param_name: query.param_name(field.name.to_s),
                     css: css)

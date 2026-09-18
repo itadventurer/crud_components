@@ -55,7 +55,6 @@ en:
         select_all: "Select all (%{count})"
         select_none: "Select none"
         shown: "%{count} shown"
-        shown_of: "%{count} of %{total} shown"
         cancel: "Cancel"
     pager:
       label: "Pagination"

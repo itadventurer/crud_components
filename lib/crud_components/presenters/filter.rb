@@ -6,11 +6,6 @@ module CrudComponents
     # Renders the fieldset's filterable fields (including its `filters:`
     # extension); never auto-submits — users compose several filters here.
     class Filter < Base
-      include ChoicesRequest
-
-      # The `source` its value filters and their search answers carry.
-      CHOICES_SOURCE = 'filter'
-
       attr_reader :model, :structure, :query
 
       def initialize(view:, model:, fieldset: nil, query: nil, param_prefix: nil, extra_columns: nil, sort: false)

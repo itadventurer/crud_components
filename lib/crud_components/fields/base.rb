@@ -135,8 +135,9 @@ module CrudComponents
       end
 
       # Which filter control partial to render: :text, :select, :values,
-      # :boolean, :number_range or :date_range.
-      def filter_control
+      # :boolean, :number_range or :date_range. The query is what the control
+      # filters, for a control that depends on the values in play.
+      def filter_control(_query = nil)
         return typed_filter.control if typed_filter
 
         filter_facet ? :text : derived_filter_control
@@ -149,9 +150,6 @@ module CrudComponents
       def filter_choices(query = nil)
         typed_filter&.filter_choices(query)
       end
-
-      # Whether a value filter may search this field's choices on the server.
-      def suggests_choices? = false
 
       # Whether the filter param may carry several values (`field[]=a&field[]=b`).
       # Every other field reads a single string and ignores an array.

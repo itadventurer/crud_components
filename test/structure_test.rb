@@ -319,20 +319,8 @@ class StructureTest < ActiveSupport::TestCase
   end
 
   # ── belongs_to value filter ─────────────────────────────────────────────────
-  test 'a belongs_to filters with a value list, however many targets there are' do
+  test 'a belongs_to filters with a value list' do
     assert_equal :values, CrudComponents::Fields::BelongsToField.new(:publisher, Book).filter_control
-  end
-
-  test 'config.select_limit is a deprecated alias of value_filter_inline_limit' do
-    original = CrudComponents.config.value_filter_inline_limit
-
-    assert_deprecated(/select_limit/, CrudComponents.deprecator) { CrudComponents.config.select_limit = 7 }
-    assert_equal 7, CrudComponents.config.value_filter_inline_limit
-    assert_deprecated(/select_limit/, CrudComponents.deprecator) do
-      assert_equal 7, CrudComponents.config.select_limit
-    end
-  ensure
-    CrudComponents.config.value_filter_inline_limit = original
   end
 
   # ── reflection categories ──────────────────────────────────────────────────

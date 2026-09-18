@@ -3,8 +3,8 @@
 require 'test_helper'
 
 # A belongs_to filter is a value list: the targets occurring in the list (its
-# base scope), never more than the ability may see, several at once, "not
-# set" among them — and searchable on the same page when there are many.
+# base scope), never more than the ability may see, several at once, with
+# "not set" among them.
 class ValueFilterTest < ActiveSupport::TestCase
   NULL = CrudComponents::NULL_FILTER_VALUE
 
@@ -131,7 +131,7 @@ class ValueFilterTest < ActiveSupport::TestCase
     q = CrudComponents::Query.new(model, {}, base_scope: model.all)
 
     assert_equal [['Tor Books', 'tor-books']], field.filter_choices(q)
-    assert_equal [[['Tor Books', 'tor-books']], 1], field.filter_values(q)
+    assert_equal :values, field.filter_control(q)
   end
 
   test 'a query that has seen no scope offers every target the ability may see' do
@@ -144,100 +144,53 @@ class ValueFilterTest < ActiveSupport::TestCase
     assert_equal :date_range, structure_of(Book).field(:'publisher.founded_on').filter_control
   end
 
-  # ── the inline list and the search ────────────────────────────────────────
-  test 'the page lists up to the inline limit, plus the selected values, with the total' do
-    25.times do |i|
-      Book.create!(title: "Book #{i}", slug: "book-#{i}",
-                   publisher: Publisher.create!(name: format('Imprint %02d', i), slug: "imprint-#{i}"))
-    end
+  # ── how many values the filter offers ────────────────────────────────────
+  test 'beyond select_limit values the filter is the plain text filter' do
+    original = CrudComponents.config.select_limit
+    CrudComponents.config.select_limit = 2
 
-    values, total = publisher_field.filter_values(query, selected: %w[imprint-24 tor-books], limit: 20)
+    assert_equal :values, publisher_field.filter_control(query)
+    CrudComponents.config.select_limit = 1
 
-    assert_equal 27, total
-    assert_equal 22, values.size
-    assert_equal ['Ace', 'Imprint 00'], values.first(2).map(&:first)
-    assert_includes values, ['Imprint 24', 'imprint-24']
-    assert_includes values, ['Tor Books', 'tor-books']
+    assert_equal :text, publisher_field.filter_control(query)
+    assert_equal :values, publisher_field.filter_control(query(base: @tolkien.books))
+  ensure
+    CrudComponents.config.select_limit = original
   end
 
-  test 'selected values outside the choices are not listed' do
-    values, = publisher_field.filter_values(query(base: @tolkien.books), selected: %w[ace orbit])
+  test 'the threshold counts the choices, not the targets' do
+    original = CrudComponents.config.select_limit
+    CrudComponents.config.select_limit = 2
 
-    assert_equal [['Tor Books', 'tor-books']], values
+    assert_equal :values, publisher_field.filter_control(query) # 2 of 3 publishers occur
+    Book.create!(title: 'Elsewhere', slug: 'elsewhere', publisher: @orbit)
+
+    assert_equal :text, publisher_field.filter_control(query)
+  ensure
+    CrudComponents.config.select_limit = original
   end
 
-  test 'a search matches the label and stays within the base scope' do
-    assert_equal [[['Tor Books', 'tor-books']], 1], publisher_field.filter_values(query, term: 'o')
-    assert_equal [[], 0], publisher_field.filter_values(query(base: @tolkien.books), term: 'ace')
+  # ── which fields take several values ──────────────────────────────────────
+  test 'a hidden or non-association field takes no value list' do
+    assert_not structure_of(Book).field(:title).multi_value_filter?
+    assert_not structure_of(Book).field(:genre).multi_value_filter?
   end
 
-  test 'a search never names what the ability hides' do
-    q = query(ability: CrudTestHelpers::ScopingAbility.new(@ace))
-
-    assert_equal [[%w[Ace ace]], 1], publisher_field.filter_values(q)
-    assert_equal [[], 0], publisher_field.filter_values(q, term: 'tor')
-    assert_equal [[%w[Ace ace]], 1], publisher_field.filter_values(q, selected: %w[tor-books])
-  end
-
-  test 'a search escapes LIKE wildcards' do
-    assert_equal [[], 0], publisher_field.filter_values(query, term: '%')
-  end
-
-  test 'a block label is matched in Ruby' do
-    with_block_label(Publisher, ->(publisher) { "#{publisher.name} (#{publisher.slug})" }) do
-      field = CrudComponents::Fields::BelongsToField.new(:publisher, Book)
-      values, total = field.filter_values(query, term: 'TOR-')
-
-      assert_equal ['Tor Books (tor-books)'], values.map(&:first)
-      assert_equal 1, total
-    end
-  end
-
-  # ── which requests may search ─────────────────────────────────────────────
-  test 'a search request resolves only to a visible, filterable association' do
-    name, field, term = query({ 'crud_choices' => 'publisher', 'crud_term' => 'to' }).choices_request
-
-    assert_equal ['publisher', publisher_field, 'to'], [name, field, term]
-    assert_nil query.choices_request
-    assert_nil query({ 'crud_choices' => 'title' }).choices_request[1]          # not an association
-    assert_nil query({ 'crud_choices' => 'internal_token' }).choices_request[1] # not in the fieldset
-    assert_nil query({ 'crud_choices' => 'nope' }).choices_request[1]
-    assert_nil query({ 'crud_choices' => %w[publisher] }).choices_request
-  end
-
-  test 'a hidden association answers no search request' do
-    model = book_model { attribute :publisher, if: :manage }
-    params = { 'crud_choices' => 'publisher' }
-
-    denied = CrudComponents::Query.new(model, params, ability: CrudTestHelpers::DenyAll.new)
-    allowed = CrudComponents::Query.new(model, params, ability: CrudTestHelpers::AllowAll.new)
-
-    assert_nil denied.choices_request[1]
-    assert_equal :publisher, allowed.choices_request[1].name
-  end
-
-  test 'an association with a filter block answers no search request and takes one value' do
+  test 'an association with a filter block takes one value' do
     model = book_model do
       attribute(:publisher) { filter { |scope, value| scope.where(publisher_id: value) } }
     end
     field = structure_of(model).field(:publisher)
 
-    assert_nil CrudComponents::Query.new(model, { 'crud_choices' => 'publisher' }).choices_request[1]
     assert_not field.multi_value_filter?
     assert_equal :text, field.filter_control
   end
-
-  test 'the search params follow the param_prefix' do
-    q = query({ 'books_crud_choices' => 'publisher', 'crud_choices' => 'nope' }, param_prefix: :books)
-
-    assert_equal 'publisher', q.choices_request.first
-  end
 end
 
-# The same, through the playground: a plain multiple select, and the page
-# answers its own searches.
+# The same, through the playground: a plain multiple select.
 class ValueFilterIntegrationTest < ActionDispatch::IntegrationTest
   def setup
+    @original_limit = CrudComponents.config.select_limit
     @tor = Publisher.create!(name: 'Tor Books', slug: 'tor-books')
     @ace = Publisher.create!(name: 'Ace', slug: 'ace')
     @tolkien = Author.create!(name: 'J. R. R. Tolkien', email: 'jrr@example.com')
@@ -245,11 +198,10 @@ class ValueFilterIntegrationTest < ActionDispatch::IntegrationTest
     @silmarillion = Book.create!(title: 'The Silmarillion', slug: 'silmarillion', publisher: @tor)
     @dispossessed = Book.create!(title: 'The Dispossessed', slug: 'dispossessed', publisher: @ace)
     @draft = Book.create!(title: 'Draft', slug: 'draft')
-    @original_limit = CrudComponents.config.value_filter_inline_limit
   end
 
   def teardown
-    CrudComponents.config.value_filter_inline_limit = @original_limit
+    CrudComponents.config.select_limit = @original_limit
   end
 
   def filter_select = 'tr.crud-filter-row select[name="publisher[]"][multiple]'
@@ -261,12 +213,9 @@ class ValueFilterIntegrationTest < ActionDispatch::IntegrationTest
     assert_select "#{filter_select} option", count: 3
     assert_select "#{filter_select} option:first-child[value=?]", CrudComponents::NULL_FILTER_VALUE, text: '(empty)'
     assert_select control do |(div)|
-      assert_equal 'publisher', div['data-crud-value-filter-field-value']
-      assert_equal 'crud_choices', div['data-crud-value-filter-choices-param-value']
-      assert_equal 'crud_filter_books', div['data-crud-value-filter-source-value']
-      assert_equal '3', div['data-crud-value-filter-total-value']
-      assert_equal 'false', div['data-crud-value-filter-remote-value']
-      assert_equal '/books', div['data-crud-value-filter-url-value']
+      assert_equal 'Publisher', div['data-crud-value-filter-label-value']
+      assert_equal 'true', div['data-crud-value-filter-autosubmit-value']
+      assert_equal 'All', JSON.parse(div['data-crud-value-filter-texts-value'])['all']
     end
   end
 
@@ -302,66 +251,20 @@ class ValueFilterIntegrationTest < ActionDispatch::IntegrationTest
     assert_select 'td', text: 'The Hobbit'
   end
 
-  test 'above the inline limit the page lists the first values plus the selected ones' do
-    CrudComponents.config.value_filter_inline_limit = 1
-    get books_path(publisher: %w[tor-books])
+  test 'beyond the threshold the filter row falls back to the text filter' do
+    CrudComponents.config.select_limit = 1
+    get books_path
 
-    assert_select "#{filter_select} option", count: 3 # (empty), Ace, Tor Books (selected)
-    assert_select control do |(div)|
-      assert_equal 'true', div['data-crud-value-filter-remote-value']
-      assert_equal '3', div['data-crud-value-filter-total-value']
-    end
+    assert_select filter_select, count: 0
+    assert_select control, count: 0
+    assert_select 'tr.crud-filter-row input[type="search"][name="publisher"]'
   end
 
-  test 'the page answers a search request with the matches only' do
-    get books_path(crud_choices: 'publisher', crud_term: 'tor')
+  test 'a prefixed collection filters by its own values' do
+    get dashboard_path(books_publisher: %w[ace])
 
-    assert_response :success
-    assert_select 'table', count: 0
-    assert_select 'ul[data-crud-choices="publisher"][data-crud-choices-source="crud_filter_books"]' do |(list)|
-      assert_equal '1', list['data-crud-choices-total']
-      assert_select 'li', count: 1
-      assert_select 'li[data-value="tor-books"]', text: 'Tor Books'
-    end
-  end
-
-  test 'a search answer stops at the inline limit and reports the total' do
-    CrudComponents.config.value_filter_inline_limit = 1
-    get books_path(crud_choices: 'publisher', crud_term: '')
-
-    assert_select 'ul[data-crud-choices-source="crud_filter_books"][data-crud-choices-total="2"] li', count: 1
-  end
-
-  test 'a search for a nested index stays inside it' do
-    get author_books_path(@tolkien, crud_choices: 'publisher', crud_term: '')
-
-    assert_select 'ul[data-crud-choices="publisher"][data-crud-choices-source="crud_filter_books"] li', count: 1
-    assert_select 'ul[data-crud-choices="publisher"][data-crud-choices-source="filter"] li', count: 1
-    assert_select 'li[data-value="ace"]', count: 0
-  end
-
-  test 'the standalone filter form answers too, narrowed by the scope it is given' do
-    get publisher_books_path(@ace, crud_choices: 'publisher')
-
-    assert_select 'ul[data-crud-choices="publisher"][data-crud-choices-source="filter"] li[data-value="ace"]'
-    assert_select 'ul[data-crud-choices="publisher"] li[data-value="tor-books"]', count: 0
-  end
-
-  test 'a field that is not searchable gets an empty answer' do
-    %w[title purchase_price reviews nope].each do |name|
-      get books_path(crud_choices: name, crud_term: 'o')
-
-      assert_select "ul[data-crud-choices=\"#{name}\"] li", count: 0
-      assert_select 'table', count: 0
-    end
-  end
-
-  test 'a prefixed collection answers only its own search requests' do
-    get dashboard_path(books_crud_choices: 'publisher')
-
-    assert_select 'ul[data-crud-choices="books_publisher"] li', count: 2
-    assert_select 'ul[data-crud-choices]', count: 1 # the reviews collection renders its table
-    assert_select 'table', count: 1
+    assert_select 'select[name="books_publisher[]"][multiple] option[selected]', text: 'Ace'
+    assert_select 'td', text: 'The Hobbit', count: 0
   end
 
   test 'the admin, which loads no Stimulus, gets the same multiple select and filters by it' do

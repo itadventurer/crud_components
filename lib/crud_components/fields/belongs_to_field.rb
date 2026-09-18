@@ -49,8 +49,17 @@ module CrudComponents
         scope.left_joins(name).reorder(target.arel_table[sort_column].public_send(dir))
       end
 
-      # A value filter: a multiple select (checkboxes in a popover with the
-      # crud-value-filter controller) of the targets occurring in the list.
+      # A multiple select of the values occurring in the list (a checkbox
+      # popover with the crud-value-filter controller), or — beyond
+      # `select_limit` values — the plain text filter over the target's label.
+      # Counted per render, not memoized: the field instance lives on the
+      # process-cached Structure, and the count depends on the query.
+      def filter_control(query = nil)
+        return super unless multi_value_filter?
+
+        filter_choice_scope(query).size > CrudComponents.config.select_limit ? :text : :values
+      end
+
       def derived_filter_control = :values
 
       # [label, identify_by] pairs: the targets the ability may see that occur
@@ -60,25 +69,12 @@ module CrudComponents
         choice_records(query&.ability, within: occurring_in(query)).map { |_, record| choice_pair(record) }
       end
 
-      # Only the derived filter takes several values and answers searches; a
-      # `filter` block or typed filter reads a single string.
-      def suggests_choices? = derived_filterable? && !typed_filter && !filter_facet
-      def multi_value_filter? = suggests_choices?
+      # A `filter` block or typed filter reads a single string; only the
+      # derived filter offers the values and takes several of them.
+      def multi_value_filter? = derived_filterable? && !typed_filter && !filter_facet
 
       def nullable? = !!model.columns_hash[reflection.foreign_key.to_s]&.null
       def filter_includes_null? = nullable?
-
-      # Up to `limit` [label, identify_by] pairs out of #filter_choices whose
-      # label contains `term` (the free-text match), plus the `selected` values
-      # beyond that limit, and how many choices match in all.
-      def filter_values(query, term: '', selected: [], limit: CrudComponents.config.value_filter_inline_limit)
-        records = filter_choice_scope(query)
-        found, total = matching(records, term, limit)
-        pairs = found.map { |record| choice_pair(record) }
-        missing = selected.map(&:to_s) - pairs.map { |_, value| value.to_s }
-        pairs += selected_records(records, missing).map { |record| choice_pair(record) } if missing.any?
-        [pairs.sort_by(&:first), total]
-      end
 
       # A single string (`?publisher=tor`) matches the identify_by value or the
       # label; an array (`?publisher[]=tor&publisher[]=ace`) matches the
@@ -137,31 +133,6 @@ module CrudComponents
 
         keys = base.unscope(:order, :limit, :offset).reselect(base.klass.arel_table[reflection.foreign_key])
         { reflection.association_primary_key => keys }
-      end
-
-      # [the first `limit` records whose label contains `term`, their total].
-      # A label block has no column to match in SQL, so the labels are matched
-      # in Ruby.
-      def matching(records, term, limit)
-        label = target_structure.label_column_name
-        if records.is_a?(ActiveRecord::Relation) && label
-          records = LikeSpec.apply(records, [label], term) if term.present?
-          return [records.reorder(target.arel_table[label]).limit(limit).to_a, records.count]
-        end
-
-        needle = term.to_s.downcase
-        found = records.to_a
-                       .map { |record| [target_structure.label_for(record).to_s, record] }
-                       .select { |text, _| text.downcase.include?(needle) }
-                       .sort_by(&:first)
-        [found.first(limit).map(&:last), found.size]
-      end
-
-      def selected_records(records, values)
-        identify_by = target_structure.identify_by
-        return records.where(identify_by => values).to_a if records.is_a?(ActiveRecord::Relation)
-
-        records.select { |record| values.include?(record.public_send(identify_by).to_s) }
       end
 
       # The target column to ORDER BY: the field behind its label when that's a

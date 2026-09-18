@@ -12,11 +12,10 @@ config can't guess.
 - **Fast cells** — built-in cell types are rendered inline, not a partial per cell — see
   [Fast cell rendering](#fast-cell-rendering).
 - **belongs_to filters stay small.** A belongs_to filter offers the targets that occur in
-  the list (one `IN (SELECT foreign_key …)` subquery over the list's scope) and lists at most
-  `config.value_filter_inline_limit` of them (default 200) in the page, plus the selected
-  ones, with one `COUNT` for the total. Beyond that the `crud-value-filter` search asks the
-  page again: the list is replaced by at most that many matches, and the controller waits
-  for a pause in typing and cancels the previous request.
+  the list (one `IN (SELECT foreign_key …)` subquery over the list's scope), and one `COUNT`
+  per render decides whether that is still a sensible list: up to `config.select_limit`
+  values (default 200) it renders them, beyond that it falls back to a text box over the
+  target's `label`, so a 50k-row association never reaches the page.
 - **Long text truncates** in collections — the full value renders on the record page.
 
 ## Eager-loading render dependencies

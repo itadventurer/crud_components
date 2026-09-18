@@ -390,7 +390,7 @@ Keyed by what a field *is* — with zero config, every row applies without decla
 | enum                      | i18n'd badge (click to filter; `—` if null)  | select of enum keys (+ "not set" if nullable)                                        | validated against the enum; "not set" → IS NULL         | yes         |
 | json column               | pretty `<pre>` (rouge if present)            | —                                                                                    | —                                                       | no          |
 | Active Storage attachment | image / preview / icon by content type       | —                                                                                    | —                                                       | no          |
-| `belongs_to`              | nil-safe link via target's `label`           | the values occurring in the list, several at once (`?publisher[]=`), "not set" included; a checkbox popover with `crud-value-filter` | `where(assoc: Target.where(identify_by => v))`          | v2          |
+| `belongs_to`              | nil-safe link via target's `label`           | the values occurring in the list, several at once (`?publisher[]=`), "(empty)" included, text box above `select_limit`; a checkbox popover with `crud-value-filter` | `where(assoc: Target.where(identify_by => v))`          | v2          |
 | `has_many` / habtm        | "a, b +n more" links                         | opt-in via `filter` facet                                                            | —                                                       | no          |
 | public model method       | by value type                                | —                                                                                    | —                                                       | —           |
 | `render` block / `as:`    | as declared                                  | — *(unless `filter` facet)*                                                          | — *(unless `sort` facet)*                               | facet-gated |
@@ -501,7 +501,7 @@ CrudComponents::Query.new(model, params, fieldset: :default, ability: nil, param
                                             # #filter_params → present subset, for filter-preserving links
                                             # #active_filters → active values by logical name, for chips
 CrudComponents.permitted_attributes(model, action: :update, ability: nil, record: nil)  # strong-params list (forms)
-CrudComponents.configure { |config| … }     # css/icon maps, value_filter_inline_limit, defaults
+CrudComponents.configure { |config| … }     # css/icon maps, select_limit, defaults
 ```
 
 ## Documentation
@@ -515,7 +515,7 @@ CrudComponents.configure { |config| … }     # css/icon maps, value_filter_inli
 | [docs/forms.md](docs/forms.md)             | `crud_form`, the permit list, `editable:`, form controls, attachments            |
 | [docs/security.md](docs/security.md)       | Permissions (`if:`/`editable:`), the whitelist, and the injection-safe URL model |
 | [docs/extending.md](docs/extending.md)     | Partials/renderers/layouts, progressive enhancement, styling, i18n               |
-| [docs/performance.md](docs/performance.md) | Eager-loading, the belongs_to value list and its inline limit, pagination        |
+| [docs/performance.md](docs/performance.md) | Eager-loading, the belongs_to value list and its limit, pagination               |
 | [docs/admin.md](docs/admin.md)             | The optional mountable admin UI: discovery, authorization, Show in App           |
 
 

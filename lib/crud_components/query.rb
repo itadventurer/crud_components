@@ -13,12 +13,6 @@ module CrudComponents
     # host's — it lives in the controller, never here — so it is not listed.
     RESERVED_PARAMS = %w[q sort dir].freeze
 
-    # The params a value filter searches its choices with: which field, and
-    # the text typed so far. Read by the collection/filter helpers, never by
-    # #apply.
-    CHOICES_PARAM = 'crud_choices'
-    TERM_PARAM = 'crud_term'
-
     attr_reader :model, :structure, :fieldset, :param_prefix, :ability
 
     # The relation this query narrows, before any filter, search or sort: the
@@ -118,20 +112,6 @@ module CrudComponents
     end
 
     def param_name(key) = "#{prefix}#{key}"
-
-    # The value filter's search request in `params`, if any, as
-    # [requested name, field, typed term]. The field must be one this query
-    # filters by (visible to the ability) and one that offers suggestions;
-    # anything else yields a nil field, so an unknown or hidden name learns
-    # nothing.
-    def choices_request
-      name = @params[param_name(CHOICES_PARAM)]
-      return nil unless name.is_a?(String)
-
-      field = filter_fields.find { |f| f.name.to_s == name && f.suggests_choices? }
-      term = @params[param_name(TERM_PARAM)]
-      [name, field, term.is_a?(String) ? term : '']
-    end
 
     private
 

@@ -2,9 +2,9 @@
 
 # CrudComponents — everything has a working default; uncomment to deviate.
 CrudComponents.configure do |config|
-  # A belongs_to filter lists this many of the targets occurring in the list
-  # in the page; the crud-value-filter controller searches the rest:
-  # config.value_filter_inline_limit = 200
+  # A belongs_to filter offers the values occurring in the list up to this many
+  # of them; beyond that it filters by free text over the target's label:
+  # config.select_limit = 200
 
   # Grouped collections (`group_by:`) open all groups below this row count, the
   # first only above it:
