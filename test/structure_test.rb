@@ -318,38 +318,9 @@ class StructureTest < ActiveSupport::TestCase
     assert_equal %i[publisher reviews], s.identity_preloads
   end
 
-  # ── belongs_to select/text threshold (config.select_limit) ─────────────────
-  test 'belongs_to filter control flips to text above select_limit' do
-    Publisher.create!(name: 'A', slug: 'a')
-    Publisher.create!(name: 'B', slug: 'b')
-    original = CrudComponents.config.select_limit
-    CrudComponents.config.select_limit = 5
-
-    assert_equal :select, CrudComponents::Fields::BelongsToField.new(:publisher, Book).filter_control
-    CrudComponents.config.select_limit = 1
-
-    assert_equal :text, CrudComponents::Fields::BelongsToField.new(:publisher, Book).filter_control
-  ensure
-    CrudComponents.config.select_limit = original
-  end
-
-  # Regression: the field instance lives on the process-cached Structure, so the
-  # control must NOT freeze at its first-seen count — a table that grows past the
-  # limit after boot has to start rendering text instead of a stale full select.
-  test 'belongs_to filter control re-counts on the same (cached) field instance' do
-    Publisher.create!(name: 'P1', slug: 'p1')
-    original = CrudComponents.config.select_limit
-    CrudComponents.config.select_limit = 2
-    field = CrudComponents::Fields::BelongsToField.new(:publisher, Book)
-
-    assert_equal :select, field.filter_control            # 1 row ≤ 2
-
-    Publisher.create!(name: 'P2', slug: 'p2')
-    Publisher.create!(name: 'P3', slug: 'p3')
-
-    assert_equal :text, field.filter_control              # same instance, now 3 rows > 2
-  ensure
-    CrudComponents.config.select_limit = original
+  # ── belongs_to value filter ─────────────────────────────────────────────────
+  test 'a belongs_to filters with a value list' do
+    assert_equal :values, CrudComponents::Fields::BelongsToField.new(:publisher, Book).filter_control
   end
 
   # ── reflection categories ──────────────────────────────────────────────────

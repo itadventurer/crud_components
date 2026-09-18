@@ -14,7 +14,7 @@ see") see [security.md](security.md).
 
 Every column is filterable by default through the control its type implies — a string by
 substring, a number/date by range, an enum/boolean by select, an association by its target's
-**label** (the name shown in the cell): a `belongs_to` as a select/text, a `has_many`/habtm as
+**label** (the name shown in the cell): a `belongs_to` as a list of values, a `has_many`/habtm as
 text matching any child. A *computed* column, or an association whose label has no column
 behind it — a block, or a method name like `label :display_title` — opts in with the `filter`
 facet (a [search spec](#the-search-spec) or a block):
@@ -28,9 +28,27 @@ end
 attribute :token, filter: false               # opt a derived field out of filtering
 ```
 
-A `belongs_to` select lists only the targets the ability lets the viewer see, and
-`choices:` narrows it further — see
-[association choices](security.md#association-choices-and-the-ability).
+A `belongs_to` filter offers the targets that occur in the list — on `/authors/3/books` the
+publishers of that author's books, not every publisher — and of those only the ones the
+ability lets the viewer see; `choices:` narrows it further — see
+[association choices](security.md#association-choices-and-the-ability). "The list" is the
+scope handed to `crud_collection` (or to `Query#apply`, or `base_scope:` of a `Query`)
+before any filter, search or sort, so picking a publisher never shrinks the choice to that
+publisher. `crud_filter` narrows the same way when it is given that scope instead of the
+model class (`crud_filter @books`).
+
+The filter is a `<select multiple>` of those values, "(empty)" first when the foreign key is
+nullable, submitted as `?publisher[]=tor-books&publisher[]=ace` and applied as `IN (…)`,
+`OR IS NULL` for "(empty)". A single `?publisher=tor` keeps working as before: it matches the
+`identify_by` value or the label. The optional `crud-value-filter` controller turns the select
+into a button with a checkbox popover whose search box narrows the options already in the page
+— no request of its own (see
+[progressive enhancement](extending.md#progressive-enhancement)).
+
+Beyond `config.select_limit` values (default 200) the page would carry a pointlessly long
+list, so the filter is the plain text box over the target's label instead, as for any other
+field. `Query#permitted_keys` ends with `{ "publisher" => [] }` for a value list, and
+`Query#values(:publisher)` reads the selection.
 
 A `has_many`/habtm column filters by its children's label with no extra config — typing in its
 filter box keeps owners that have a matching child. Here `/publishers` (which lists each

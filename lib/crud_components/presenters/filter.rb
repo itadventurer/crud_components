@@ -22,7 +22,8 @@ module CrudComponents
                  else
                    Query.new(@model, view.request.query_parameters,
                              fieldset: @structure.fieldset(fieldset || :index),
-                             ability: ability, param_prefix: param_prefix, extra_fields: dynamic_fields)
+                             ability: ability, param_prefix: param_prefix, extra_fields: dynamic_fields,
+                             base_scope: model.is_a?(Class) ? nil : model)
                  end
       end
 

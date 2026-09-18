@@ -1,0 +1,32 @@
+<%# Locals: field, query, form_id, compact, autosubmit, param_name, css
+    A multiple select of the values occurring in the list, submitted as
+    `param_name[]`. The optional crud-value-filter controller turns it into a
+    button with a searchable checkbox popover. Without it the select is the
+    control, and it does not submit on change: picking several values takes
+    more than one change. %>
+<% choices = field.filter_choices(query) %>
+<% if field.filter_includes_null? %>
+  <% choices = [[t('crud_components.filter.values.blank', default: '(empty)'),
+                 CrudComponents::NULL_FILTER_VALUE]] + choices %>
+<% end %>
+<% texts = { all: t('crud_components.filter.values.all', default: 'All'),
+             some: t('crud_components.filter.values.some', count: '{count}', total: '{total}',
+                     default: '%<count>s of %<total>s'),
+             search: t('crud_components.filter.values.search', default: 'Search values'),
+             select_all: t('crud_components.filter.values.select_all', count: '{count}',
+                           default: 'Select all (%<count>s)'),
+             select_none: t('crud_components.filter.values.select_none', default: 'Select none'),
+             shown: t('crud_components.filter.values.shown', count: '{count}', default: '%<count>s shown'),
+             apply: t('crud_components.filter.apply', default: 'Apply'),
+             cancel: t('crud_components.filter.values.cancel', default: 'Cancel') } %>
+<%= tag.div data: { controller: 'crud-value-filter',
+                    crud_value_filter_label_value: field.human_name,
+                    crud_value_filter_autosubmit_value: autosubmit,
+                    crud_value_filter_texts_value: texts.to_json } do %>
+  <%= select_tag param_name, options_for_select(choices, query.values(field.name.to_s)),
+                 multiple: true, form: form_id, id: nil,
+                 size: choices.size.clamp(2, compact ? 4 : 8),
+                 class: compact ? css.select_input_sm : css.select_input,
+                 aria: { label: field.human_name },
+                 data: { crud_value_filter_target: 'select' } %>
+<% end %>

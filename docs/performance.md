@@ -11,10 +11,11 @@ config can't guess.
   once — see [Eager-loading render dependencies](#eager-loading-render-dependencies).
 - **Fast cells** — built-in cell types are rendered inline, not a partial per cell — see
   [Fast cell rendering](#fast-cell-rendering).
-- **belongs_to filters degrade gracefully.** A belongs_to filter renders a `<select>` of
-  the target's records up to `config.select_limit` (default 250); beyond that it switches
-  to a text input over the target's `label`, so a 50k-row association never builds a
-  giant `<select>`. (A typeahead/autocomplete is a later version.)
+- **belongs_to filters stay small.** A belongs_to filter offers the targets that occur in
+  the list (one `IN (SELECT foreign_key …)` subquery over the list's scope), and one `COUNT`
+  per render decides whether that is still a sensible list: up to `config.select_limit`
+  values (default 200) it renders them, beyond that it falls back to a text box over the
+  target's `label`, so a 50k-row association never reaches the page.
 - **Long text truncates** in collections — the full value renders on the record page.
 
 ## Eager-loading render dependencies

@@ -3,10 +3,10 @@
 module CrudComponents
   module Fields
     # belongs_to / has_one: nil-safe link via the target's label. The filter
-    # (belongs_to only) accepts both the target's identify_by value (what the
-    # select submits) and free text matched against the target's label — the
-    # name shown in the cell — one param, two OR-combined parameterized
-    # subqueries.
+    # (belongs_to only) takes the identify_by values the value filter submits,
+    # or a single string matched against the identify_by value and the
+    # target's label — the name shown in the cell — as OR-combined
+    # parameterized subqueries.
     class BelongsToField < Base
       include AssociationChoices
 
@@ -49,29 +49,48 @@ module CrudComponents
         scope.left_joins(name).reorder(target.arel_table[sort_column].public_send(dir))
       end
 
-      # select (a dropdown of all targets) below `select_limit` rows, else free
-      # text. Counted per render, not memoized: the field instance lives on the
-      # process-cached Structure, so a memoized count would freeze at its boot-time
-      # value and render the wrong control once the table grows past the limit.
-      # One COUNT per filter-row render is negligible next to rendering the table.
-      # A declared `choices:` is a short list by intent, so always a select.
-      def derived_filter_control
-        return :select if declared_choices?
+      # A multiple select of the values occurring in the list (a checkbox
+      # popover with the crud-value-filter controller), or — beyond
+      # `select_limit` values — the plain text filter over the target's label.
+      # Counted per render, not memoized: the field instance lives on the
+      # process-cached Structure, and the count depends on the query.
+      def filter_control(query = nil)
+        return super unless multi_value_filter?
 
-        target.count <= CrudComponents.config.select_limit ? :select : :text
+        filter_choice_scope(query).size > CrudComponents.config.select_limit ? :text : :values
       end
 
+      def derived_filter_control = :values
+
+      # [label, identify_by] pairs: the targets the ability may see that occur
+      # in the query's base scope — the rows the list could show before any
+      # filter, so picking one never shrinks the choice to itself.
       def filter_choices(query = nil)
-        identify_by = target_structure.identify_by
-        choice_records(query&.ability).map { |label, record| [label, record.public_send(identify_by)] }
+        choice_records(query&.ability, within: occurring_in(query)).map { |_, record| choice_pair(record) }
       end
 
-      def apply_derived_filter(scope, value: nil, **)
-        return scope unless value
+      # A `filter` block or typed filter reads a single string; only the
+      # derived filter offers the values and takes several of them.
+      def multi_value_filter? = derived_filterable? && !typed_filter && !filter_facet
 
-        identified = scope.where(name => target.where(target_structure.identify_by => value))
-        searched = like_subquery(scope, value)
-        searched ? identified.or(searched) : identified
+      def nullable? = !!model.columns_hash[reflection.foreign_key.to_s]&.null
+      def filter_includes_null? = nullable?
+
+      # A single string (`?publisher=tor`) matches the identify_by value or the
+      # label; an array (`?publisher[]=tor&publisher[]=ace`) matches the
+      # identify_by values exactly. NULL_FILTER_VALUE among them adds IS NULL.
+      def apply_derived_filter(scope, value: nil, **)
+        values = Array(value).map(&:to_s).compact_blank
+        return scope if values.empty?
+
+        blank = values.delete(CrudComponents::NULL_FILTER_VALUE)
+        parts = []
+        if values.any?
+          parts << scope.where(name => target.where(target_structure.identify_by => values))
+          parts << like_subquery(scope, value) if value.is_a?(String)
+        end
+        parts << scope.where(reflection.foreign_key => nil) if blank
+        parts.compact.reduce(:or)
       end
 
       # Load the association, nesting the target's identity_preloads (its label's
@@ -96,6 +115,25 @@ module CrudComponents
       def permit_param = reflection.foreign_key.to_sym
 
       private
+
+      def choice_pair(record)
+        [target_structure.label_for(record).to_s, record.public_send(target_structure.identify_by)]
+      end
+
+      def filter_choice_scope(query)
+        choice_scope(query&.ability, within: occurring_in(query))
+      end
+
+      # A where-condition on the target: its key is among the foreign keys of
+      # the query's base scope. Ordering and pagination of the base don't
+      # matter to which targets occur, so they are dropped.
+      def occurring_in(query)
+        base = query&.base_scope
+        return nil unless base
+
+        keys = base.unscope(:order, :limit, :offset).reselect(base.klass.arel_table[reflection.foreign_key])
+        { reflection.association_primary_key => keys }
+      end
 
       # The target column to ORDER BY: the field behind its label when that's a
       # real column, else nil (a block label or computed attribute can't be sorted

@@ -42,9 +42,13 @@
     document.addEventListener('turbo:load', highlightCode)
     document.addEventListener('turbo:render', highlightCode)
   </script>
+  <script type="importmap">
+    { "imports": { "@hotwired/stimulus": "https://cdn.jsdelivr.net/npm/@hotwired/stimulus@3.2.2/+esm" } }
+  </script>
   <script type="module">
     import * as Turbo from "https://cdn.jsdelivr.net/npm/@hotwired/turbo@8.0.12/+esm"
-    import { Application, Controller } from "https://cdn.jsdelivr.net/npm/@hotwired/stimulus@3.2.2/+esm"
+    import { Application, Controller } from "@hotwired/stimulus"
+    import CrudValueFilterController from "<%= stimulus_controller_path('crud_value_filter_controller') %>"
     window.Turbo = Turbo  // the ESM build auto-starts but doesn't expose the global
 
     // The gem's one optional Stimulus controller (normally copied in via
@@ -155,6 +159,7 @@
     application.register("crud-select", CrudSelectController)
     application.register("crud-columns", CrudColumnsController)
     application.register("crud-nested", CrudNestedController)
+    application.register("crud-value-filter", CrudValueFilterController)
   </script>
 </head>
 <body class="bg-light">

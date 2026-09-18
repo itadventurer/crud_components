@@ -14,11 +14,21 @@ module CrudComponents
     # records.
     module AssociationChoices
       # The target records to offer, sorted by label as [label, record] pairs.
-      def choice_records(ability)
+      # `within` (a where-condition) narrows them further, e.g. to the targets
+      # occurring in a list.
+      def choice_records(ability, within: nil)
         structure = target_structure
+        records = choice_scope(ability, within: within).to_a
+        records.map { |record| [structure.label_for(record).to_s, record] }.sort_by(&:first)
+      end
+
+      # The same records unloaded: a relation, or an array when a `choices:`
+      # callable returns one.
+      def choice_scope(ability, within: nil)
         records = Permission.accessible(target.all, ability)
+        records = records.where(within) if within
         records = call_choices(records, ability) if options[:choices]
-        records.to_a.map { |record| [structure.label_for(record).to_s, record] }.sort_by(&:first)
+        records
       end
 
       def declared_choices? = !options[:choices].nil?

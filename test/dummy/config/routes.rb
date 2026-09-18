@@ -40,6 +40,7 @@ Rails.application.routes.draw do
   get 'live', to: 'live#index'
   post 'live/poke', to: 'live#poke'
   post 'toggle_admin', to: 'application#toggle_admin'
+  get 'stimulus/:name', to: 'javascripts#show', as: :stimulus_controller, format: false
 
   # Stands in for a mounted jobs dashboard; the admin's sidebar links to it.
   mount ->(_env) { [200, { 'content-type' => 'text/plain' }, ['Background jobs']] },

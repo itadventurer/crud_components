@@ -188,12 +188,12 @@ same markup in place via Stimulus controllers attached with `data-controller`. T
 lives in the [class map](#styling), not in template variants. A controller that isn't
 loaded simply leaves the baseline as-is.
 
-The gem ships **four** optional controllers, copied in by the install generator (you
+The gem ships **six** optional controllers, copied in by the install generator (you
 register them with Stimulus; the gem depends on none):
 
 ```sh
 bin/rails generate crud_components:install
-# initializer + crud-filter + crud-multiselect + crud-columns + crud-select + crud-nested
+# initializer + crud-filter + crud-multiselect + crud-columns + crud-select + crud-nested + crud-value-filter
 ```
 
 - **`crud-filter`** strips empty params on submit (clean URLs) and auto-submits selects in
@@ -210,6 +210,16 @@ bin/rails generate crud_components:install
   the moment it is clicked. The checkbox stays the source of truth, so the form submits
   identically either way; without it you tick the box and save. Adding rows needs no
   JavaScript at all — the (+) is a link.
+- **`crud-value-filter`** turns a belongs_to filter's `<select multiple>` into a compact
+  button ("All", the single value, or "3 of 12") that opens a popover in the manner of a
+  spreadsheet's value filter: a search box over the options the select already carries,
+  "Select all (N)" / "Select none", the values as checkboxes ("(empty)" first when the column
+  is nullable) and Apply / Cancel. Apply writes the select and, in the inline filter row,
+  submits the form; ticking every value means no filter. Keyboard: arrows move between the
+  checkboxes, Space toggles, Enter applies, Escape and a click outside cancel; the popover is
+  an ARIA `dialog`. Everything happens in the browser — the controller asks the server for
+  nothing. Without it the select is the control; the bundled admin layout loads no Stimulus
+  and shows it that way.
 - **`crud-select`** adds a "select all visible" / per-group master checkbox and a live
   "N selected" count to selectable tables (bulk/selection actions). Without it the row
   checkboxes still submit; you just tick them individually.
@@ -235,7 +245,7 @@ CrudComponents.configure do |config|
   config.css.table  = 'table table-sm table-hover'
   config.css.button = 'btn btn-outline-dark'
   config.css.badge  = 'badge text-bg-secondary'
-  config.select_limit = 250    # belongs_to filter: select → text input threshold
+  config.select_limit = 200    # belongs_to filter: values listed, beyond it a text box
 end
 ```
 

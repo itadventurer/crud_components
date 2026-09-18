@@ -2,9 +2,9 @@
 
 # CrudComponents — everything has a working default; uncomment to deviate.
 CrudComponents.configure do |config|
-  # belongs_to filter selects switch to a text input over the target's
-  # search_in beyond this many records:
-  # config.select_limit = 250
+  # A belongs_to filter offers the values occurring in the list up to this many
+  # of them; beyond that it filters by free text over the target's label:
+  # config.select_limit = 200
 
   # Grouped collections (`group_by:`) open all groups below this row count, the
   # first only above it:

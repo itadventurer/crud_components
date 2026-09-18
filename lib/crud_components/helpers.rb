@@ -128,7 +128,9 @@ module CrudComponents
     # A standalone labelled filter form (modal / sidebar) — separate from the
     # inline filter row a table renders.
     #
-    # @param model [Class] the ActiveRecord model whose fields drive the form.
+    # @param model [Class, ActiveRecord::Relation] the model whose fields drive
+    #   the form. Pass the list's scope instead of the class and association
+    #   filters offer only the targets occurring in it.
     # @param fieldset [Symbol, nil] which fieldset's filterable fields to offer.
     # @param query [CrudComponents::Query, nil] reuse an existing query's values;
     #   nil reads the request params.

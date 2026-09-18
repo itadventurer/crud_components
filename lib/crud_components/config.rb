@@ -115,7 +115,9 @@ module CrudComponents
     attr_reader :css
 
     def initialize
-      @select_limit = 250
+      # A belongs_to filter offers the values occurring in the list up to this
+      # many of them; beyond that it filters by free text over the label.
+      @select_limit = 200
       # Grouped collections open every group when the total row count is below
       # this, and only the first group above it (the rest collapse).
       @group_collapse_threshold = 50

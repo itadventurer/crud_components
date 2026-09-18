@@ -31,7 +31,7 @@
 <% end %>
 <%= code_file('app/views/books/index.html.erb', :erb) do %>
 &lt;%= crud_collection @books, fieldset: :<%= fieldset %>, layout: :cards %&gt;
-&lt;%= crud_filter   Book, fieldset: :<%= fieldset %>, sort: true %&gt;   &lt;%# headerless → carry the sort picker %&gt;
+&lt;%= crud_filter   @books, fieldset: :<%= fieldset %>, sort: true %&gt;   &lt;%# headerless → carry the sort picker %&gt;
 <% end %>
 <% end %>
 <% else %>
@@ -48,7 +48,7 @@ end
 <% end %>
 <%= code_file('app/views/books/index.html.erb', :erb) do %>
 &lt;%= crud_collection @books, fieldset: :<%= fieldset %> %&gt;   &lt;%# search, filters, sort, actions %&gt;
-&lt;%= crud_filter   Book, fieldset: :<%= fieldset %> %&gt;     &lt;%# filter sidebar (takes the model, not a scope) %&gt;
+&lt;%= crud_filter   @books, fieldset: :<%= fieldset %> %&gt;   &lt;%# filter sidebar (the model, or the list's scope) %&gt;
 <% end %>
 <% end %>
 <% end %>
@@ -63,7 +63,7 @@ end
     <div class="card"><div class="card-body">
       <h5 class="card-title">Filter</h5>
       <%# Cards have no column headers, so let the filter form carry the sort picker. %>
-      <%= crud_filter Book, fieldset: fieldset, sort: layout == :cards %>
+      <%= crud_filter @books, fieldset: fieldset, sort: layout == :cards %>
     </div></div>
   </div>
 </div>

@@ -390,7 +390,7 @@ Keyed by what a field *is* — with zero config, every row applies without decla
 | enum                      | i18n'd badge (click to filter; `—` if null)  | select of enum keys (+ "not set" if nullable)                                        | validated against the enum; "not set" → IS NULL         | yes         |
 | json column               | pretty `<pre>` (rouge if present)            | —                                                                                    | —                                                       | no          |
 | Active Storage attachment | image / preview / icon by content type       | —                                                                                    | —                                                       | no          |
-| `belongs_to`              | nil-safe link via target's `label`           | select valued by target's `identify_by` (text over target's `label` above `select_limit`) | `where(assoc: Target.where(identify_by => v))`          | v2          |
+| `belongs_to`              | nil-safe link via target's `label`           | the values occurring in the list, several at once (`?publisher[]=`), "(empty)" included, text box above `select_limit`; a checkbox popover with `crud-value-filter` | `where(assoc: Target.where(identify_by => v))`          | v2          |
 | `has_many` / habtm        | "a, b +n more" links                         | opt-in via `filter` facet                                                            | —                                                       | no          |
 | public model method       | by value type                                | —                                                                                    | —                                                       | —           |
 | `render` block / `as:`    | as declared                                  | — *(unless `filter` facet)*                                                          | — *(unless `sort` facet)*                               | facet-gated |
@@ -415,11 +415,12 @@ the inline filter row binds to an external form via the HTML `form` attribute; f
 plain (simple_form) markup. Niceties layer on as **one mechanism, not a fork**: the
 markup is always the plain baseline, and Stimulus controllers enhance it *in place* via
 `data-controller` (no parallel template trees; framework choice lives in the class map).
-The gem ships five optional Stimulus controllers — `crud-filter` (strips empty inputs for
+The gem ships six optional Stimulus controllers — `crud-filter` (strips empty inputs for
 clean URLs), `crud-multiselect` (a habtm `<select multiple>` → chips-list + "add" picker),
 `crud-columns` (drag-to-reorder + tidy `?cols=` in the column picker), `crud-select`
 ("select all" / per-group master checkbox + live count for selectable tables) and
-`crud-nested` (a nested row's "remove" checkbox → a button that hides the row) — and
+`crud-nested` (a nested row's "remove" checkbox → a button that hides the row) and
+`crud-value-filter` (a belongs_to filter's multiple select → a searchable checkbox popover) — and
 depends on no JS. →
 [Extending → progressive enhancement](docs/extending.md#progressive-enhancement)
 
@@ -514,7 +515,7 @@ CrudComponents.configure { |config| … }     # css/icon maps, select_limit, def
 | [docs/forms.md](docs/forms.md)             | `crud_form`, the permit list, `editable:`, form controls, attachments            |
 | [docs/security.md](docs/security.md)       | Permissions (`if:`/`editable:`), the whitelist, and the injection-safe URL model |
 | [docs/extending.md](docs/extending.md)     | Partials/renderers/layouts, progressive enhancement, styling, i18n               |
-| [docs/performance.md](docs/performance.md) | Eager-loading, the belongs_to select→text threshold, pagination                  |
+| [docs/performance.md](docs/performance.md) | Eager-loading, the belongs_to value list and its limit, pagination               |
 | [docs/admin.md](docs/admin.md)             | The optional mountable admin UI: discovery, authorization, Show in App           |
 
 

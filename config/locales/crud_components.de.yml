@@ -46,6 +46,15 @@ de:
       direction: "Richtung"
       asc: "Aufsteigend"
       desc: "Absteigend"
+      values:
+        all: "Alle"
+        some: "%{count} von %{total}"
+        blank: "(leer)"
+        search: "Werte durchsuchen"
+        select_all: "Alle auswählen (%{count})"
+        select_none: "Keine auswählen"
+        shown: "%{count} angezeigt"
+        cancel: "Abbrechen"
     pager:
       label: "Seitennummerierung"
       summary: "Seite %{page} von %{total} · %{count} gesamt"
