@@ -91,7 +91,7 @@ module CrudTestHelpers
     def initialize(*visible) = @visible = visible
     def can?(_action, subject) = !subject.is_a?(ActiveRecord::Base) || @visible.include?(subject)
     def model_adapter(*) = self
-    def visible_ids(model) = @visible.select { |record| record.is_a?(model) }.map(&:id)
+    def visible_ids(model) = @visible.grep(model).map(&:id)
   end
 end
 

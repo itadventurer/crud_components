@@ -320,7 +320,7 @@ module CrudComponents
         return [] if total_pages <= 1
 
         shown = ([1, total_pages] + ((current_page - window)..(current_page + window)).to_a)
-                .select { |p| p.between?(1, total_pages) }.uniq.sort
+                .grep(1..total_pages).uniq.sort
         shown.each_with_index.flat_map do |p, i|
           i.positive? && p - shown[i - 1] > 1 ? [:gap, p] : [p]
         end

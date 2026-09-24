@@ -9,27 +9,7 @@ require 'active_support/core_ext/date/calculations'
 require 'active_support/core_ext/date_and_time/calculations'
 require 'active_support/core_ext/integer/time'
 
-# Declarative CRUD UI for ActiveRecord models: the entry points an app calls
-# (structure_for, permitted_attributes, selected) and the configuration hook.
-module CrudComponents
-  # The query params the gem owns (filters are top-level params named after the
-  # field, so a field can't share these names). Declaring such an attribute
-  # raises in the Builder rather than silently colliding with sort/pagination.
-  RESERVED_PARAMS = %w[q sort dir page per cols].freeze
-
-  # Sentinel filter value meaning "the column is NULL" (boolean/enum filters on
-  # nullable columns offer it as a "not set" choice). Improbable as a real
-  # value, so it never collides with a genuine enum key or boolean string.
-  NULL_FILTER_VALUE = '__null__'
-
-  # The two non-blank values of an attachment **presence** filter — its 3-state
-  # control (any / present / absent) submits these, and the query turns them into
-  # an EXISTS / NOT EXISTS (`where.associated` / `where.missing`) over the backing
-  # attachment association rather than a value match. See {Fields::AttachmentField}.
-  PRESENT_FILTER_VALUE = 'present'
-  ABSENT_FILTER_VALUE = 'absent'
-end
-
+require_relative 'crud_components/constants'
 require_relative 'crud_components/version'
 require_relative 'crud_components/errors'
 require_relative 'crud_components/config'
@@ -65,7 +45,8 @@ require_relative 'crud_components/model'
 require_relative 'crud_components/query'
 require_relative 'crud_components/admin'
 
-# Reopened once the parts above are loaded: the module-level API an app calls.
+# Declarative CRUD UI for ActiveRecord models: the entry points an app calls
+# (structure_for, permitted_attributes, selected) and the configuration hook.
 module CrudComponents
   class << self
     def config

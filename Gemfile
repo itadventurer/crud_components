@@ -31,9 +31,9 @@ group :development, :test do
   gem 'sqlite3' # unconstrained: bundler picks a version compatible with the Rails above
   # Linting. Pinned to a minor so a newly released cop cannot turn CI red on a
   # commit that did not touch the code; bump deliberately.
-  gem 'rubocop', '~> 1.81.0', require: false
-  gem 'rubocop-minitest', '~> 0.38.2', require: false
-  gem 'rubocop-performance', '~> 1.26.0', require: false
-  gem 'rubocop-rails', '~> 2.34.0', require: false
+  gem 'rubocop', '~> 1.91.0', require: false
+  gem 'rubocop-minitest', '~> 0.40.0', require: false
+  gem 'rubocop-performance', '~> 1.27.0', require: false
+  gem 'rubocop-rails', '~> 2.38.0', require: false
   gem 'rubocop-rake', '~> 0.7.1', require: false
 end
