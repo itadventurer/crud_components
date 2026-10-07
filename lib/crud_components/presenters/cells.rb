@@ -62,7 +62,7 @@ module CrudComponents
       end
 
       def datetime(value, _record, _field, _surface, _cc)
-        value.nil? ? dash : esc(@v.l(value, format: :short))
+        value.nil? ? dash : esc(@v.l(value, format: datetime_format))
       end
 
       def enum(value, _record, field, _surface, cc)
@@ -130,6 +130,10 @@ module CrudComponents
 
       # The muted em-dash shown for a nil/blank value.
       def dash = @v.tag.span('—', class: css.muted)
+
+      def datetime_format
+        @datetime_format ||= @v.t('crud_components.formats.datetime', default: '%d %b %Y %H:%M')
+      end
 
       # html_escape — matches ERB `<%= value %>` (passes SafeBuffers through).
       def esc(value) = ERB::Util.html_escape(value)
