@@ -4,6 +4,8 @@
 # it in your own config/locales/*.yml.
 en:
   crud_components:
+    formats:
+      datetime: "%d %b %Y %H:%M"
     confirm: "Are you sure?"
     empty: "No records"
     more: "+%{count} more"

@@ -68,7 +68,7 @@ Built-in renderers:
 * `:text` — truncates in a collection, keeps line breaks on a record page.
 * `:number` — `unit:` (suffix) and `digits:` (decimal places).
 * `:date` — localized.
-* `:datetime` — localized.
+* `:datetime` — localized, always with the year (`crud_components.formats.datetime`, a `strftime` string; override it in your locale files).
 * `:boolean` — ✓/✗ icon; nil shows `—`.
 * `:enum` — i18n'd badge; nil shows `—`.
 * `:association` — nil-safe link via the target's `label`.

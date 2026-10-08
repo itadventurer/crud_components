@@ -2,5 +2,5 @@
 <%- if value.nil? -%>
   <span class="<%= CrudComponents.config.css.muted %>">—</span>
 <%- else -%>
-  <%= l(value, format: :short) %>
+  <%= l(value, format: t('crud_components.formats.datetime', default: '%d %b %Y %H:%M')) %>
 <%- end -%>
