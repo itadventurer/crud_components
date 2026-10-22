@@ -42,7 +42,12 @@ PDF
 
 puts 'Seeding the bookstore…'
 
-[Comment, Review, Stock, Book, Author, Publisher, Document].each(&:delete_all)
+# Wipe everything this file creates. Attachments and blobs are purged too (a
+# plain delete_all leaves the files on disk), and the custom-property tables are
+# cleared so a re-run does not hit their unique key.
+[Comment, Review, Stock, Chapter, Contact, PropertyValue, PropertyDefinition, Book, Author, Publisher, Document].each(&:delete_all)
+ActiveStorage::Attachment.delete_all
+ActiveStorage::Blob.find_each(&:purge)
 ActiveRecord::Base.connection.execute('DELETE FROM authors_books')
 
 publishers = [
